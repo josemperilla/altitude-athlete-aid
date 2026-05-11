@@ -11,18 +11,18 @@ const tabs = [
 ] as const;
 
 function pickHRV(g: any): string {
-  const h = g?.health ?? g;
-  const v =
-    h?.hrv ?? h?.HRV ?? h?.hrv_today ?? h?.hrv_last_night ??
-    (Array.isArray(g?.hrv) ? g.hrv.at(-1)?.value ?? g.hrv.at(-1)?.hrv : undefined);
-  return v != null ? String(Math.round(Number(v))) : "—";
+  const arr = g?.health?.hrv;
+  if (!Array.isArray(arr)) return "—";
+  const last = arr.filter((h: any) => h?.hrv != null).at(-1);
+  const v = last?.hrv;
+  return v != null && !isNaN(Number(v)) ? String(Math.round(Number(v))) : "—";
 }
 function pickRHR(g: any): string {
-  const h = g?.health ?? g;
-  const v =
-    h?.resting_hr ?? h?.restingHR ?? h?.rhr ?? h?.resting_heart_rate ??
-    (Array.isArray(g?.resting_hr) ? g.resting_hr.at(-1)?.value ?? g.resting_hr.at(-1)?.rhr : undefined);
-  return v != null ? String(Math.round(Number(v))) : "—";
+  const arr = g?.health?.resting_hr;
+  if (!Array.isArray(arr)) return "—";
+  const last = arr.filter((h: any) => h?.resting_hr != null).at(-1);
+  const v = last?.resting_hr;
+  return v != null && !isNaN(Number(v)) ? String(Math.round(Number(v))) : "—";
 }
 function pickState(p: any): string {
   const s = typeof p?.athlete_state === "string" ? p.athlete_state : p?.athlete_state?.state ?? p?.athlete_state?.label;
