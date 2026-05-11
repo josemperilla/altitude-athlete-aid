@@ -9,6 +9,8 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
+import { Sidebar } from "@/components/entrenador/Sidebar";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -72,11 +74,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Entrenador — Medio Maratón Bogotá" },
+      { name: "description", content: "Plataforma de entrenamiento premium para corredor de medio maratón en Bogotá (2.600 m)." },
+      { name: "author", content: "Entrenador" },
+      { property: "og:title", content: "Entrenador — Medio Maratón Bogotá" },
+      { property: "og:description", content: "Plataforma de entrenamiento premium para corredor de medio maratón en Bogotá." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
@@ -85,6 +87,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         rel: "stylesheet",
         href: appCss,
+      },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap",
       },
     ],
   }),
@@ -113,7 +121,13 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <div className="flex min-h-screen w-full" style={{ background: "#020101" }}>
+        <Sidebar />
+        <main className="flex-1 min-w-0">
+          <Outlet />
+        </main>
+      </div>
+      <Toaster theme="dark" />
     </QueryClientProvider>
   );
 }

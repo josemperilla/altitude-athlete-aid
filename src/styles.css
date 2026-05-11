@@ -63,38 +63,56 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
+  /* Entrenador — premium dark club */
+  --background: oklch(0.05 0.002 30);          /* #020101 */
+  --foreground: oklch(1 0 0);                  /* #FFFFFF */
+  --card: oklch(0.16 0.002 30);                /* #111111 */
+  --card-foreground: oklch(1 0 0);
+  --popover: oklch(0.16 0.002 30);
+  --popover-foreground: oklch(1 0 0);
+  --primary: oklch(0.86 0.06 80);              /* #E9CEA9 dorado arena */
+  --primary-foreground: oklch(0.05 0.002 30);
+  --secondary: oklch(0.2 0.002 30);            /* #1A1A1A */
+  --secondary-foreground: oklch(1 0 0);
+  --muted: oklch(0.2 0.002 30);
+  --muted-foreground: oklch(0.66 0 0);         /* #9A9A9A */
+  --accent: oklch(0.78 0.09 75);               /* #CEA970 dorado intenso */
+  --accent-foreground: oklch(0.05 0.002 30);
+  --destructive: oklch(0.65 0.22 27);          /* #EF4444 */
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.86 0.06 80 / 0.15);
+  --input: oklch(0.2 0.002 30);
+  --ring: oklch(0.86 0.06 80);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --sidebar: oklch(0.13 0.002 30);             /* #0D0D0D */
+  --sidebar-foreground: oklch(1 0 0);
+  --sidebar-primary: oklch(0.86 0.06 80);
+  --sidebar-primary-foreground: oklch(0.05 0.002 30);
+  --sidebar-accent: oklch(0.2 0.002 30);
+  --sidebar-accent-foreground: oklch(0.86 0.06 80);
+  --sidebar-border: oklch(0.86 0.06 80 / 0.1);
+  --sidebar-ring: oklch(0.86 0.06 80);
+
+  /* brand palette as raw hex for fine control */
+  --bg: #020101;
+  --card-1: #111111;
+  --card-2: #1A1A1A;
+  --gold: #E9CEA9;
+  --gold-deep: #CEA970;
+  --gold-light: #FFBC7D;
+  --text: #FFFFFF;
+  --text-muted: #9A9A9A;
+  --gold-border: rgba(233,206,169,0.15);
+  --gold-border-strong: rgba(233,206,169,0.35);
+  --run: #3B82F6;
+  --bike: #10B981;
+  --err: #EF4444;
+  --warn: #FBBF24;
+  --shadow-club: 0 4px 20px rgba(0,0,0,0.4);
 }
 
 .dark {
@@ -138,7 +156,51 @@
   }
 
   body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: "Hanken Grotesk", system-ui, sans-serif;
+    font-weight: 400;
   }
+
+  h1, h2, h3, h4 {
+    font-family: "Hanken Grotesk", system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+  }
+}
+
+/* Utility classes */
+.club-card {
+  background: var(--card-1);
+  border: 1px solid var(--gold-border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-club);
+  transition: border-color 160ms ease;
+}
+.club-card:hover { border-color: var(--gold); }
+
+.btn-gold {
+  background: var(--gold);
+  color: var(--bg);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 6px;
+  padding: 0.65rem 1rem;
+  transition: background-color 160ms ease;
+  font-family: "Hanken Grotesk", system-ui, sans-serif;
+}
+.btn-gold:hover:not(:disabled) { background: var(--gold-deep); }
+.btn-gold:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.metric-num {
+  font-weight: 700;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+
+.gold-divider {
+  height: 1px;
+  background: var(--gold-border);
+  border: none;
 }
