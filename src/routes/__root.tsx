@@ -10,6 +10,7 @@ import {
 
 import appCss from "../styles.css?url";
 import { Sidebar } from "@/components/entrenador/Sidebar";
+import { MobileTopBar, MobileBottomNav } from "@/components/entrenador/MobileNav";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -123,9 +124,11 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <div className="flex min-h-screen w-full" style={{ background: "#020101" }}>
         <Sidebar />
-        <main className="flex-1 min-w-0">
+        <main className="flex-1 min-w-0 pb-20 md:pb-0">
+          <MobileTopBar />
           <Outlet />
         </main>
+        <MobileBottomNav />
       </div>
       <Toaster theme="dark" />
     </QueryClientProvider>
