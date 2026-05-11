@@ -4,7 +4,9 @@ function parseDate(d: any): Date | null {
   if (!d) return null;
   const s = typeof d === "string" ? d : d?.date ?? d?.day ?? d?.start ?? d?.scheduled_date;
   if (!s) return null;
-  const dt = new Date(s);
+  // Treat YYYY-MM-DD as a local date (avoid UTC shift)
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s));
+  const dt = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(s);
   return isNaN(dt.getTime()) ? null : dt;
 }
 
@@ -42,7 +44,8 @@ export function WeekBlock({
   index: number;
 }) {
   const { start, end } = getWeekRange(week);
-  const type = (week?.type ?? week?.week_type ?? week?.label ?? `Semana ${index + 1}`).toString();
+  const rawType = (week?.week_type ?? week?.type ?? week?.label ?? `Semana ${index + 1}`).toString();
+  const type = rawType.replace(/_/g, " ").toUpperCase();
   const purpose = week?.purpose ?? week?.goal ?? week?.description ?? "";
 
   const today = startOfDay(new Date());
@@ -138,10 +141,10 @@ export function WeekBlock({
               {c.runs.length === 0 && c.bikes.length === 0 && (
                 <div className="text-[11px] mt-2" style={{ color: "#555" }}>—</div>
               )}
-              {c.runs.map((s, idx) => (
+              {c.runs.map((s: any, idx: number) => (
                 <SessionCard key={`r-${idx}`} session={s} kind="run" />
               ))}
-              {c.bikes.map((s, idx) => (
+              {c.bikes.map((s: any, idx: number) => (
                 <SessionCard key={`b-${idx}`} session={s} kind="bike" />
               ))}
             </div>
@@ -154,24 +157,26 @@ export function WeekBlock({
 
 function SessionCard({ session, kind }: { session: any; kind: "run" | "bike" }) {
   const color = kind === "run" ? "#3B82F6" : "#10B981";
-  const name =
-    session?.name ?? session?.title ?? session?.session_name ?? session?.workout_name ?? (kind === "run" ? "Carrera" : "Ciclismo");
-  const duration = session?.duration ?? session?.duration_min ?? session?.minutes ?? session?.time;
-  const zone = session?.zone ?? session?.intensity ?? session?.pace ?? session?.target;
-  const distance = session?.distance ?? session?.km ?? session?.distance_km;
+  const name = session?.name ?? (kind === "run" ? "Carrera" : "Ciclismo");
+  const duration = session?.duration_min;
+  const zone = session?.primary_zone ?? session?.zone;
+  const sport = session?.sport ?? session?.type;
 
   return (
     <div
       className="rounded px-2.5 py-2 text-xs"
       style={{ background: "#111", borderLeft: `3px solid ${color}` }}
     >
-      <div className="text-white font-semibold leading-tight truncate" title={String(name)}>
+      <div
+        className="text-white font-semibold leading-snug break-words"
+        style={{ whiteSpace: "normal" }}
+      >
         {String(name)}
       </div>
       <div className="mt-1 flex flex-wrap gap-1.5 text-[11px]" style={{ color: "#9A9A9A" }}>
-        {duration != null && <span>{duration}{typeof duration === "number" ? " min" : ""}</span>}
-        {distance != null && <span>· {distance} km</span>}
+        {duration != null && <span>{duration} min</span>}
         {zone != null && <span>· {String(zone)}</span>}
+        {duration == null && sport != null && <span>{String(sport)}</span>}
       </div>
     </div>
   );
