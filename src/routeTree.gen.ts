@@ -10,11 +10,23 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as HistorialRouteImport } from './routes/historial'
+import { Route as DiagnosticoRouteImport } from './routes/diagnostico'
+import { Route as AprendeRouteImport } from './routes/aprende'
 import { Route as IndexRouteImport } from './routes/index'
 
 const HistorialRoute = HistorialRouteImport.update({
   id: '/historial',
   path: '/historial',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiagnosticoRoute = DiagnosticoRouteImport.update({
+  id: '/diagnostico',
+  path: '/diagnostico',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AprendeRoute = AprendeRouteImport.update({
+  id: '/aprende',
+  path: '/aprende',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -25,27 +37,35 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/aprende': typeof AprendeRoute
+  '/diagnostico': typeof DiagnosticoRoute
   '/historial': typeof HistorialRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/aprende': typeof AprendeRoute
+  '/diagnostico': typeof DiagnosticoRoute
   '/historial': typeof HistorialRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/aprende': typeof AprendeRoute
+  '/diagnostico': typeof DiagnosticoRoute
   '/historial': typeof HistorialRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/historial'
+  fullPaths: '/' | '/aprende' | '/diagnostico' | '/historial'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/historial'
-  id: '__root__' | '/' | '/historial'
+  to: '/' | '/aprende' | '/diagnostico' | '/historial'
+  id: '__root__' | '/' | '/aprende' | '/diagnostico' | '/historial'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AprendeRoute: typeof AprendeRoute
+  DiagnosticoRoute: typeof DiagnosticoRoute
   HistorialRoute: typeof HistorialRoute
 }
 
@@ -56,6 +76,20 @@ declare module '@tanstack/react-router' {
       path: '/historial'
       fullPath: '/historial'
       preLoaderRoute: typeof HistorialRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/diagnostico': {
+      id: '/diagnostico'
+      path: '/diagnostico'
+      fullPath: '/diagnostico'
+      preLoaderRoute: typeof DiagnosticoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/aprende': {
+      id: '/aprende'
+      path: '/aprende'
+      fullPath: '/aprende'
+      preLoaderRoute: typeof AprendeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -70,6 +104,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AprendeRoute: AprendeRoute,
+  DiagnosticoRoute: DiagnosticoRoute,
   HistorialRoute: HistorialRoute,
 }
 export const routeTree = rootRouteImport
