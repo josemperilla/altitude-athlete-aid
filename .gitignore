@@ -1,0 +1,21 @@
+# Credenciales — NUNCA en git.
+# Contiene GARMIN_EMAIL, GARMIN_PASSWORD y ANTHROPIC_API_KEY.
+# La plantilla sin valores está en .env.template.
+.env
+.env.local
+
+# Entorno virtual (490 MB, se reconstruye con requirements.txt)
+.venv/
+venv/
+
+# Datos de procesamiento: se regeneran con /update.
+# Incluyen datos de salud de Garmin, que no tienen por qué versionarse.
+.tmp/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# macOS
+.DS_Store
