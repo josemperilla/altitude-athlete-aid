@@ -98,3 +98,15 @@ export const READINESS_COLORS: Record<ReadinessResult["color"], string> = {
   amber: "#FBBF24",
   green: "#10B981",
 };
+
+/**
+ * Última lectura disponible de una métrica, formateada como string. Garmin repite
+ * fechas y los datos llegan con retraso, así que se toma la última entrada no nula.
+ */
+export function latestReading(garmin: any, field: "hrv" | "resting_hr"): string {
+  const arr = garmin?.health?.[field];
+  if (!Array.isArray(arr)) return "—";
+  const last = arr.filter((h: any) => h?.[field] != null).at(-1);
+  const v = last?.[field];
+  return v != null && !isNaN(Number(v)) ? String(Math.round(Number(v))) : "—";
+}

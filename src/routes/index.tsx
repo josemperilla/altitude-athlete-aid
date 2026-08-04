@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { planQO } from "@/lib/api";
 import { PageHeader } from "@/components/entrenador/PageHeader";
+import { ERR, MUTED } from "@/lib/theme";
 import { WeekBlock } from "@/components/entrenador/WeekBlock";
 import { WeeklyPlaylistPanel } from "@/components/entrenador/WeeklyPlaylistPanel";
 import { SpotifyIcon } from "@/components/entrenador/SpotifyIcon";
@@ -65,7 +66,7 @@ function PlanPage() {
 
 function SkeletonBlock() {
   return (
-    <div className="club-card p-8 mt-6 text-center" style={{ color: "#9A9A9A" }}>
+    <div className="club-card p-8 mt-6 text-center" style={{ color: MUTED }}>
       Cargando plan…
     </div>
   );
@@ -73,8 +74,8 @@ function SkeletonBlock() {
 function ErrorBlock({ message }: { message: string }) {
   return (
     <div className="club-card p-6 mt-6" style={{ borderLeft: "3px solid #EF4444" }}>
-      <div style={{ color: "#EF4444", fontWeight: 700 }}>No se pudo cargar el plan</div>
-      <div className="text-sm mt-1" style={{ color: "#9A9A9A" }}>
+      <div style={{ color: ERR, fontWeight: 700 }}>No se pudo cargar el plan</div>
+      <div className="text-sm mt-1" style={{ color: MUTED }}>
         {message}
       </div>
     </div>
@@ -82,7 +83,7 @@ function ErrorBlock({ message }: { message: string }) {
 }
 function EmptyBlock({ message }: { message: string }) {
   return (
-    <div className="club-card p-8 mt-6 text-center" style={{ color: "#9A9A9A" }}>
+    <div className="club-card p-8 mt-6 text-center" style={{ color: MUTED }}>
       {message}
     </div>
   );

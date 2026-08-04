@@ -1,15 +1,23 @@
+/**
+ * Parsea una fecha en Date local. Acepta un string ("YYYY-MM-DD" se interpreta
+ * como fecha local para evitar el shift UTC), un Date, o un objeto de sesión con
+ * campos de fecha.
+ */
 export function parseDate(d: any): Date | null {
-  if (!d) return null;
-  const s = typeof d === "string" ? d : (d?.date ?? d?.day ?? d?.start ?? d?.scheduled_date);
-  if (!s) return null;
-  // Treat YYYY-MM-DD as a local date (avoid UTC shift)
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s));
+  if (d == null) return null;
+  if (d instanceof Date) return isNaN(d.getTime()) ? null : d;
+  if (typeof d === "object") {
+    return parseDate(d?.date ?? d?.day ?? d?.scheduled_date ?? d?.start ?? d?.datetime);
+  }
+  const s = String(d);
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
   const dt = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(s);
   return isNaN(dt.getTime()) ? null : dt;
 }
 
+/** Fecha de una sesión del plan (acepta sesión, string o Date). */
 export function sessionDate(s: any): Date | null {
-  return parseDate(s?.date ?? s?.day ?? s?.scheduled_date ?? s?.start ?? s?.datetime ?? s);
+  return parseDate(s);
 }
 
 export const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -30,12 +38,14 @@ export function inRange(d: Date, start: Date | null, end: Date | null): boolean 
   return d >= startOfDay(start) && d <= endOfDay(end);
 }
 
-/** Today through the next Sunday, inclusive (today itself if today is Sunday). */
+/** Lunes a domingo de la semana actual (inicio ISO), inclusive. */
 export function thisWeekRange(now: Date = new Date()): { start: Date; end: Date } {
-  const start = startOfDay(now);
-  const daysUntilSunday = (7 - start.getDay()) % 7;
+  const today = startOfDay(now);
+  const daysSinceMonday = (today.getDay() + 6) % 7;
+  const start = new Date(today);
+  start.setDate(today.getDate() - daysSinceMonday);
   const end = new Date(start);
-  end.setDate(start.getDate() + daysUntilSunday);
+  end.setDate(start.getDate() + 6);
   return { start, end };
 }
 

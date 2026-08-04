@@ -1,6 +1,8 @@
 import {
-  deriveIntensity,
   buildSessionPhases,
+  deriveIntensity,
+  withLevel,
+  type IntensityLevel,
   type SessionIntensity,
   type SessionPhase,
 } from "@/lib/spotify-intensity";
@@ -351,11 +353,6 @@ const PERSONAL_SHARE = 0.3;
 /**
  * Que falle una fuente no puede tumbar la playlist entera, pero tampoco puede
  * desaparecer sin dejar rastro: el motivo se guarda para poder reportarlo si al final
- * no quedó ninguna canción.
- */
-/**
- * Que falle una fuente no puede tumbar la playlist entera, pero tampoco puede
- * desaparecer sin dejar rastro: el motivo se guarda para poder reportarlo si al final
  * no quedó ninguna canción. Devuelve [] si la fuente falla.
  */
 async function safeArray<T>(
@@ -386,10 +383,6 @@ type ScoredTrack = { uri: string; popularity: number };
 const normPop = (p: number | undefined): number =>
   Number.isFinite(p) && p! >= 0 ? Math.min(1, p! / 100) : 0.5;
 
-async function fetchTopTrackUris(limit = 30): Promise<string[]> {
-  return (await fetchTopTrackScored(limit)).map((t) => t.uri);
-}
-
 async function fetchTopTrackScored(limit = 30): Promise<ScoredTrack[]> {
   const data = await spotifyFetch<{ items?: { uri: string; popularity?: number }[] }>(
     `/me/top/tracks?limit=${limit}&time_range=medium_term`,
@@ -403,10 +396,6 @@ async function fetchTopTrackScored(limit = 30): Promise<ScoredTrack[]> {
  * verdadero motivo.
  */
 const MAX_SEARCH_LIMIT = 10;
-
-async function searchTrackUris(term: string, limit = MAX_SEARCH_LIMIT): Promise<string[]> {
-  return (await searchTrackScored(term, limit)).map((t) => t.uri);
-}
 
 async function searchTrackScored(term: string, limit = MAX_SEARCH_LIMIT): Promise<ScoredTrack[]> {
   const capped = Math.min(limit, MAX_SEARCH_LIMIT);
@@ -422,20 +411,6 @@ function shuffle<T>(items: T[]): T[] {
     const j = Math.floor(Math.random() * (i + 1));
     [out[i], out[j]] = [out[j], out[i]];
   }
-  return out;
-}
-
-/** Reparte las canciones personales de forma pareja en vez de amontonarlas al final. */
-function interleave(main: string[], accents: string[]): string[] {
-  if (accents.length === 0) return main;
-  const step = Math.max(1, Math.round(main.length / (accents.length + 1)));
-  const out: string[] = [];
-  let next = 0;
-  main.forEach((uri, i) => {
-    out.push(uri);
-    if (next < accents.length && (i + 1) % step === 0) out.push(accents[next++]);
-  });
-  out.push(...accents.slice(next));
   return out;
 }
 
@@ -633,10 +608,9 @@ export async function buildTrackPool(
   // dentro del tope de 10 por búsqueda que impone el modo desarrollo.
   const perTerm = Math.min(MAX_SEARCH_LIMIT, Math.max(6, Math.ceil((target * 2) / terms.length)));
 
-  // `/artists/{id}/top-tracks` fue eliminado en la migración de febrero de 2026 sin
-  // reemplazo, así que el gusto personal sale solo de /me/top/tracks. Ese endpoint
-  // también está en la lista de eliminados, por eso va envuelto y puede quedar vacío:
-  // en ese caso la playlist se arma solo con las búsquedas por intensidad.
+  // El gusto personal sale solo de /me/top/tracks (el endpoint de artistas favoritos
+  // fue eliminado en la migración de febrero de 2026). Va envuelto en safeArray y puede
+  // quedar vacío: en ese caso la playlist se arma solo con las búsquedas por intensidad.
   const failures: string[] = [];
   const [searched, topTracks] = await Promise.all([
     Promise.all(
@@ -644,7 +618,6 @@ export async function buildTrackPool(
     ),
     safeArray("me/top/tracks", () => fetchTopTrackScored(), failures),
   ]);
-  const artistTracks: string[] = [];
 
   // (#3) URIs usados en las últimas semanas → penalizados (quedan últimos).
   const recent = recentlyUsedUris();
@@ -659,11 +632,8 @@ export async function buildTrackPool(
   }
   const intensityFresh = deprioritizeRecent(shuffle(intensityPool), recent);
 
-  // Pool personal: top tracks + top tracks de artistas favoritos.
-  const personalPool = shuffle([
-    ...topTracks,
-    ...artistTracks.map((uri) => ({ uri, popularity: 0.5 })),
-  ]);
+  // Pool personal: top tracks del usuario.
+  const personalPool = shuffle([...topTracks]);
   const personalFresh = deprioritizeRecent(personalPool, recent).map((t) => t.uri);
 
   // Curva de energía de la sesión (#1): fases con su energía y duración.
@@ -705,8 +675,10 @@ export async function createIntensityPlaylist(
   session: any,
   sessionKey?: string,
   garmin?: any,
+  levelOverride?: IntensityLevel,
 ): Promise<CreatedPlaylist> {
-  const intensity = deriveIntensity(session);
+  const base = deriveIntensity(session);
+  const intensity = levelOverride ? withLevel(base, levelOverride) : base;
   const adjusted = await applyFatigue(intensity, garmin);
 
   const uris = await buildTrackPool(adjusted, session);

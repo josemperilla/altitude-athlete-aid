@@ -24,6 +24,7 @@ import {
   dedupeSessions,
 } from "@/lib/session-dates";
 import { deriveSport } from "@/lib/spotify-intensity";
+import { ERR, GOLD, MUTED } from "@/lib/theme";
 
 type Row = {
   key: string;
@@ -165,7 +166,7 @@ export function WeeklyPlaylistPanel({
         <h3
           className="text-sm flex items-center gap-2"
           style={{
-            color: "#E9CEA9",
+            color: GOLD,
             fontWeight: 700,
             letterSpacing: "0.08em",
             textTransform: "uppercase",
@@ -174,19 +175,19 @@ export function WeeklyPlaylistPanel({
           <SpotifyIcon size={16} />
           Playlists de esta semana
         </h3>
-        <button type="button" onClick={onClose} style={{ color: "#9A9A9A" }} aria-label="Cerrar">
+        <button type="button" onClick={onClose} style={{ color: MUTED }} aria-label="Cerrar">
           <X size={16} />
         </button>
       </div>
 
       {rows.length === 0 && (
-        <p className="text-sm" style={{ color: "#9A9A9A" }}>
+        <p className="text-sm" style={{ color: MUTED }}>
           No hay sesiones esta semana.
         </p>
       )}
 
       {pruned && pruned.removed > 0 && (
-        <p className="text-[11px] mb-3" style={{ color: "#9A9A9A" }}>
+        <p className="text-[11px] mb-3" style={{ color: MUTED }}>
           {pruned.removed} playlist{pruned.removed === 1 ? "" : "s"} de semanas pasadas retirada
           {pruned.removed === 1 ? "" : "s"} de tu biblioteca
           {pruned.kept > 0 &&
@@ -210,7 +211,7 @@ export function WeeklyPlaylistPanel({
                   <RowStatus row={row} onRetry={() => retryOne(row.key)} />
                 </div>
                 {row.errorMessage && (
-                  <p className="text-[11px] break-words" style={{ color: "#EF4444" }}>
+                  <p className="text-[11px] break-words" style={{ color: ERR }}>
                     {row.errorMessage}
                   </p>
                 )}
@@ -225,14 +226,14 @@ export function WeeklyPlaylistPanel({
           )}
 
           {running && (
-            <div className="flex items-center gap-2 text-sm" style={{ color: "#9A9A9A" }}>
+            <div className="flex items-center gap-2 text-sm" style={{ color: MUTED }}>
               <Loader2 size={14} className="animate-spin" /> Generando…
             </div>
           )}
 
           {!running && pendingCount === 0 && (
             <div className="flex flex-wrap items-center gap-3">
-              <p className="text-xs" style={{ color: "#9A9A9A" }}>
+              <p className="text-xs" style={{ color: MUTED }}>
                 {doneCount} creadas · {alreadyCount} ya existían
                 {errorCount > 0 ? ` · ${errorCount} con error` : ""}
               </p>
@@ -249,7 +250,7 @@ export function WeeklyPlaylistPanel({
                     connect();
                   }}
                   className="text-xs underline"
-                  style={{ color: "#9A9A9A" }}
+                  style={{ color: MUTED }}
                 >
                   Reconectar Spotify
                 </button>
@@ -269,7 +270,7 @@ function RowStatus({ row, onRetry }: { row: Row; onRetry: () => void }) {
         type="button"
         onClick={() => row.result && window.open(row.result.externalUrl, "_blank")}
         className="flex items-center gap-1 text-[11px]"
-        style={{ color: "#9A9A9A" }}
+        style={{ color: MUTED }}
       >
         <Check size={12} /> {row.status === "already" ? "Ya generada" : "Lista"}
       </button>
@@ -277,7 +278,7 @@ function RowStatus({ row, onRetry }: { row: Row; onRetry: () => void }) {
   }
   if (row.status === "creating") {
     return (
-      <span className="flex items-center gap-1 text-[11px]" style={{ color: "#E9CEA9" }}>
+      <span className="flex items-center gap-1 text-[11px]" style={{ color: GOLD }}>
         <Loader2 size={12} className="animate-spin" /> Creando…
       </span>
     );
@@ -288,7 +289,7 @@ function RowStatus({ row, onRetry }: { row: Row; onRetry: () => void }) {
         type="button"
         onClick={onRetry}
         className="flex items-center gap-1 text-[11px]"
-        style={{ color: "#EF4444" }}
+        style={{ color: ERR }}
         title={row.errorMessage}
       >
         Error · reintentar

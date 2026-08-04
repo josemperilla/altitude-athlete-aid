@@ -1,8 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
 import { garminQO } from "@/lib/api";
 import { PageHeader } from "@/components/entrenador/PageHeader";
+import { GOLD, MUTED, PANEL } from "@/lib/theme";
 
 export const Route = createFileRoute("/historial")({
   head: () => ({
@@ -72,11 +81,14 @@ function HistorialPage() {
         <ChartCard title="FC reposo (bpm)" data={rhrSeries} />
       </div>
 
-      <h2 className="mt-10 mb-4 text-lg" style={{ color: "#E9CEA9", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+      <h2
+        className="mt-10 mb-4 text-lg"
+        style={{ color: GOLD, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}
+      >
         Resumen semanal
       </h2>
       {summaries.length === 0 ? (
-        <div className="club-card p-6 text-sm" style={{ color: "#9A9A9A" }}>
+        <div className="club-card p-6 text-sm" style={{ color: MUTED }}>
           Sin resúmenes disponibles.
         </div>
       ) : (
@@ -93,24 +105,53 @@ function HistorialPage() {
 function ChartCard({ title, data }: { title: string; data: { date: string; value: number }[] }) {
   return (
     <div className="club-card p-5">
-      <div className="text-xs mb-3" style={{ color: "#9A9A9A", letterSpacing: "0.12em", fontWeight: 700, textTransform: "uppercase" }}>
+      <div
+        className="text-xs mb-3"
+        style={{
+          color: MUTED,
+          letterSpacing: "0.12em",
+          fontWeight: 700,
+          textTransform: "uppercase",
+        }}
+      >
         {title}
       </div>
       <div className="h-[220px]">
         {data.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-sm" style={{ color: "#555" }}>Sin datos</div>
+          <div
+            className="h-full flex items-center justify-center text-sm"
+            style={{ color: "#555" }}
+          >
+            Sin datos
+          </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
               <CartesianGrid stroke="rgba(233,206,169,0.08)" vertical={false} />
-              <XAxis dataKey="date" tick={{ fill: "#9A9A9A", fontSize: 11 }} axisLine={{ stroke: "rgba(233,206,169,0.15)" }} tickLine={false} />
-              <YAxis tick={{ fill: "#9A9A9A", fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip
-                contentStyle={{ background: "#0D0D0D", border: "1px solid rgba(233,206,169,0.25)", borderRadius: 6 }}
-                labelStyle={{ color: "#9A9A9A" }}
-                itemStyle={{ color: "#E9CEA9" }}
+              <XAxis
+                dataKey="date"
+                tick={{ fill: MUTED, fontSize: 11 }}
+                axisLine={{ stroke: "rgba(233,206,169,0.15)" }}
+                tickLine={false}
               />
-              <Line type="monotone" dataKey="value" stroke="#E9CEA9" strokeWidth={2} dot={{ fill: "#E9CEA9", r: 2 }} activeDot={{ r: 4 }} />
+              <YAxis tick={{ fill: MUTED, fontSize: 11 }} axisLine={false} tickLine={false} />
+              <Tooltip
+                contentStyle={{
+                  background: PANEL,
+                  border: "1px solid rgba(233,206,169,0.25)",
+                  borderRadius: 6,
+                }}
+                labelStyle={{ color: MUTED }}
+                itemStyle={{ color: GOLD }}
+              />
+              <Line
+                type="monotone"
+                dataKey="value"
+                stroke={GOLD}
+                strokeWidth={2}
+                dot={{ fill: GOLD, r: 2 }}
+                activeDot={{ r: 4 }}
+              />
             </LineChart>
           </ResponsiveContainer>
         )}
@@ -123,7 +164,15 @@ function WeekSummaryCard({ w }: { w: WeekSummary }) {
   const label = `Semana ${w.weekLabel.slice(5)}`;
   return (
     <div className="club-card p-5">
-      <div className="text-xs" style={{ color: "#9A9A9A", letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase" }}>
+      <div
+        className="text-xs"
+        style={{
+          color: MUTED,
+          letterSpacing: "0.1em",
+          fontWeight: 700,
+          textTransform: "uppercase",
+        }}
+      >
         {label}
       </div>
       <div className="grid grid-cols-3 gap-3 mt-3">
@@ -135,13 +184,27 @@ function WeekSummaryCard({ w }: { w: WeekSummary }) {
   );
 }
 
-function Stat({ icon, value, suffix, digits = 0 }: { icon: string; value: number; suffix: string; digits?: number }) {
+function Stat({
+  icon,
+  value,
+  suffix,
+  digits = 0,
+}: {
+  icon: string;
+  value: number;
+  suffix: string;
+  digits?: number;
+}) {
   const show = value > 0 ? value.toFixed(digits) : "—";
   return (
     <div>
-      <div className="text-[11px]" style={{ color: "#9A9A9A" }}>{icon}</div>
+      <div className="text-[11px]" style={{ color: MUTED }}>
+        {icon}
+      </div>
       <div className="metric-num text-2xl leading-none mt-1">{show}</div>
-      <div className="text-[10px] mt-0.5" style={{ color: "#9A9A9A", letterSpacing: "0.1em" }}>{suffix.toUpperCase()}</div>
+      <div className="text-[10px] mt-0.5" style={{ color: MUTED, letterSpacing: "0.1em" }}>
+        {suffix.toUpperCase()}
+      </div>
     </div>
   );
 }

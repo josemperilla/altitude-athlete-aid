@@ -76,10 +76,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Entrenador — Medio Maratón Bogotá" },
-      { name: "description", content: "Plataforma de entrenamiento premium para corredor de medio maratón en Bogotá (2.600 m)." },
+      {
+        name: "description",
+        content:
+          "Plataforma de entrenamiento premium para corredor de medio maratón en Bogotá (2.600 m).",
+      },
       { name: "author", content: "Entrenador" },
       { property: "og:title", content: "Entrenador — Medio Maratón Bogotá" },
-      { property: "og:description", content: "Plataforma de entrenamiento premium para corredor de medio maratón en Bogotá." },
+      {
+        property: "og:description",
+        content: "Plataforma de entrenamiento premium para corredor de medio maratón en Bogotá.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
