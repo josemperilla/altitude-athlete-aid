@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { garminQO, planQO, postUpdate } from "@/lib/api";
+import { getReadinessScore, READINESS_COLORS, type ReadinessResult } from "@/lib/readiness";
 
 const tabs = [
   { to: "/", label: "Plan" },
@@ -25,7 +26,10 @@ function pickRHR(g: any): string {
   return v != null && !isNaN(Number(v)) ? String(Math.round(Number(v))) : "—";
 }
 function pickState(p: any): string {
-  const s = typeof p?.athlete_state === "string" ? p.athlete_state : p?.athlete_state?.state ?? p?.athlete_state?.label;
+  const s =
+    typeof p?.athlete_state === "string"
+      ? p.athlete_state
+      : (p?.athlete_state?.state ?? p?.athlete_state?.label);
   return (s ?? "").toString().toUpperCase();
 }
 
@@ -54,6 +58,7 @@ export function Sidebar() {
 
   const hrv = pickHRV(garmin);
   const rhr = pickRHR(garmin);
+  const readiness = getReadinessScore(garmin);
   const state = pickState(plan);
   const st = stateStyle(state);
 
@@ -63,20 +68,31 @@ export function Sidebar() {
       style={{ background: "#0D0D0D", borderRight: "1px solid rgba(233,206,169,0.1)" }}
     >
       <div>
-        <h1 className="text-xl" style={{ color: "#E9CEA9", fontWeight: 800, letterSpacing: "0.08em" }}>
+        <h1
+          className="text-xl"
+          style={{ color: "#E9CEA9", fontWeight: 800, letterSpacing: "0.08em" }}
+        >
           ⚡ ENTRENADOR
         </h1>
         <div
           className="mt-3 inline-block px-2.5 py-1 text-[11px] rounded"
-          style={{ background: "rgba(233,206,169,0.1)", color: "#E9CEA9", letterSpacing: "0.08em", fontWeight: 600 }}
+          style={{
+            background: "rgba(233,206,169,0.1)",
+            color: "#E9CEA9",
+            letterSpacing: "0.08em",
+            fontWeight: 600,
+          }}
         >
           📍 BOGOTÁ · 2.600 M
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <MetricMini label="HRV" value={hrv} />
-        <MetricMini label="FC REPOSO" value={rhr} />
+      <div className="flex flex-col gap-3">
+        {readiness && <ReadinessCard readiness={readiness} />}
+        <div className="grid grid-cols-2 gap-3">
+          <MetricMini label="HRV" value={hrv} />
+          <MetricMini label="FC REPOSO" value={rhr} />
+        </div>
       </div>
 
       {state && (
@@ -136,13 +152,58 @@ export function Sidebar() {
   );
 }
 
+/** Desviación de hoy contra la base móvil, en porcentaje con signo. */
+function delta(today: number, base: number): string {
+  const pct = Math.round(((today - base) / base) * 100);
+  return `${pct > 0 ? "+" : ""}${pct}%`;
+}
+
+function ReadinessCard({ readiness: r }: { readiness: ReadinessResult }) {
+  const color = READINESS_COLORS[r.color];
+  return (
+    <div
+      className="rounded px-3 py-3"
+      style={{ background: "#111", border: `1px solid ${color}40` }}
+    >
+      <div className="flex items-baseline justify-between">
+        <span
+          className="text-[10px]"
+          style={{ color: "#9A9A9A", letterSpacing: "0.1em", fontWeight: 600 }}
+        >
+          DISPOSICIÓN
+        </span>
+        <span className="text-[10px]" style={{ color, fontWeight: 700, letterSpacing: "0.08em" }}>
+          {r.label.toUpperCase()}
+        </span>
+      </div>
+      <div className="mt-1 flex items-baseline gap-1">
+        <span className="text-3xl leading-none metric-num" style={{ color }}>
+          {r.score}
+        </span>
+        <span className="text-[11px]" style={{ color: "#555" }}>
+          /100
+        </span>
+      </div>
+      <div className="mt-2 h-1 rounded" style={{ background: "rgba(233,206,169,0.12)" }}>
+        <div className="h-1 rounded" style={{ width: `${r.score}%`, background: color }} />
+      </div>
+      <div className="mt-2 text-[10px]" style={{ color: "#9A9A9A" }}>
+        HRV {delta(r.todayHrv, r.baseHrv)} · FC {delta(r.todayRhr, r.baseRhr)} vs base 7d
+      </div>
+    </div>
+  );
+}
+
 function MetricMini({ label, value }: { label: string; value: string }) {
   return (
     <div
       className="rounded px-3 py-3"
       style={{ background: "#111", border: "1px solid rgba(233,206,169,0.12)" }}
     >
-      <div className="text-[10px]" style={{ color: "#9A9A9A", letterSpacing: "0.1em", fontWeight: 600 }}>
+      <div
+        className="text-[10px]"
+        style={{ color: "#9A9A9A", letterSpacing: "0.1em", fontWeight: 600 }}
+      >
         {label}
       </div>
       <div className="text-2xl mt-1 metric-num leading-none">{value}</div>
