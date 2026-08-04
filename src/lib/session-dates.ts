@@ -40,9 +40,27 @@ export function thisWeekRange(now: Date = new Date()): { start: Date; end: Date 
 }
 
 /** Deterministic key identifying a session, stable across reloads (sessions have no reliable id). */
-export function sessionKey(session: any, kind: "run" | "bike"): string {
+export function sessionKey(session: any): string {
   const d = sessionDate(session);
-  const dateStr = d ? d.toISOString().slice(0, 10) : "unknown-date";
+  const dateStr = d
+    ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+    : "unknown-date";
   const name = String(session?.name ?? session?.sport ?? session?.type ?? "session");
-  return `${kind}:${dateStr}:${name}`;
+  return `${dateStr}:${name}`;
+}
+
+/**
+ * `runna_sessions` incluye sesiones de ciclismo, así que la misma sesión puede venir en
+ * los dos arreglos del plan. Sin esto se generarían dos playlists para una sola sesión.
+ */
+export function dedupeSessions(...groups: any[][]): any[] {
+  const seen = new Set<string>();
+  const out: any[] = [];
+  for (const session of groups.flat()) {
+    const key = sessionKey(session);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(session);
+  }
+  return out;
 }
