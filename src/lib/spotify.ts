@@ -134,6 +134,28 @@ export function disconnectSpotify(): void {
   localStorage.removeItem(TOKENS_KEY);
 }
 
+const SESSION_PLAYLISTS_KEY = "spotify_session_playlists";
+
+function readSessionPlaylists(): Record<string, CreatedPlaylist> {
+  const raw = localStorage.getItem(SESSION_PLAYLISTS_KEY);
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw) as Record<string, CreatedPlaylist>;
+  } catch {
+    return {};
+  }
+}
+
+export function getCreatedPlaylist(sessionKey: string): CreatedPlaylist | null {
+  return readSessionPlaylists()[sessionKey] ?? null;
+}
+
+export function recordCreatedPlaylist(sessionKey: string, playlist: CreatedPlaylist): void {
+  const all = readSessionPlaylists();
+  all[sessionKey] = playlist;
+  localStorage.setItem(SESSION_PLAYLISTS_KEY, JSON.stringify(all));
+}
+
 export async function getValidAccessToken(): Promise<string | null> {
   const tokens = readTokens();
   if (!tokens) return null;
@@ -220,7 +242,10 @@ export type CreatedPlaylist = {
   intensityLabel: string;
 };
 
-export async function createIntensityPlaylist(session: any): Promise<CreatedPlaylist> {
+export async function createIntensityPlaylist(
+  session: any,
+  sessionKey?: string,
+): Promise<CreatedPlaylist> {
   const intensity = deriveIntensity(session);
 
   const me = await spotifyFetch<{ id: string }>("/me");
@@ -256,10 +281,12 @@ export async function createIntensityPlaylist(session: any): Promise<CreatedPlay
     body: JSON.stringify({ uris }),
   });
 
-  return {
+  const created: CreatedPlaylist = {
     playlistId: playlist.id,
     externalUrl:
       playlist.external_urls?.spotify ?? `https://open.spotify.com/playlist/${playlist.id}`,
     intensityLabel: intensity.label,
   };
+  if (sessionKey) recordCreatedPlaylist(sessionKey, created);
+  return created;
 }

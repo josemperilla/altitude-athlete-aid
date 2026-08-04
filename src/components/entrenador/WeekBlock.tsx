@@ -1,28 +1,23 @@
 import { useMutation } from "@tanstack/react-query";
-import { Music, Loader2 } from "lucide-react";
+import { Music, Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 import {
   createIntensityPlaylist,
+  getCreatedPlaylist,
   isSpotifyConnected,
   startSpotifyLogin,
   SpotifyRateLimitError,
 } from "@/lib/spotify";
+import {
+  parseDate,
+  sessionDate,
+  startOfDay,
+  endOfDay,
+  sameDay,
+  sessionKey,
+} from "@/lib/session-dates";
 
 const DAYS = ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"];
-
-function parseDate(d: any): Date | null {
-  if (!d) return null;
-  const s = typeof d === "string" ? d : (d?.date ?? d?.day ?? d?.start ?? d?.scheduled_date);
-  if (!s) return null;
-  // Treat YYYY-MM-DD as a local date (avoid UTC shift)
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s));
-  const dt = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(s);
-  return isNaN(dt.getTime()) ? null : dt;
-}
-
-function sessionDate(s: any): Date | null {
-  return parseDate(s?.date ?? s?.day ?? s?.scheduled_date ?? s?.start ?? s?.datetime ?? s);
-}
 
 function getWeekRange(w: any): { start: Date | null; end: Date | null } {
   const start = parseDate(w?.week_start ?? w?.start ?? w?.start_date ?? w?.from);
@@ -39,8 +34,6 @@ function inWeek(d: Date, start: Date | null, end: Date | null): boolean {
   if (!start || !end) return false;
   return d >= startOfDay(start) && d <= endOfDay(end);
 }
-const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59);
 
 export function WeekBlock({
   week,
@@ -199,14 +192,17 @@ function SessionCard({ session, kind }: { session: any; kind: "run" | "bike" }) 
         {zone != null && <span>· {String(zone)}</span>}
         {duration == null && sport != null && <span>{String(sport)}</span>}
       </div>
-      <PlaylistButton session={session} />
+      <PlaylistButton session={session} kind={kind} />
     </div>
   );
 }
 
-function PlaylistButton({ session }: { session: any }) {
+function PlaylistButton({ session, kind }: { session: any; kind: "run" | "bike" }) {
+  const key = sessionKey(session, kind);
+  const existing = getCreatedPlaylist(key);
+
   const mut = useMutation({
-    mutationFn: () => createIntensityPlaylist(session),
+    mutationFn: () => createIntensityPlaylist(session, key),
     onSuccess: (result) => {
       toast.success(`Playlist creada · ${result.intensityLabel}`, {
         action: { label: "Abrir", onClick: () => window.open(result.externalUrl, "_blank") },
@@ -220,6 +216,22 @@ function PlaylistButton({ session }: { session: any }) {
       }
     },
   });
+
+  const created = mut.data ?? existing;
+
+  if (created) {
+    return (
+      <button
+        type="button"
+        onClick={() => window.open(created.externalUrl, "_blank")}
+        className="mt-1 flex items-center gap-1 text-[10px] self-start"
+        style={{ color: "#9A9A9A" }}
+      >
+        <Check size={11} />
+        Playlist lista
+      </button>
+    );
+  }
 
   const handleClick = () => {
     if (!isSpotifyConnected()) {
@@ -243,12 +255,4 @@ function PlaylistButton({ session }: { session: any }) {
   );
 }
 
-function sameDay(a: Date | null, b: Date | null) {
-  if (!a || !b) return false;
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
-}
 const fmt = (d: Date) => d.toLocaleDateString("es-CO", { day: "2-digit", month: "short" });
