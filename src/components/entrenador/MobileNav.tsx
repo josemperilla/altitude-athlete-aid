@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { garminQO, planQO, postUpdate } from "@/lib/api";
+import { getReadinessScore, READINESS_COLORS } from "@/lib/readiness";
 
 const tabs = [
   { to: "/", label: "Plan", icon: "📅" },
@@ -32,15 +33,20 @@ export function MobileTopBar() {
     onError: (e: any) => toast.error(`Error: ${e?.message ?? "no se pudo actualizar"}`),
   });
 
-  const state = (typeof plan?.athlete_state === "string"
-    ? plan.athlete_state
-    : (plan?.athlete_state as any)?.state ?? "").toString().toUpperCase();
+  const state = (
+    typeof plan?.athlete_state === "string"
+      ? plan.athlete_state
+      : ((plan?.athlete_state as any)?.state ?? "")
+  )
+    .toString()
+    .toUpperCase();
   const st = stateStyle(state);
 
   const hrvArr: any[] = (garmin as any)?.health?.hrv ?? [];
   const rhrArr: any[] = (garmin as any)?.health?.resting_hr ?? [];
   const hrv = hrvArr.filter((h: any) => h?.hrv != null).at(-1)?.hrv;
   const rhr = rhrArr.filter((h: any) => h?.resting_hr != null).at(-1)?.resting_hr;
+  const readiness = getReadinessScore(garmin);
 
   return (
     <header
@@ -49,19 +55,46 @@ export function MobileTopBar() {
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span style={{ color: "#E9CEA9", fontWeight: 800, letterSpacing: "0.08em", fontSize: 14 }}>
+          <span
+            style={{ color: "#E9CEA9", fontWeight: 800, letterSpacing: "0.08em", fontSize: 14 }}
+          >
             ⚡ ENTRENADOR
           </span>
           {state && (
             <span
               className="px-2 py-0.5 rounded text-[10px]"
-              style={{ background: st.bg, color: st.color, fontWeight: 700, letterSpacing: "0.08em" }}
+              style={{
+                background: st.bg,
+                color: st.color,
+                fontWeight: 700,
+                letterSpacing: "0.08em",
+              }}
             >
               {state}
             </span>
           )}
         </div>
-        <div className="mt-1 flex gap-3 text-[11px]" style={{ color: "#9A9A9A" }}>
+        <div
+          className="mt-1 flex flex-wrap items-center gap-3 text-[11px]"
+          style={{ color: "#9A9A9A" }}
+        >
+          {readiness && (
+            <span
+              className="flex items-center gap-1"
+              title={`HRV ${readiness.todayHrv} (base ${readiness.baseHrv}) · FC ${readiness.todayRhr} (base ${readiness.baseRhr})`}
+            >
+              <span
+                className="inline-block w-1.5 h-1.5 rounded-full"
+                style={{ background: READINESS_COLORS[readiness.color] }}
+              />
+              <span className="metric-num" style={{ color: READINESS_COLORS[readiness.color] }}>
+                {readiness.score}
+              </span>
+              <span style={{ color: READINESS_COLORS[readiness.color], fontWeight: 600 }}>
+                {readiness.label}
+              </span>
+            </span>
+          )}
           <span>
             HRV <span className="metric-num">{hrv != null ? Math.round(Number(hrv)) : "—"}</span>
           </span>

@@ -12,4 +12,17 @@ export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
   },
+  vite: {
+    server: {
+      allowedHosts: ["puppet-wincing-frenzied.ngrok-free.dev"],
+      proxy: {
+        "/garmin":   { target: "http://localhost:8503", changeOrigin: true },
+        "/plan":     { target: "http://localhost:8503", changeOrigin: true },
+        "/insights": { target: "http://localhost:8503", changeOrigin: true },
+        "/update":   { target: "http://localhost:8503", changeOrigin: true },
+        "/diagnose": { target: "http://localhost:8503", changeOrigin: true },
+        "/diagnosis":{ target: "http://localhost:8503", changeOrigin: true },
+      },
+    },
+  },
 });

@@ -1,7 +1,9 @@
-import { useMutation } from "@tanstack/react-query";
+import { useCallback, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { SpotifyIcon } from "@/components/entrenador/SpotifyIcon";
+import { SessionDetailModal } from "@/components/entrenador/SessionDetailModal";
 import {
   createIntensityPlaylist,
   getCreatedPlaylist,
@@ -9,6 +11,7 @@ import {
   startSpotifyLogin,
   SpotifyRateLimitError,
 } from "@/lib/spotify";
+import { garminQO } from "@/lib/api";
 import {
   parseDate,
   sessionDate,
@@ -177,33 +180,51 @@ function SessionCard({ session, kind }: { session: any; kind: "run" | "bike" }) 
   const zone = session?.primary_zone ?? session?.zone;
   const sport = session?.sport ?? session?.type;
 
+  const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
+
   return (
-    <div
-      className="rounded px-2.5 py-2 text-xs"
-      style={{ background: "#111", borderLeft: `3px solid ${color}` }}
-    >
+    <>
       <div
-        className="text-white font-semibold leading-snug break-words"
-        style={{ whiteSpace: "normal" }}
+        role="button"
+        tabIndex={0}
+        onClick={() => setOpen(true)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setOpen(true);
+          }
+        }}
+        className="rounded px-2.5 py-2 text-xs cursor-pointer transition-colors bg-[#111] hover:bg-[#1A1A1A]"
+        style={{ borderLeft: `3px solid ${color}` }}
       >
-        {String(name)}
+        <div
+          className="text-white font-semibold leading-snug break-words"
+          style={{ whiteSpace: "normal" }}
+        >
+          {String(name)}
+        </div>
+        <div className="mt-1 flex flex-wrap gap-1.5 text-[11px]" style={{ color: "#9A9A9A" }}>
+          {duration != null && <span>{duration} min</span>}
+          {zone != null && <span>· {String(zone)}</span>}
+          {duration == null && sport != null && <span>{String(sport)}</span>}
+        </div>
+        <PlaylistButton session={session} />
       </div>
-      <div className="mt-1 flex flex-wrap gap-1.5 text-[11px]" style={{ color: "#9A9A9A" }}>
-        {duration != null && <span>{duration} min</span>}
-        {zone != null && <span>· {String(zone)}</span>}
-        {duration == null && sport != null && <span>{String(sport)}</span>}
-      </div>
-      <PlaylistButton session={session} kind={kind} />
-    </div>
+      {open && <SessionDetailModal session={session} kind={kind} onClose={close} />}
+    </>
   );
 }
 
-function PlaylistButton({ session, kind }: { session: any; kind: "run" | "bike" }) {
-  const key = sessionKey(session, kind);
+function PlaylistButton({ session }: { session: any }) {
+  const key = sessionKey(session);
   const existing = getCreatedPlaylist(key);
+  // Leemos el garmin cacheado para que el ajuste por fatiga (#8) tenga datos.
+  const queryClient = useQueryClient();
+  const garmin = queryClient.getQueryData(garminQO().queryKey);
 
   const mut = useMutation({
-    mutationFn: () => createIntensityPlaylist(session, key),
+    mutationFn: () => createIntensityPlaylist(session, key, garmin),
     onSuccess: (result) => {
       toast.success(`Playlist creada · ${result.intensityLabel}`, {
         action: { label: "Abrir", onClick: () => window.open(result.externalUrl, "_blank") },
@@ -224,7 +245,10 @@ function PlaylistButton({ session, kind }: { session: any; kind: "run" | "bike" 
     return (
       <button
         type="button"
-        onClick={() => window.open(created.externalUrl, "_blank")}
+        onClick={(e) => {
+          e.stopPropagation();
+          window.open(created.externalUrl, "_blank");
+        }}
         className="mt-1 flex items-center gap-1 text-[10px] self-start"
         style={{ color: "#9A9A9A" }}
       >
@@ -234,9 +258,15 @@ function PlaylistButton({ session, kind }: { session: any; kind: "run" | "bike" 
     );
   }
 
-  const handleClick = () => {
+  // El card contenedor abre el detalle de la sesión: el botón no debe dispararlo.
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!isSpotifyConnected()) {
-      startSpotifyLogin();
+      // startSpotifyLogin es async: sin este catch, un fallo de configuración
+      // (Client ID ausente) deja el botón sin hacer absolutamente nada.
+      startSpotifyLogin().catch((e: any) =>
+        toast.error(e?.message ?? "No se pudo conectar con Spotify"),
+      );
       return;
     }
     mut.mutate();

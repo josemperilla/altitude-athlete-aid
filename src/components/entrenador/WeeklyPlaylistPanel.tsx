@@ -1,21 +1,33 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Check, X } from "lucide-react";
+import { toast } from "sonner";
 import { SpotifyIcon } from "@/components/entrenador/SpotifyIcon";
 import {
   createIntensityPlaylist,
+  disconnectSpotify,
   getCreatedPlaylist,
   isSpotifyConnected,
+  prunePastPlaylists,
   startSpotifyLogin,
   SpotifyNotConnectedError,
   SpotifyRateLimitError,
   type CreatedPlaylist,
+  type PruneResult,
 } from "@/lib/spotify";
-import { sessionKey, thisWeekRange, inRange, sessionDate } from "@/lib/session-dates";
+import { garminQO } from "@/lib/api";
+import {
+  sessionKey,
+  thisWeekRange,
+  inRange,
+  sessionDate,
+  dedupeSessions,
+} from "@/lib/session-dates";
+import { deriveSport } from "@/lib/spotify-intensity";
 
 type Row = {
   key: string;
   session: any;
-  kind: "run" | "bike";
   label: string;
   status: "pending" | "creating" | "done" | "error" | "already";
   result?: CreatedPlaylist;
@@ -24,26 +36,24 @@ type Row = {
 
 function toRows(runs: any[], bikes: any[]): Row[] {
   const { start, end } = thisWeekRange();
-  const build = (items: any[], kind: "run" | "bike"): Row[] =>
-    items
-      .filter((s) => {
-        const d = sessionDate(s);
-        return d && inRange(d, start, end);
-      })
-      .map((session) => {
-        const key = sessionKey(session, kind);
-        const existing = getCreatedPlaylist(key);
-        const label = session?.name ?? (kind === "run" ? "Carrera" : "Ciclismo");
-        return {
-          key,
-          session,
-          kind,
-          label: String(label),
-          status: existing ? "already" : "pending",
-          result: existing ?? undefined,
-        } as Row;
-      });
-  return [...build(runs, "run"), ...build(bikes, "bike")];
+  return dedupeSessions(runs, bikes)
+    .filter((s) => {
+      const d = sessionDate(s);
+      return d && inRange(d, start, end);
+    })
+    .sort((a, b) => (sessionDate(a)?.getTime() ?? 0) - (sessionDate(b)?.getTime() ?? 0))
+    .map((session) => {
+      const key = sessionKey(session);
+      const existing = getCreatedPlaylist(key);
+      const fallback = deriveSport(session) === "cycling" ? "Ciclismo" : "Carrera";
+      return {
+        key,
+        session,
+        label: String(session?.name ?? fallback),
+        status: existing ? "already" : "pending",
+        result: existing ?? undefined,
+      } as Row;
+    });
 }
 
 export function WeeklyPlaylistPanel({
@@ -57,13 +67,24 @@ export function WeeklyPlaylistPanel({
 }) {
   const [rows, setRows] = useState<Row[]>(() => toRows(runs, bikes));
   const [running, setRunning] = useState(false);
+  const [pruned, setPruned] = useState<PruneResult | null>(null);
+  // Garantimos que el ajuste por fatiga (#8) tenga los datos de Garmin.
+  const queryClient = useQueryClient();
+  const garmin = queryClient.getQueryData(garminQO().queryKey);
+
+  // startSpotifyLogin es async: sin este catch, un fallo de configuración
+  // (Client ID ausente) deja el botón sin hacer absolutamente nada.
+  const connect = () =>
+    startSpotifyLogin().catch((e: any) =>
+      toast.error(e?.message ?? "No se pudo conectar con Spotify"),
+    );
 
   const runSequentially = async (targets: Row[]) => {
     setRunning(true);
     for (const row of targets) {
       setRows((prev) => prev.map((r) => (r.key === row.key ? { ...r, status: "creating" } : r)));
       try {
-        const result = await createIntensityPlaylist(row.session, row.key);
+        const result = await createIntensityPlaylist(row.session, row.key, garmin);
         setRows((prev) =>
           prev.map((r) => (r.key === row.key ? { ...r, status: "done", result } : r)),
         );
@@ -77,7 +98,7 @@ export function WeeklyPlaylistPanel({
             ),
           );
           setRunning(false);
-          startSpotifyLogin();
+          connect();
           return;
         }
         const errorMessage =
@@ -92,17 +113,45 @@ export function WeeklyPlaylistPanel({
     setRunning(false);
   };
 
-  const start = () => {
+  const start = async () => {
     if (!isSpotifyConnected()) {
-      startSpotifyLogin();
+      connect();
       return;
+    }
+    // Limpiar es secundario: si falla, la generación sigue igual.
+    try {
+      const result = await prunePastPlaylists(new Date());
+      setPruned(result);
+    } catch (e) {
+      console.warn("[spotify] no se pudieron retirar las playlists pasadas", e);
     }
     runSequentially(rows.filter((r) => r.status === "pending"));
   };
 
   const retryOne = (key: string) => {
+    // Mismo control que `start`: sin esto se reintenta con un token sin permisos y
+    // nunca se dispara la reconexión, porque tras un fallo el botón principal
+    // desaparece (ya no quedan filas pendientes) y solo queda "reintentar".
+    if (!isSpotifyConnected()) {
+      connect();
+      return;
+    }
     const row = rows.find((r) => r.key === key);
     if (row) runSequentially([row]);
+  };
+
+  const retryAll = () => {
+    if (!isSpotifyConnected()) {
+      connect();
+      return;
+    }
+    const failed = rows.filter((r) => r.status === "error");
+    setRows((prev) =>
+      prev.map((r) =>
+        r.status === "error" ? { ...r, status: "pending", errorMessage: undefined } : r,
+      ),
+    );
+    runSequentially(failed);
   };
 
   const pendingCount = rows.filter((r) => r.status === "pending").length;
@@ -136,17 +185,35 @@ export function WeeklyPlaylistPanel({
         </p>
       )}
 
+      {pruned && pruned.removed > 0 && (
+        <p className="text-[11px] mb-3" style={{ color: "#9A9A9A" }}>
+          {pruned.removed} playlist{pruned.removed === 1 ? "" : "s"} de semanas pasadas retirada
+          {pruned.removed === 1 ? "" : "s"} de tu biblioteca
+          {pruned.kept > 0 &&
+            ` · ${pruned.kept} conservada${pruned.kept === 1 ? "" : "s"} por estar renombrada${pruned.kept === 1 ? "" : "s"}`}
+          {pruned.failed > 0 && ` · ${pruned.failed} sin retirar`}. Siguen existiendo en Spotify: se
+          recuperan abriendo su enlace y volviendo a seguirlas.
+        </p>
+      )}
+
       {rows.length > 0 && (
         <>
           <div className="flex flex-col gap-2 mb-4">
             {rows.map((row) => (
               <div
                 key={row.key}
-                className="flex items-center justify-between text-sm py-1.5"
+                className="flex flex-col gap-1 py-1.5"
                 style={{ borderBottom: "1px solid rgba(233,206,169,0.08)" }}
               >
-                <span style={{ color: "#fff" }}>{row.label}</span>
-                <RowStatus row={row} onRetry={() => retryOne(row.key)} />
+                <div className="flex items-center justify-between text-sm">
+                  <span style={{ color: "#fff" }}>{row.label}</span>
+                  <RowStatus row={row} onRetry={() => retryOne(row.key)} />
+                </div>
+                {row.errorMessage && (
+                  <p className="text-[11px] break-words" style={{ color: "#EF4444" }}>
+                    {row.errorMessage}
+                  </p>
+                )}
               </div>
             ))}
           </div>
@@ -164,10 +231,30 @@ export function WeeklyPlaylistPanel({
           )}
 
           {!running && pendingCount === 0 && (
-            <p className="text-xs" style={{ color: "#9A9A9A" }}>
-              {doneCount} creadas · {alreadyCount} ya existían
-              {errorCount > 0 ? ` · ${errorCount} con error` : ""}
-            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-xs" style={{ color: "#9A9A9A" }}>
+                {doneCount} creadas · {alreadyCount} ya existían
+                {errorCount > 0 ? ` · ${errorCount} con error` : ""}
+              </p>
+              {errorCount > 0 && (
+                <button type="button" onClick={retryAll} className="btn-gold">
+                  Reintentar {errorCount}
+                </button>
+              )}
+              {errorCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    disconnectSpotify();
+                    connect();
+                  }}
+                  className="text-xs underline"
+                  style={{ color: "#9A9A9A" }}
+                >
+                  Reconectar Spotify
+                </button>
+              )}
+            </div>
           )}
         </>
       )}
