@@ -1,4 +1,4 @@
-const BASE = "https://puppet-wincing-frenzied.ngrok-free.dev";
+const BASE = ""; // rutas relativas — Vite proxy reenvía al backend en localhost:8503
 
 export async function apiFetch<T = unknown>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {

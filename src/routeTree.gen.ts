@@ -9,25 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AprendeRouteImport } from './routes/aprende'
-import { Route as DiagnosticoRouteImport } from './routes/diagnostico'
-import { Route as HistorialRouteImport } from './routes/historial'
 import { Route as SpotifyCallbackRouteImport } from './routes/spotify-callback'
+import { Route as HistorialRouteImport } from './routes/historial'
+import { Route as DiagnosticoRouteImport } from './routes/diagnostico'
+import { Route as AprendeRouteImport } from './routes/aprende'
+import { Route as IndexRouteImport } from './routes/index'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AprendeRoute = AprendeRouteImport.update({
-  id: '/aprende',
-  path: '/aprende',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DiagnosticoRoute = DiagnosticoRouteImport.update({
-  id: '/diagnostico',
-  path: '/diagnostico',
+const SpotifyCallbackRoute = SpotifyCallbackRouteImport.update({
+  id: '/spotify-callback',
+  path: '/spotify-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HistorialRoute = HistorialRouteImport.update({
@@ -35,9 +25,19 @@ const HistorialRoute = HistorialRouteImport.update({
   path: '/historial',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SpotifyCallbackRoute = SpotifyCallbackRouteImport.update({
-  id: '/spotify-callback',
-  path: '/spotify-callback',
+const DiagnosticoRoute = DiagnosticoRouteImport.update({
+  id: '/diagnostico',
+  path: '/diagnostico',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AprendeRoute = AprendeRouteImport.update({
+  id: '/aprende',
+  path: '/aprende',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -66,7 +66,11 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/aprende' | '/diagnostico' | '/historial' | '/spotify-callback'
+    | '/'
+    | '/aprende'
+    | '/diagnostico'
+    | '/historial'
+    | '/spotify-callback'
   fileRoutesByTo: FileRoutesByTo
   to: '/' | '/aprende' | '/diagnostico' | '/historial' | '/spotify-callback'
   id:
@@ -88,25 +92,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/aprende': {
-      id: '/aprende'
-      path: '/aprende'
-      fullPath: '/aprende'
-      preLoaderRoute: typeof AprendeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/diagnostico': {
-      id: '/diagnostico'
-      path: '/diagnostico'
-      fullPath: '/diagnostico'
-      preLoaderRoute: typeof DiagnosticoRouteImport
+    '/spotify-callback': {
+      id: '/spotify-callback'
+      path: '/spotify-callback'
+      fullPath: '/spotify-callback'
+      preLoaderRoute: typeof SpotifyCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/historial': {
@@ -116,11 +106,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HistorialRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/spotify-callback': {
-      id: '/spotify-callback'
-      path: '/spotify-callback'
-      fullPath: '/spotify-callback'
-      preLoaderRoute: typeof SpotifyCallbackRouteImport
+    '/diagnostico': {
+      id: '/diagnostico'
+      path: '/diagnostico'
+      fullPath: '/diagnostico'
+      preLoaderRoute: typeof DiagnosticoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/aprende': {
+      id: '/aprende'
+      path: '/aprende'
+      fullPath: '/aprende'
+      preLoaderRoute: typeof AprendeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
