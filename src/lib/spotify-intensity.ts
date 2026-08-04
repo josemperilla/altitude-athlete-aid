@@ -101,6 +101,15 @@ function stepTypeKey(step: Step): string {
 /**
  * Nivel según lo que exigen los pasos, ignorando calentamiento y enfriamiento:
  * lo que define la sesión es su parte principal.
+ *
+ * OJO con las sesiones de Runna: sus workouts apuntan a ritmo (pace/speed), no a
+ * pulsaciones, así que `stepMaxZone` no puede leer zona y devuelve null para todos.
+ * Antes esto hacía que cualquier paso `interval` (que Garmin le pone al bloque
+ * principal de cualquier workout, incluido un rodaje suave) se clasificara como
+ * "alta" — y los Easy Run sonaban igual que los Intervalos. Ahora, sin zonas
+ * legibles, devolvemos null para caer al nombre (que acierta), con una sola
+ * excepción: un grupo de repetición real (numberOfIterations > 1) sí es señal
+ * fuerte de series → alta. Un rodaje continuo no tiene repeticiones.
  */
 function levelFromSteps(steps: Step[]): IntensityLevel | null {
   if (steps.length === 0) return null;
@@ -113,8 +122,18 @@ function levelFromSteps(steps: Step[]): IntensityLevel | null {
     return max >= 4 ? "alta" : max >= 2 ? "moderada" : "baja";
   }
 
-  // Sin zonas legibles, el tipo de paso todavía dice algo.
-  if (body.some((s) => /interval|repeat/.test(stepTypeKey(s)))) return "alta";
+  // Sin zonas legibles: la única señal estructural fiable de calidad es un grupo
+  // de repetición real (no el mero stepType "interval", que es genérico en Garmin).
+  const hasRealRepeat = body.some((s) => {
+    const key = stepTypeKey(s);
+    if (key !== "repeat") return false;
+    const iters = Number((s as any)?.numberOfIterations);
+    return Number.isFinite(iters) && iters > 1;
+  });
+  if (hasRealRepeat) return "alta";
+
+  // Si todos los pasos son warmup/cooldown/rest → baja. Si no hay señal clara,
+  // null: se cae al texto del nombre, que hoy clasifica bien.
   return steps.every((s) => !stepTypeKey(s) || /warmup|cooldown|rest|recovery/.test(stepTypeKey(s)))
     ? "baja"
     : null;

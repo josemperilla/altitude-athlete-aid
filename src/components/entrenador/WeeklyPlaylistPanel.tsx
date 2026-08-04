@@ -8,10 +8,12 @@ import {
   disconnectSpotify,
   getCreatedPlaylist,
   isSpotifyConnected,
+  prunePastPlaylists,
   startSpotifyLogin,
   SpotifyNotConnectedError,
   SpotifyRateLimitError,
   type CreatedPlaylist,
+  type PruneResult,
 } from "@/lib/spotify";
 import { garminQO } from "@/lib/api";
 import {
@@ -65,6 +67,7 @@ export function WeeklyPlaylistPanel({
 }) {
   const [rows, setRows] = useState<Row[]>(() => toRows(runs, bikes));
   const [running, setRunning] = useState(false);
+  const [pruned, setPruned] = useState<PruneResult | null>(null);
   // Garantimos que el ajuste por fatiga (#8) tenga los datos de Garmin.
   const queryClient = useQueryClient();
   const garmin = queryClient.getQueryData(garminQO().queryKey);
@@ -110,10 +113,17 @@ export function WeeklyPlaylistPanel({
     setRunning(false);
   };
 
-  const start = () => {
+  const start = async () => {
     if (!isSpotifyConnected()) {
       connect();
       return;
+    }
+    // Limpiar es secundario: si falla, la generación sigue igual.
+    try {
+      const result = await prunePastPlaylists(new Date());
+      setPruned(result);
+    } catch (e) {
+      console.warn("[spotify] no se pudieron retirar las playlists pasadas", e);
     }
     runSequentially(rows.filter((r) => r.status === "pending"));
   };
@@ -172,6 +182,17 @@ export function WeeklyPlaylistPanel({
       {rows.length === 0 && (
         <p className="text-sm" style={{ color: "#9A9A9A" }}>
           No hay sesiones esta semana.
+        </p>
+      )}
+
+      {pruned && pruned.removed > 0 && (
+        <p className="text-[11px] mb-3" style={{ color: "#9A9A9A" }}>
+          {pruned.removed} playlist{pruned.removed === 1 ? "" : "s"} de semanas pasadas retirada
+          {pruned.removed === 1 ? "" : "s"} de tu biblioteca
+          {pruned.kept > 0 &&
+            ` · ${pruned.kept} conservada${pruned.kept === 1 ? "" : "s"} por estar renombrada${pruned.kept === 1 ? "" : "s"}`}
+          {pruned.failed > 0 && ` · ${pruned.failed} sin retirar`}. Siguen existiendo en Spotify: se
+          recuperan abriendo su enlace y volviendo a seguirlas.
         </p>
       )}
 
