@@ -9,19 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as HistorialRouteImport } from './routes/historial'
-import { Route as DiagnosticoRouteImport } from './routes/diagnostico'
-import { Route as AprendeRouteImport } from './routes/aprende'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AprendeRouteImport } from './routes/aprende'
+import { Route as DiagnosticoRouteImport } from './routes/diagnostico'
+import { Route as HistorialRouteImport } from './routes/historial'
+import { Route as SpotifyCallbackRouteImport } from './routes/spotify-callback'
 
-const HistorialRoute = HistorialRouteImport.update({
-  id: '/historial',
-  path: '/historial',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DiagnosticoRoute = DiagnosticoRouteImport.update({
-  id: '/diagnostico',
-  path: '/diagnostico',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AprendeRoute = AprendeRouteImport.update({
@@ -29,9 +25,19 @@ const AprendeRoute = AprendeRouteImport.update({
   path: '/aprende',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const DiagnosticoRoute = DiagnosticoRouteImport.update({
+  id: '/diagnostico',
+  path: '/diagnostico',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HistorialRoute = HistorialRouteImport.update({
+  id: '/historial',
+  path: '/historial',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SpotifyCallbackRoute = SpotifyCallbackRouteImport.update({
+  id: '/spotify-callback',
+  path: '/spotify-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -40,12 +46,14 @@ export interface FileRoutesByFullPath {
   '/aprende': typeof AprendeRoute
   '/diagnostico': typeof DiagnosticoRoute
   '/historial': typeof HistorialRoute
+  '/spotify-callback': typeof SpotifyCallbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/aprende': typeof AprendeRoute
   '/diagnostico': typeof DiagnosticoRoute
   '/historial': typeof HistorialRoute
+  '/spotify-callback': typeof SpotifyCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,21 @@ export interface FileRoutesById {
   '/aprende': typeof AprendeRoute
   '/diagnostico': typeof DiagnosticoRoute
   '/historial': typeof HistorialRoute
+  '/spotify-callback': typeof SpotifyCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/aprende' | '/diagnostico' | '/historial'
+  fullPaths:
+    '/' | '/aprende' | '/diagnostico' | '/historial' | '/spotify-callback'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/aprende' | '/diagnostico' | '/historial'
-  id: '__root__' | '/' | '/aprende' | '/diagnostico' | '/historial'
+  to: '/' | '/aprende' | '/diagnostico' | '/historial' | '/spotify-callback'
+  id:
+    | '__root__'
+    | '/'
+    | '/aprende'
+    | '/diagnostico'
+    | '/historial'
+    | '/spotify-callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,22 +83,16 @@ export interface RootRouteChildren {
   AprendeRoute: typeof AprendeRoute
   DiagnosticoRoute: typeof DiagnosticoRoute
   HistorialRoute: typeof HistorialRoute
+  SpotifyCallbackRoute: typeof SpotifyCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/historial': {
-      id: '/historial'
-      path: '/historial'
-      fullPath: '/historial'
-      preLoaderRoute: typeof HistorialRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/diagnostico': {
-      id: '/diagnostico'
-      path: '/diagnostico'
-      fullPath: '/diagnostico'
-      preLoaderRoute: typeof DiagnosticoRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/aprende': {
@@ -92,11 +102,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AprendeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/diagnostico': {
+      id: '/diagnostico'
+      path: '/diagnostico'
+      fullPath: '/diagnostico'
+      preLoaderRoute: typeof DiagnosticoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/historial': {
+      id: '/historial'
+      path: '/historial'
+      fullPath: '/historial'
+      preLoaderRoute: typeof HistorialRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/spotify-callback': {
+      id: '/spotify-callback'
+      path: '/spotify-callback'
+      fullPath: '/spotify-callback'
+      preLoaderRoute: typeof SpotifyCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -107,7 +131,18 @@ const rootRouteChildren: RootRouteChildren = {
   AprendeRoute: AprendeRoute,
   DiagnosticoRoute: DiagnosticoRoute,
   HistorialRoute: HistorialRoute,
+  SpotifyCallbackRoute: SpotifyCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
