@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
-import { Music, Loader2, Check } from "lucide-react";
+import { Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
+import { SpotifyIcon } from "@/components/entrenador/SpotifyIcon";
 import {
   createIntensityPlaylist,
   getCreatedPlaylist,
@@ -249,7 +250,7 @@ function PlaylistButton({ session, kind }: { session: any; kind: "run" | "bike" 
       className="mt-1 flex items-center gap-1 text-[10px] self-start"
       style={{ color: "#E9CEA9" }}
     >
-      {mut.isPending ? <Loader2 size={11} className="animate-spin" /> : <Music size={11} />}
+      {mut.isPending ? <Loader2 size={11} className="animate-spin" /> : <SpotifyIcon size={11} />}
       {mut.isPending ? "Creando…" : "Playlist"}
     </button>
   );

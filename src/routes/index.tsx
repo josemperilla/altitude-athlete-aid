@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Music } from "lucide-react";
 import { planQO } from "@/lib/api";
 import { PageHeader } from "@/components/entrenador/PageHeader";
 import { WeekBlock } from "@/components/entrenador/WeekBlock";
 import { WeeklyPlaylistPanel } from "@/components/entrenador/WeeklyPlaylistPanel";
+import { SpotifyIcon } from "@/components/entrenador/SpotifyIcon";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -35,7 +35,7 @@ function PlanPage() {
             onClick={() => setShowWeeklyPanel((v) => !v)}
             className="btn-gold flex items-center gap-2 mt-1"
           >
-            <Music size={14} />
+            <SpotifyIcon size={14} />
             Generar playlists de esta semana
           </button>
         )}

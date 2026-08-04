@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Music, Loader2, Check, X } from "lucide-react";
+import { Loader2, Check, X } from "lucide-react";
+import { SpotifyIcon } from "@/components/entrenador/SpotifyIcon";
 import {
   createIntensityPlaylist,
   getCreatedPlaylist,
@@ -113,7 +114,7 @@ export function WeeklyPlaylistPanel({
     <div className="club-card p-5 mt-4" style={{ borderLeft: "3px solid #E9CEA9" }}>
       <div className="flex items-center justify-between mb-3">
         <h3
-          className="text-sm"
+          className="text-sm flex items-center gap-2"
           style={{
             color: "#E9CEA9",
             fontWeight: 700,
@@ -121,6 +122,7 @@ export function WeeklyPlaylistPanel({
             textTransform: "uppercase",
           }}
         >
+          <SpotifyIcon size={16} />
           Playlists de esta semana
         </h3>
         <button type="button" onClick={onClose} style={{ color: "#9A9A9A" }} aria-label="Cerrar">
@@ -208,7 +210,7 @@ function RowStatus({ row, onRetry }: { row: Row; onRetry: () => void }) {
   }
   return (
     <span className="flex items-center gap-1 text-[11px]" style={{ color: "#555" }}>
-      <Music size={12} /> Pendiente
+      <SpotifyIcon size={12} /> Pendiente
     </span>
   );
 }
