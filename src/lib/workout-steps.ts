@@ -50,8 +50,13 @@ export function stepSeconds(step: Step): number {
   return Number.isFinite(v) && v > 0 && v < 1_000_000 ? v : 0;
 }
 
-export const mmss = (s: number) =>
-  `${Math.floor(s / 60)}:${String(Math.round(s) % 60).padStart(2, "0")}`;
+// Redondea una sola vez y deriva minutos y segundos del mismo total: redondear
+// por separado (floor en minutos, round en segundos) desalinea los dos cuando
+// s%60 cae en [59.5, 60) — p. ej. 179.6s daba "2:00" en vez de "3:00".
+export const mmss = (s: number) => {
+  const total = Math.round(s);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+};
 
 /**
  * Medida de un paso. `endConditionValue` son segundos cuando la condición es de

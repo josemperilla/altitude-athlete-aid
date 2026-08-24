@@ -253,7 +253,7 @@ function DiagnoseResult({ result }: { result: any }) {
               <div
                 key={i}
                 className="club-card p-3 text-sm"
-                style={{ borderLeft: "3px solid #E9CEA9" }}
+                style={{ borderLeft: `3px solid ${GOLD}` }}
               >
                 {typeof a === "string" ? a : (a?.description ?? a?.text ?? JSON.stringify(a))}
               </div>
@@ -280,7 +280,7 @@ function DiagnoseResult({ result }: { result: any }) {
               <div
                 key={i}
                 className="club-card p-3 text-sm"
-                style={{ borderLeft: "3px solid #EF4444" }}
+                style={{ borderLeft: `3px solid ${ERR}` }}
               >
                 {typeof a === "string" ? a : (a?.description ?? a?.text ?? JSON.stringify(a))}
               </div>

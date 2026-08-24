@@ -1,42 +1,26 @@
 import { useCallback, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { SpotifyIcon } from "@/components/entrenador/SpotifyIcon";
 import { SessionDetailModal } from "@/components/entrenador/SessionDetailModal";
-import {
-  createIntensityPlaylist,
-  getCreatedPlaylist,
-  isSpotifyConnected,
-  startSpotifyLogin,
-  SpotifyRateLimitError,
-} from "@/lib/spotify";
+import { getCreatedPlaylist, isSpotifyConnected, startSpotifyLogin } from "@/lib/spotify";
+import { usePlaylistMutation } from "@/hooks/use-playlist-mutation";
 import { garminQO } from "@/lib/api";
 import {
   inRange,
-  parseDate,
+  parseWeekRange,
   sameDay,
   sessionDate,
   sessionKey,
   startOfDay,
 } from "@/lib/session-dates";
-import { BIKE, BG, CARD_1, CARD_2, GOLD, MUTED, PANEL, RUN } from "@/lib/theme";
+import { BIKE, BG, GOLD, MUTED, PANEL, RUN } from "@/lib/theme";
 
 // El backend genera semanas domingo→sábado (week_start = domingo), así que el
 // grid se construye desde week_start tal cual, sin realinear a lunes: realinear
 // haría que las sesiones del lunes-sábado quedaran fuera del grid.
 const DAY_NAMES = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
-
-function getWeekRange(w: any): { start: Date | null; end: Date | null } {
-  const start = parseDate(w?.week_start ?? w?.start ?? w?.start_date ?? w?.from);
-  const end = parseDate(w?.week_end ?? w?.end ?? w?.end_date ?? w?.to);
-  if (start && !end) {
-    const e = new Date(start);
-    e.setDate(start.getDate() + 6);
-    return { start, end: e };
-  }
-  return { start, end };
-}
 
 export function WeekBlock({
   week,
@@ -49,7 +33,7 @@ export function WeekBlock({
   bikes: any[];
   index: number;
 }) {
-  const { start, end } = getWeekRange(week);
+  const { start, end } = parseWeekRange(week);
   const rawType = (
     week?.week_type ??
     week?.type ??
@@ -84,12 +68,15 @@ export function WeekBlock({
       });
     }
   } else {
-    // fallback: just bucket by day-of-week
+    // Fallback sin week_start: bucket por día de semana. `getDay()` es
+    // domingo=0, pero DAY_NAMES (y el índice `i` de este bucket) es
+    // lunes-first — hay que traducir, si no cada columna queda un día corrida.
+    const mondayFirst = (d: Date | null) => (d ? (d.getDay() + 6) % 7 : -1);
     for (let i = 0; i < 7; i++) {
       cols.push({
         date: null,
-        runs: weekRuns.filter((s) => (sessionDate(s)?.getDay() ?? -1) === i),
-        bikes: weekBikes.filter((s) => (sessionDate(s)?.getDay() ?? -1) === i),
+        runs: weekRuns.filter((s) => mondayFirst(sessionDate(s)) === i),
+        bikes: weekBikes.filter((s) => mondayFirst(sessionDate(s)) === i),
       });
     }
   }
@@ -218,21 +205,7 @@ function PlaylistButton({ session }: { session: any }) {
   const queryClient = useQueryClient();
   const garmin = queryClient.getQueryData(garminQO().queryKey);
 
-  const mut = useMutation({
-    mutationFn: () => createIntensityPlaylist(session, key, garmin),
-    onSuccess: (result) => {
-      toast.success(`Playlist creada · ${result.intensityLabel}`, {
-        action: { label: "Abrir", onClick: () => window.open(result.externalUrl, "_blank") },
-      });
-    },
-    onError: (e: any) => {
-      if (e instanceof SpotifyRateLimitError) {
-        toast.error(`Spotify: demasiadas solicitudes, intenta en ${e.retryAfterSeconds}s`);
-      } else {
-        toast.error(e?.message ?? "No se pudo crear la playlist");
-      }
-    },
-  });
+  const mut = usePlaylistMutation(session, key, garmin);
 
   const created = mut.data ?? existing;
 
@@ -264,7 +237,7 @@ function PlaylistButton({ session }: { session: any }) {
       );
       return;
     }
-    mut.mutate();
+    mut.mutate(undefined);
   };
 
   return (

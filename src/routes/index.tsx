@@ -24,19 +24,24 @@ function PlanPage() {
   const { data, isLoading, error } = useQuery(planQO());
   const [showWeeklyPanel, setShowWeeklyPanel] = useState(false);
 
-  const weeks: any[] = Array.isArray(data?.weeks_plan) ? data!.weeks_plan : [];
-
   // El plan puede traer la misma sesión más de una vez (ver dedupeSessions).
   // Se unifica aquí, una sola vez, para que el calendario y el panel de
-  // playlists partan exactamente de la misma lista. El deporte se decide por el
-  // campo `sport`/`type` y no por el arreglo de origen: `runna_sessions`
-  // también trae ciclismo.
-  const { runs, bikes } = useMemo(() => {
+  // playlists partan exactamente de la misma lista.
+  const { weeks, runs, bikes } = useMemo(() => {
+    const weeks: any[] = Array.isArray(data?.weeks_plan) ? data!.weeks_plan : [];
+    // `cycling_sessions` no trae `sport` (solo `type`, p. ej. "ciclorruta_en_plano"):
+    // se etiqueta aquí por el arreglo de origen, que es una señal cierta, en vez de
+    // dejar que deriveSport lo infiera solo del texto — así una sesión de ciclismo
+    // nunca puede caer en "running" por un `type`/`name` que el texto no reconozca.
+    const cycling = (Array.isArray(data?.cycling_sessions) ? data!.cycling_sessions : []).map(
+      (s) => ({ ...s, sport: s?.sport ?? "cycling" }),
+    );
     const all = dedupeSessions(
       Array.isArray(data?.runna_sessions) ? data!.runna_sessions : [],
-      Array.isArray(data?.cycling_sessions) ? data!.cycling_sessions : [],
+      cycling,
     );
     return {
+      weeks,
       runs: all.filter((s) => deriveSport(s) === "running"),
       bikes: all.filter((s) => deriveSport(s) === "cycling"),
     };
@@ -94,7 +99,7 @@ function SkeletonBlock() {
 }
 function ErrorBlock({ message }: { message: string }) {
   return (
-    <div className="club-card p-6 mt-6" style={{ borderLeft: "3px solid #EF4444" }}>
+    <div className="club-card p-6 mt-6" style={{ borderLeft: `3px solid ${ERR}` }}>
       <div style={{ color: ERR, fontWeight: 700 }}>No se pudo cargar el plan</div>
       <div className="text-sm mt-1" style={{ color: MUTED }}>
         {message}

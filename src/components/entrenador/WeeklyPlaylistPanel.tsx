@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Check, X } from "lucide-react";
 import { toast } from "sonner";
@@ -35,11 +35,8 @@ type Row = {
   errorMessage?: string;
 };
 
-// `weeks` es `weeks_plan` del backend: la semana que se muestra en el calendario
-// manda sobre cualquier convención de semana calculada aquí (ver
-// currentPlanWeekRange).
-function toRows(runs: any[], bikes: any[], weeks: any[]): Row[] {
-  const { start, end } = currentPlanWeekRange(weeks);
+function toRows(runs: any[], bikes: any[], range: { start: Date; end: Date }): Row[] {
+  const { start, end } = range;
   return dedupeSessions(runs, bikes)
     .filter((s) => {
       const d = sessionDate(s);
@@ -71,12 +68,25 @@ export function WeeklyPlaylistPanel({
   weeks: any[];
   onClose: () => void;
 }) {
-  const [rows, setRows] = useState<Row[]>(() => toRows(runs, bikes, weeks));
+  // `weeks` es `weeks_plan` del backend: la semana que se muestra en el
+  // calendario manda sobre cualquier convención de semana calculada aquí.
+  const weekRange = useMemo(() => currentPlanWeekRange(weeks), [weeks]);
+  const [rows, setRows] = useState<Row[]>(() => toRows(runs, bikes, weekRange));
   const [running, setRunning] = useState(false);
   const [pruned, setPruned] = useState<PruneResult | null>(null);
   // Garantimos que el ajuste por fatiga (#8) tenga los datos de Garmin.
   const queryClient = useQueryClient();
   const garmin = queryClient.getQueryData(garminQO().queryKey);
+
+  // Si el plan cambia mientras el panel sigue abierto (p. ej. el usuario pulsa
+  // "Actualizar plan" sin cerrarlo), las filas quedaban congeladas con la
+  // lista vieja de sesiones. Se resincroniza aquí, salvo mientras hay una
+  // generación en curso, para no cortarla a medio camino.
+  useEffect(() => {
+    if (running) return;
+    setRows(toRows(runs, bikes, weekRange));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runs, bikes, weekRange]);
 
   // startSpotifyLogin es async: sin este catch, un fallo de configuración
   // (Client ID ausente) deja el botón sin hacer absolutamente nada.
@@ -160,14 +170,14 @@ export function WeeklyPlaylistPanel({
     runSequentially(failed);
   };
 
-  const { start: weekStart, end: weekEnd } = currentPlanWeekRange(weeks);
+  const { start: weekStart, end: weekEnd } = weekRange;
   const pendingCount = rows.filter((r) => r.status === "pending").length;
   const doneCount = rows.filter((r) => r.status === "done").length;
   const alreadyCount = rows.filter((r) => r.status === "already").length;
   const errorCount = rows.filter((r) => r.status === "error").length;
 
   return (
-    <div className="club-card p-5 mt-4" style={{ borderLeft: "3px solid #E9CEA9" }}>
+    <div className="club-card p-5 mt-4" style={{ borderLeft: `3px solid ${GOLD}` }}>
       <div className="flex items-center justify-between mb-3">
         <h3
           className="text-sm flex items-center gap-2"

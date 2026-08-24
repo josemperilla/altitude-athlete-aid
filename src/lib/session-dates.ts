@@ -57,6 +57,25 @@ export function thisWeekRange(now: Date = new Date()): { start: Date; end: Date 
 }
 
 /**
+ * Extrae { start, end } de un objeto semana del plan, tolerando los distintos
+ * nombres de campo que ha usado el backend (`week_start`/`start`/`start_date`/
+ * `from`). Si falta el fin, se asume start+6 días (semana completa). Única
+ * fuente de esta lógica — antes WeekBlock.tsx mantenía su propia copia
+ * idéntica, con el riesgo de que un alias nuevo del backend se actualizara en
+ * un solo lugar y no en el otro.
+ */
+export function parseWeekRange(w: any): { start: Date | null; end: Date | null } {
+  const start = parseDate(w?.week_start ?? w?.start ?? w?.start_date ?? w?.from);
+  const end = parseDate(w?.week_end ?? w?.end ?? w?.end_date ?? w?.to);
+  if (start && !end) {
+    const e = new Date(start);
+    e.setDate(start.getDate() + 6);
+    return { start, end: e };
+  }
+  return { start, end };
+}
+
+/**
  * Rango de la semana en curso según el propio plan (`weeks_plan`), que es la
  * fuente de verdad de qué sesiones se ven agrupadas en la interfaz. Si el plan
  * no trae la semana que contiene hoy (plan vacío o desactualizado), cae a
@@ -68,11 +87,8 @@ export function currentPlanWeekRange(
 ): { start: Date; end: Date } {
   const today = startOfDay(now);
   for (const w of weeks ?? []) {
-    const start = parseDate(w?.week_start ?? w?.start ?? w?.start_date ?? w?.from);
-    if (!start) continue;
-    const parsedEnd = parseDate(w?.week_end ?? w?.end ?? w?.end_date ?? w?.to);
-    const end = parsedEnd ?? new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6);
-    if (inRange(today, start, end)) return { start, end };
+    const { start, end } = parseWeekRange(w);
+    if (start && end && inRange(today, start, end)) return { start, end };
   }
   return thisWeekRange(now);
 }
@@ -100,6 +116,14 @@ export function sessionKey(session: any): string {
  *     consecutivos se solapan. Eso ya se corrige en el backend
  *     (fetch_garmin.py: fetch_scheduled_workouts), pero un plan generado antes
  *     de ese arreglo sigue en disco, así que la interfaz también lo tolera.
+ *
+ * Si dos sesiones con la misma key comparten un campo con valores distintos
+ * (no solo una lo tiene y la otra no), gana la del grupo que llegó primero —
+ * el orden de los argumentos importa. Hoy ningún campo se solapa así entre
+ * `runna_sessions` y `cycling_sessions` (ver generate_plan.py:
+ * build_runna_sessions, que no emite duration_min/primary_zone/rationale), así
+ * que esto no se ha disparado nunca; queda anotado por si un campo nuevo del
+ * backend rompe ese supuesto.
  */
 export function dedupeSessions(...groups: any[][]): any[] {
   const byKey = new Map<string, any>();

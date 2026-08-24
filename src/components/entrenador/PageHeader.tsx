@@ -1,4 +1,4 @@
-import { GOLD, MUTED } from "@/lib/theme";
+import { MUTED } from "@/lib/theme";
 
 export function PageHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return (

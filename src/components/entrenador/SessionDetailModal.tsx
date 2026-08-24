@@ -1,19 +1,20 @@
 import { useEffect, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Check, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
-import { deriveIntensity, deriveSport, LABEL, type IntensityLevel } from "@/lib/spotify-intensity";
+import {
+  deriveIntensity,
+  deriveSport,
+  LABEL,
+  type IntensityLevel,
+  type SessionIntensity,
+} from "@/lib/spotify-intensity";
 import { sessionDate, sessionKey } from "@/lib/session-dates";
 import { extractSteps, mmss, stepLabel, stepMeasure } from "@/lib/workout-steps";
-import {
-  createIntensityPlaylist,
-  getCreatedPlaylist,
-  isSpotifyConnected,
-  startSpotifyLogin,
-  SpotifyRateLimitError,
-} from "@/lib/spotify";
+import { getCreatedPlaylist, isSpotifyConnected, startSpotifyLogin } from "@/lib/spotify";
+import { usePlaylistMutation } from "@/hooks/use-playlist-mutation";
 import { garminQO } from "@/lib/api";
-import { BIKE, ERR, GOLD, RUN, WARN } from "@/lib/theme";
+import { BIKE, CARD_1, ERR, GOLD, MUTED, PANEL, RUN, WARN } from "@/lib/theme";
 
 const SPORT_COLOR = { running: RUN, cycling: BIKE } as const;
 const INTENSITY_COLOR: Record<IntensityLevel, string> = {
@@ -99,7 +100,7 @@ export function SessionDetailModal({
   const sport = kind ? (kind === "bike" ? "cycling" : "running") : deriveSport(session);
   const accent = SPORT_COLOR[sport];
   const intensity = deriveIntensity(session);
-  const intensityColor = intensity.specified ? INTENSITY_COLOR[intensity.level] : "#9A9A9A";
+  const intensityColor = intensity.specified ? INTENSITY_COLOR[intensity.level] : MUTED;
 
   const name = String(session?.name ?? (sport === "cycling" ? "Ciclismo" : "Carrera"));
   const date = sessionDate(session);
@@ -121,7 +122,7 @@ export function SessionDetailModal({
         onClick={(e) => e.stopPropagation()}
         className="w-full sm:max-w-lg max-h-[88vh] overflow-y-auto rounded-t-xl sm:rounded-lg"
         style={{
-          background: "#0D0D0D",
+          background: PANEL,
           border: "1px solid rgba(233,206,169,0.15)",
           borderTop: `3px solid ${accent}`,
         }}
@@ -129,7 +130,7 @@ export function SessionDetailModal({
         <div
           className="sticky top-0 flex items-start gap-3 px-5 py-4"
           style={{
-            background: "#0D0D0D",
+            background: PANEL,
             borderBottom: "1px solid rgba(233,206,169,0.1)",
           }}
         >
@@ -149,7 +150,7 @@ export function SessionDetailModal({
             onClick={onClose}
             aria-label="Cerrar"
             className="shrink-0 mt-1"
-            style={{ color: "#9A9A9A" }}
+            style={{ color: MUTED }}
           >
             <X size={18} />
           </button>
@@ -206,7 +207,7 @@ export function SessionDetailModal({
             </Section>
           )}
 
-          <PlaylistControl session={session} garmin={garmin} />
+          <PlaylistControl session={session} garmin={garmin} base={intensity} />
         </div>
       </div>
     </div>
@@ -217,27 +218,20 @@ export function SessionDetailModal({
  * Genera la playlist de la sesión permitiendo forzar un nivel de intensidad
  * distinto del inferido (idea #6). Regenerar sobreescribe el registro local.
  */
-function PlaylistControl({ session, garmin }: { session: any; garmin: any }) {
+function PlaylistControl({
+  session,
+  garmin,
+  base,
+}: {
+  session: any;
+  garmin: any;
+  base: SessionIntensity;
+}) {
   const key = sessionKey(session);
-  const base = deriveIntensity(session);
   const [level, setLevel] = useState<IntensityLevel | null>(null);
   const selected = level ?? base.level;
 
-  const mut = useMutation({
-    mutationFn: () => createIntensityPlaylist(session, key, garmin, level ?? undefined),
-    onSuccess: (result) => {
-      toast.success(`Playlist creada · ${result.intensityLabel}`, {
-        action: { label: "Abrir", onClick: () => window.open(result.externalUrl, "_blank") },
-      });
-    },
-    onError: (e: any) => {
-      if (e instanceof SpotifyRateLimitError) {
-        toast.error(`Spotify: demasiadas solicitudes, intenta en ${e.retryAfterSeconds}s`);
-      } else {
-        toast.error(e?.message ?? "No se pudo crear la playlist");
-      }
-    },
-  });
+  const mut = usePlaylistMutation(session, key, garmin);
 
   const existing = getCreatedPlaylist(key);
   const created = mut.data ?? existing;
@@ -249,7 +243,7 @@ function PlaylistControl({ session, garmin }: { session: any; garmin: any }) {
       );
       return;
     }
-    mut.mutate();
+    mut.mutate(level ?? undefined);
   };
 
   return (
@@ -266,8 +260,8 @@ function PlaylistControl({ session, garmin }: { session: any; garmin: any }) {
                 onClick={() => setLevel((prev) => (prev === l ? null : l))}
                 className="flex-1 px-2 py-1.5 rounded text-[11px] transition-colors"
                 style={{
-                  background: active ? `${color}22` : "#111",
-                  color: active ? color : "#9A9A9A",
+                  background: active ? `${color}22` : CARD_1,
+                  color: active ? color : MUTED,
                   border: `1px solid ${active ? color : "rgba(233,206,169,0.15)"}`,
                   fontWeight: 600,
                 }}
@@ -313,6 +307,17 @@ function PlaylistControl({ session, garmin }: { session: any; garmin: any }) {
             </a>
           )}
         </div>
+        {created?.timeline && created.timeline.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {created.timeline.map((phase, i) => (
+              <Chip key={i} color={INTENSITY_COLOR[phase.band]}>
+                {mmss(phase.startSec)} · {phase.label} · {phase.tracks}
+                {Math.abs(phase.errorSec) > 45 &&
+                  ` (${phase.errorSec > 0 ? "+" : ""}${phase.errorSec}s)`}
+              </Chip>
+            ))}
+          </div>
+        )}
       </div>
     </Section>
   );
@@ -352,7 +357,7 @@ function StepRow({ step, depth = 0 }: { step: any; depth?: number }) {
   const description = step?.description ? String(step.description) : null;
 
   return (
-    <div className="rounded px-3 py-2" style={{ background: "#111" }}>
+    <div className="rounded px-3 py-2" style={{ background: CARD_1 }}>
       <div className="flex items-baseline justify-between gap-2">
         <span className="text-xs" style={{ color: "#fff", fontWeight: 600 }}>
           {stepLabel(step)}
@@ -364,7 +369,7 @@ function StepRow({ step, depth = 0 }: { step: any; depth?: number }) {
         )}
       </div>
       {(target || zone) && (
-        <div className="mt-1 flex flex-wrap gap-1.5 text-[11px]" style={{ color: "#9A9A9A" }}>
+        <div className="mt-1 flex flex-wrap gap-1.5 text-[11px]" style={{ color: MUTED }}>
           {zone && (
             <span
               className="px-1.5 rounded"
@@ -390,7 +395,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     <div>
       <h3
         className="text-[10px] mb-2"
-        style={{ color: "#9A9A9A", fontWeight: 700, letterSpacing: "0.12em" }}
+        style={{ color: MUTED, fontWeight: 700, letterSpacing: "0.12em" }}
       >
         {title.toUpperCase()}
       </h3>
