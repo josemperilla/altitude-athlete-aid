@@ -1,8 +1,18 @@
+import {
+  extractSteps,
+  mmss,
+  stepMaxZone,
+  stepSeconds,
+  stepTypeKey,
+  type Step,
+} from "@/lib/workout-steps";
+
 export type IntensityLevel = "baja" | "moderada" | "alta";
 export type Sport = "running" | "cycling";
 
 export type SessionIntensity = {
   level: IntensityLevel;
+  sport: Sport;
   label: string;
   /** Spotify search-friendly genre/mood keywords, ordered by relevance. */
   searchTerms: string[];
@@ -48,55 +58,6 @@ function parseZone(session: any): number | null {
 // Las sesiones de ciclismo traen `garmin_workout` con los pasos reales
 // (calentamiento / parte principal / enfriamiento), cada uno con su rango de FC.
 // Es la señal más fiable cuando no hay `primary_zone` declarada.
-
-type Step = {
-  stepType?: unknown;
-  description?: string;
-  endConditionValue?: number;
-  targetType?: { workoutTargetTypeKey?: string };
-  targetValueOne?: number;
-  targetValueTwo?: number;
-};
-
-function extractSteps(session: any): Step[] {
-  const segments = session?.garmin_workout?.workoutSegments;
-  if (!Array.isArray(segments)) return [];
-  return segments.flatMap((seg: any) => (Array.isArray(seg?.workoutSteps) ? seg.workoutSteps : []));
-}
-
-/** Umbrales de FC en altitud (Bogotá, 2.600 m) para traducir pulsaciones a zona. */
-function zoneFromBpm(maxBpm: number): number {
-  if (maxBpm > 165) return 5;
-  if (maxBpm > 145) return 4;
-  if (maxBpm > 125) return 3;
-  return maxBpm > 110 ? 2 : 1;
-}
-
-/**
- * Zona máxima que exige un paso. La descripción va primero porque el backend escribe
- * la zona explícita ("FC: 100–125 bpm (Z1)"); inferirla de las pulsaciones es una
- * aproximación y ahí un rango Z1 de 100-125 se leería como Z2.
- */
-function stepMaxZone(step: Step): number | null {
-  const desc = String(step?.description ?? "");
-  const range = /z\s?([1-5])\s?[/-]\s?z?\s?([1-5])/i.exec(desc);
-  if (range) return Math.max(Number(range[1]), Number(range[2]));
-  const single = /\bz\s?([1-5])\b/i.exec(desc);
-  if (single) return Number(single[1]);
-
-  // Sin zona escrita: `targetValueOne/Two` traen el rango de FC del paso.
-  const isHeartRate = /heart\.?rate/i.test(String(step?.targetType?.workoutTargetTypeKey ?? ""));
-  const hi = Number(step?.targetValueTwo);
-  if (isHeartRate && Number.isFinite(hi) && hi > 0) return zoneFromBpm(hi);
-
-  const bpm = /(\d{2,3})\s?[–-]\s?(\d{2,3})\s*bpm/i.exec(desc);
-  return bpm ? zoneFromBpm(Number(bpm[2])) : null;
-}
-
-function stepTypeKey(step: Step): string {
-  const t = step?.stepType as any;
-  return String(typeof t === "string" ? t : (t?.stepTypeKey ?? "")).toLowerCase();
-}
 
 /**
  * Nivel según lo que exigen los pasos, ignorando calentamiento y enfriamiento:
@@ -176,15 +137,15 @@ function levelFromText(text: string): IntensityLevel | null {
   return null;
 }
 
-const LABEL: Record<IntensityLevel, string> = {
+export const LABEL: Record<IntensityLevel, string> = {
   baja: "Recuperación",
   moderada: "Ritmo sostenido",
   alta: "Alta intensidad",
 };
 
-const ENERGY: Record<IntensityLevel, number> = { baja: 0.25, moderada: 0.6, alta: 0.9 };
+export const ENERGY: Record<IntensityLevel, number> = { baja: 0.25, moderada: 0.6, alta: 0.9 };
 
-const BPM: Record<IntensityLevel, [number, number]> = {
+export const BPM: Record<IntensityLevel, [number, number]> = {
   baja: [70, 110],
   moderada: [135, 155],
   alta: [155, 180],
@@ -287,19 +248,34 @@ export function deriveIntensity(session: any): SessionIntensity {
   const zone = parseZone(session);
   if (zone != null) {
     const level: IntensityLevel = zone <= 1 ? "baja" : zone <= 3 ? "moderada" : "alta";
-    return { ...profile(level, sport), estimatedMinutes, specified: true };
+    return { ...profile(level, sport), sport, estimatedMinutes, specified: true };
   }
 
   const level = levelFromSteps(extractSteps(session)) ?? levelFromText(sessionText(session));
   if (level) {
-    return { ...profile(level, sport), estimatedMinutes, specified: true };
+    return { ...profile(level, sport), sport, estimatedMinutes, specified: true };
   }
 
   return {
     ...profile("moderada", sport),
+    sport,
     label: "Intensidad no especificada",
     estimatedMinutes,
     specified: false,
+  };
+}
+
+/**
+ * Devuelve la misma sesión con un nivel de intensidad forzado, conservando deporte,
+ * duración estimada y la marca de "especificada". Se usa para el control manual de
+ * intensidad del modal (generar la playlist a un nivel distinto del inferido).
+ */
+export function withLevel(intensity: SessionIntensity, level: IntensityLevel): SessionIntensity {
+  return {
+    ...profile(level, intensity.sport),
+    sport: intensity.sport,
+    estimatedMinutes: intensity.estimatedMinutes,
+    specified: true,
   };
 }
 
@@ -325,14 +301,6 @@ function energyFromZone(zone: number): number {
   if (zone >= 2) return 0.4;
   return 0.25;
 }
-
-/** Segundos de un paso (endConditionValue viene en segundos cuando es de tiempo). */
-function stepSeconds(step: Step): number {
-  const v = Number(step?.endConditionValue);
-  return Number.isFinite(v) && v > 0 && v < 1_000_000 ? v : 0;
-}
-
-const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s) % 60).padStart(2, "0")}`;
 
 /**
  * Construye las fases de la sesión a partir de los pasos del workout de Garmin.

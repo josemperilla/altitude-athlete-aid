@@ -3,6 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { postDiagnose, type DiagnoseInput } from "@/lib/api";
 import { PageHeader } from "@/components/entrenador/PageHeader";
+import { CARD_2, ERR, GOLD, GOLD_LIGHT, MUTED } from "@/lib/theme";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/diagnostico")({
@@ -15,9 +16,27 @@ export const Route = createFileRoute("/diagnostico")({
   component: DiagnosticoPage,
 });
 
-const LOCATIONS = ["Rodilla", "Tobillo", "Cadera", "Gemelo", "Isquiotibial", "Cuádriceps", "Tendón de Aquiles", "Planta del pie", "Espalda baja", "Otro"];
+const LOCATIONS = [
+  "Rodilla",
+  "Tobillo",
+  "Cadera",
+  "Gemelo",
+  "Isquiotibial",
+  "Cuádriceps",
+  "Tendón de Aquiles",
+  "Planta del pie",
+  "Espalda baja",
+  "Otro",
+];
 const PAIN_TYPES = ["Punzante", "Sordo", "Ardor", "Tirón", "Rigidez", "Inflamación"];
-const WHEN = ["Al correr", "Al inicio", "Después de correr", "Al subir escaleras", "En reposo", "Al despertar"];
+const WHEN = [
+  "Al correr",
+  "Al inicio",
+  "Después de correr",
+  "Al subir escaleras",
+  "En reposo",
+  "Al despertar",
+];
 const DURATIONS = ["< 1 día", "1-3 días", "1 semana", "> 2 semanas"];
 const SWELLING = ["No", "Leve", "Moderada", "Severa"];
 
@@ -43,16 +62,52 @@ function DiagnosticoPage() {
 
       <form
         className="grid md:grid-cols-2 gap-4 mt-6"
-        onSubmit={(e) => { e.preventDefault(); mut.mutate(form); }}
+        onSubmit={(e) => {
+          e.preventDefault();
+          mut.mutate(form);
+        }}
       >
-        <Field label="Localización"><Select value={form.location} options={LOCATIONS} onChange={(v) => setForm({ ...form, location: v })} /></Field>
-        <Field label="Tipo de dolor"><Select value={form.pain_type} options={PAIN_TYPES} onChange={(v) => setForm({ ...form, pain_type: v })} /></Field>
-        <Field label="Cuándo ocurre"><Select value={form.when_occurs} options={WHEN} onChange={(v) => setForm({ ...form, when_occurs: v })} /></Field>
-        <Field label="Duración"><Select value={form.duration} options={DURATIONS} onChange={(v) => setForm({ ...form, duration: v })} /></Field>
-        <Field label="Inflamación"><Select value={form.swelling} options={SWELLING} onChange={(v) => setForm({ ...form, swelling: v })} /></Field>
+        <Field label="Localización">
+          <Select
+            value={form.location}
+            options={LOCATIONS}
+            onChange={(v) => setForm({ ...form, location: v })}
+          />
+        </Field>
+        <Field label="Tipo de dolor">
+          <Select
+            value={form.pain_type}
+            options={PAIN_TYPES}
+            onChange={(v) => setForm({ ...form, pain_type: v })}
+          />
+        </Field>
+        <Field label="Cuándo ocurre">
+          <Select
+            value={form.when_occurs}
+            options={WHEN}
+            onChange={(v) => setForm({ ...form, when_occurs: v })}
+          />
+        </Field>
+        <Field label="Duración">
+          <Select
+            value={form.duration}
+            options={DURATIONS}
+            onChange={(v) => setForm({ ...form, duration: v })}
+          />
+        </Field>
+        <Field label="Inflamación">
+          <Select
+            value={form.swelling}
+            options={SWELLING}
+            onChange={(v) => setForm({ ...form, swelling: v })}
+          />
+        </Field>
         <Field label={`Severidad · ${form.severity}/10`}>
           <input
-            type="range" min={1} max={10} value={form.severity}
+            type="range"
+            min={1}
+            max={10}
+            value={form.severity}
             onChange={(e) => setForm({ ...form, severity: Number(e.target.value) })}
             className="w-full gold-slider"
           />
@@ -64,7 +119,11 @@ function DiagnosticoPage() {
               onChange={(e) => setForm({ ...form, additional_notes: e.target.value })}
               rows={3}
               className="w-full px-3 py-2 rounded text-sm outline-none"
-              style={{ background: "#1A1A1A", border: "1px solid rgba(233,206,169,0.2)", color: "#fff" }}
+              style={{
+                background: CARD_2,
+                border: "1px solid rgba(233,206,169,0.2)",
+                color: "#fff",
+              }}
             />
           </Field>
         </div>
@@ -91,55 +150,112 @@ function DiagnosticoPage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-[11px]" style={{ color: "#9A9A9A", letterSpacing: "0.12em", fontWeight: 700, textTransform: "uppercase" }}>{label}</span>
+      <span
+        className="text-[11px]"
+        style={{
+          color: MUTED,
+          letterSpacing: "0.12em",
+          fontWeight: 700,
+          textTransform: "uppercase",
+        }}
+      >
+        {label}
+      </span>
       {children}
     </label>
   );
 }
 
-function Select({ value, options, onChange }: { value: string; options: string[]; onChange: (v: string) => void }) {
+function Select({
+  value,
+  options,
+  onChange,
+}: {
+  value: string;
+  options: string[];
+  onChange: (v: string) => void;
+}) {
   return (
     <select
-      value={value} onChange={(e) => onChange(e.target.value)}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
       className="px-3 py-2 rounded text-sm outline-none"
-      style={{ background: "#1A1A1A", border: "1px solid rgba(233,206,169,0.2)", color: "#fff" }}
+      style={{ background: CARD_2, border: "1px solid rgba(233,206,169,0.2)", color: "#fff" }}
     >
-      {options.map((o) => <option key={o} value={o}>{o}</option>)}
+      {options.map((o) => (
+        <option key={o} value={o}>
+          {o}
+        </option>
+      ))}
     </select>
   );
 }
 
 function classify(result: any): { label: string; color: string; emoji: string } {
-  const raw = (result?.classification ?? result?.severity_class ?? result?.level ?? result?.category ?? "").toString().toUpperCase();
-  if (raw.includes("SEVERE")) return { label: "SEVERE", color: "#EF4444", emoji: "🔴" };
-  if (raw.includes("MODER")) return { label: "MODERATE", color: "#FFBC7D", emoji: "🟠" };
-  if (raw.includes("MINOR") || raw.includes("MILD") || raw.includes("LEVE")) return { label: "MINOR", color: "#E9CEA9", emoji: "🟡" };
-  return { label: raw || "RESULTADO", color: "#E9CEA9", emoji: "🟡" };
+  const raw = (
+    result?.classification ??
+    result?.severity_class ??
+    result?.level ??
+    result?.category ??
+    ""
+  )
+    .toString()
+    .toUpperCase();
+  if (raw.includes("SEVERE")) return { label: "SEVERE", color: ERR, emoji: "🔴" };
+  if (raw.includes("MODER")) return { label: "MODERATE", color: GOLD_LIGHT, emoji: "🟠" };
+  if (raw.includes("MINOR") || raw.includes("MILD") || raw.includes("LEVE"))
+    return { label: "MINOR", color: GOLD, emoji: "🟡" };
+  return { label: raw || "RESULTADO", color: GOLD, emoji: "🟡" };
 }
 
 function DiagnoseResult({ result }: { result: any }) {
   const c = classify(result);
-  const cyclingAdjustments: any[] = result?.cycling_adjustments ?? result?.bike_adjustments ?? result?.adjustments?.cycling ?? [];
-  const runnaWarnings: any[] = result?.runna_warnings ?? result?.warnings ?? result?.adjustments?.running ?? [];
+  const cyclingAdjustments: any[] =
+    result?.cycling_adjustments ?? result?.bike_adjustments ?? result?.adjustments?.cycling ?? [];
+  const runnaWarnings: any[] =
+    result?.runna_warnings ?? result?.warnings ?? result?.adjustments?.running ?? [];
   const summary = result?.summary ?? result?.message ?? result?.recommendation;
 
   return (
     <section className="mt-8 flex flex-col gap-5">
-      <div className="club-card p-5" style={{ borderColor: c.color, borderLeft: `4px solid ${c.color}` }}>
+      <div
+        className="club-card p-5"
+        style={{ borderColor: c.color, borderLeft: `4px solid ${c.color}` }}
+      >
         <div className="flex items-center gap-3">
           <span className="text-2xl">{c.emoji}</span>
-          <span style={{ color: c.color, fontWeight: 800, letterSpacing: "0.12em" }}>{c.label}</span>
+          <span style={{ color: c.color, fontWeight: 800, letterSpacing: "0.12em" }}>
+            {c.label}
+          </span>
         </div>
-        {summary && <p className="mt-3 text-sm" style={{ color: "#9A9A9A" }}>{String(summary)}</p>}
+        {summary && (
+          <p className="mt-3 text-sm" style={{ color: MUTED }}>
+            {String(summary)}
+          </p>
+        )}
       </div>
 
       {Array.isArray(cyclingAdjustments) && cyclingAdjustments.length > 0 && (
         <div>
-          <h3 className="text-sm mb-2" style={{ color: "#E9CEA9", letterSpacing: "0.12em", fontWeight: 700, textTransform: "uppercase" }}>Ajustes al ciclismo</h3>
+          <h3
+            className="text-sm mb-2"
+            style={{
+              color: GOLD,
+              letterSpacing: "0.12em",
+              fontWeight: 700,
+              textTransform: "uppercase",
+            }}
+          >
+            Ajustes al ciclismo
+          </h3>
           <div className="flex flex-col gap-2">
             {cyclingAdjustments.map((a, i) => (
-              <div key={i} className="club-card p-3 text-sm" style={{ borderLeft: "3px solid #E9CEA9" }}>
-                {typeof a === "string" ? a : a?.description ?? a?.text ?? JSON.stringify(a)}
+              <div
+                key={i}
+                className="club-card p-3 text-sm"
+                style={{ borderLeft: "3px solid #E9CEA9" }}
+              >
+                {typeof a === "string" ? a : (a?.description ?? a?.text ?? JSON.stringify(a))}
               </div>
             ))}
           </div>
@@ -148,11 +264,25 @@ function DiagnoseResult({ result }: { result: any }) {
 
       {Array.isArray(runnaWarnings) && runnaWarnings.length > 0 && (
         <div>
-          <h3 className="text-sm mb-2" style={{ color: "#EF4444", letterSpacing: "0.12em", fontWeight: 700, textTransform: "uppercase" }}>Advertencias Runna</h3>
+          <h3
+            className="text-sm mb-2"
+            style={{
+              color: ERR,
+              letterSpacing: "0.12em",
+              fontWeight: 700,
+              textTransform: "uppercase",
+            }}
+          >
+            Advertencias Runna
+          </h3>
           <div className="flex flex-col gap-2">
             {runnaWarnings.map((a, i) => (
-              <div key={i} className="club-card p-3 text-sm" style={{ borderLeft: "3px solid #EF4444" }}>
-                {typeof a === "string" ? a : a?.description ?? a?.text ?? JSON.stringify(a)}
+              <div
+                key={i}
+                className="club-card p-3 text-sm"
+                style={{ borderLeft: "3px solid #EF4444" }}
+              >
+                {typeof a === "string" ? a : (a?.description ?? a?.text ?? JSON.stringify(a))}
               </div>
             ))}
           </div>

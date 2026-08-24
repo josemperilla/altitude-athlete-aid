@@ -1,64 +1,27 @@
-import { useEffect } from "react";
-import { X } from "lucide-react";
-import { deriveIntensity, deriveSport, type IntensityLevel } from "@/lib/spotify-intensity";
-import { sessionDate } from "@/lib/session-dates";
+import { useEffect, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Check, Loader2, X } from "lucide-react";
+import { toast } from "sonner";
+import { deriveIntensity, deriveSport, LABEL, type IntensityLevel } from "@/lib/spotify-intensity";
+import { sessionDate, sessionKey } from "@/lib/session-dates";
+import { extractSteps, mmss, stepLabel, stepMeasure } from "@/lib/workout-steps";
+import {
+  createIntensityPlaylist,
+  getCreatedPlaylist,
+  isSpotifyConnected,
+  startSpotifyLogin,
+  SpotifyRateLimitError,
+} from "@/lib/spotify";
+import { garminQO } from "@/lib/api";
+import { BIKE, ERR, GOLD, RUN, WARN } from "@/lib/theme";
 
-const GOLD = "#E9CEA9";
-const SPORT_COLOR = { running: "#3B82F6", cycling: "#10B981" } as const;
+const SPORT_COLOR = { running: RUN, cycling: BIKE } as const;
 const INTENSITY_COLOR: Record<IntensityLevel, string> = {
-  baja: "#10B981",
-  moderada: "#FBBF24",
-  alta: "#EF4444",
+  baja: BIKE,
+  moderada: WARN,
+  alta: ERR,
 };
-
-// ── Lectura del workout de Garmin ───────────────────────────────────────────
-
-function workoutSteps(session: any): any[] {
-  const segments = session?.garmin_workout?.workoutSegments;
-  if (!Array.isArray(segments)) return [];
-  return segments.flatMap((seg: any) => (Array.isArray(seg?.workoutSteps) ? seg.workoutSteps : []));
-}
-
-const STEP_LABELS: [RegExp, string][] = [
-  [/warmup/, "Calentamiento"],
-  [/cooldown/, "Enfriamiento"],
-  [/recovery/, "Recuperación"],
-  [/rest/, "Descanso"],
-  [/interval/, "Intervalo"],
-  [/repeat/, "Repeticiones"],
-];
-
-function stepLabel(step: any): string {
-  const raw = step?.stepType;
-  const key = String(typeof raw === "string" ? raw : (raw?.stepTypeKey ?? "")).toLowerCase();
-  for (const [pattern, label] of STEP_LABELS) {
-    if (pattern.test(key)) return label;
-  }
-  return "Bloque principal";
-}
-
-function mmss(seconds: number): string {
-  const total = Math.round(seconds);
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
-}
-
-/**
- * `endConditionValue` son segundos cuando la condición es de tiempo y metros cuando es
- * de distancia; el tipo va en `endCondition`, que a veces llega como string suelto.
- */
-function stepMeasure(step: any): string | null {
-  const value = Number(step?.endConditionValue);
-  if (!Number.isFinite(value) || value <= 0) return null;
-
-  const raw = step?.endCondition;
-  const key = String(typeof raw === "string" ? raw : (raw?.conditionTypeKey ?? "")).toLowerCase();
-  if (key.includes("distance")) {
-    return value >= 1000 ? `${Number((value / 1000).toFixed(2))} km` : `${Math.round(value)} m`;
-  }
-  // "lap.button" / "iterations" no describen una duración.
-  if (key.includes("lap") || key.includes("iteration")) return null;
-  return mmss(value);
-}
+const INTENSITY_LEVELS: IntensityLevel[] = ["baja", "moderada", "alta"];
 
 /** Ritmo: Garmin lo entrega en m/s, y más rápido es un valor más alto. */
 function paceRange(lo: number, hi: number): string {
@@ -130,6 +93,9 @@ export function SessionDetailModal({
     };
   }, [onClose]);
 
+  const queryClient = useQueryClient();
+  const garmin = queryClient.getQueryData(garminQO().queryKey);
+
   const sport = kind ? (kind === "bike" ? "cycling" : "running") : deriveSport(session);
   const accent = SPORT_COLOR[sport];
   const intensity = deriveIntensity(session);
@@ -138,7 +104,7 @@ export function SessionDetailModal({
   const name = String(session?.name ?? (sport === "cycling" ? "Ciclismo" : "Carrera"));
   const date = sessionDate(session);
   const distance = Number(session?.distance_km);
-  const steps = workoutSteps(session);
+  const steps = extractSteps(session);
   const workoutDescription = session?.garmin_workout?.description;
   const rationale = session?.rationale;
 
@@ -239,9 +205,116 @@ export function SessionDetailModal({
               </p>
             </Section>
           )}
+
+          <PlaylistControl session={session} garmin={garmin} />
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Genera la playlist de la sesión permitiendo forzar un nivel de intensidad
+ * distinto del inferido (idea #6). Regenerar sobreescribe el registro local.
+ */
+function PlaylistControl({ session, garmin }: { session: any; garmin: any }) {
+  const key = sessionKey(session);
+  const base = deriveIntensity(session);
+  const [level, setLevel] = useState<IntensityLevel | null>(null);
+  const selected = level ?? base.level;
+
+  const mut = useMutation({
+    mutationFn: () => createIntensityPlaylist(session, key, garmin, level ?? undefined),
+    onSuccess: (result) => {
+      toast.success(`Playlist creada · ${result.intensityLabel}`, {
+        action: { label: "Abrir", onClick: () => window.open(result.externalUrl, "_blank") },
+      });
+    },
+    onError: (e: any) => {
+      if (e instanceof SpotifyRateLimitError) {
+        toast.error(`Spotify: demasiadas solicitudes, intenta en ${e.retryAfterSeconds}s`);
+      } else {
+        toast.error(e?.message ?? "No se pudo crear la playlist");
+      }
+    },
+  });
+
+  const existing = getCreatedPlaylist(key);
+  const created = mut.data ?? existing;
+
+  const generate = () => {
+    if (!isSpotifyConnected()) {
+      startSpotifyLogin().catch((e: any) =>
+        toast.error(e?.message ?? "No se pudo conectar con Spotify"),
+      );
+      return;
+    }
+    mut.mutate();
+  };
+
+  return (
+    <Section title="Playlist de la sesión">
+      <div className="flex flex-col gap-3">
+        <div className="flex gap-1.5">
+          {INTENSITY_LEVELS.map((l) => {
+            const active = selected === l;
+            const color = INTENSITY_COLOR[l];
+            return (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setLevel((prev) => (prev === l ? null : l))}
+                className="flex-1 px-2 py-1.5 rounded text-[11px] transition-colors"
+                style={{
+                  background: active ? `${color}22` : "#111",
+                  color: active ? color : "#9A9A9A",
+                  border: `1px solid ${active ? color : "rgba(233,206,169,0.15)"}`,
+                  fontWeight: 600,
+                }}
+              >
+                {LABEL[l]}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-[11px]" style={{ color: "#777" }}>
+          {level
+            ? level === base.level
+              ? "Nivel inferido por la sesión."
+              : `Nivel manual: ${LABEL[level].toLowerCase()}.`
+            : `Intensidad inferida: ${base.label.toLowerCase()}.`}
+        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={generate}
+            disabled={mut.isPending}
+            className="btn-gold text-[11px] px-3 py-2"
+          >
+            {mut.isPending ? (
+              <span className="flex items-center gap-1.5">
+                <Loader2 size={12} className="animate-spin" /> Creando…
+              </span>
+            ) : created ? (
+              "Regenerar playlist"
+            ) : (
+              "Generar playlist"
+            )}
+          </button>
+          {created && (
+            <a
+              href={created.externalUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1 text-[11px]"
+              style={{ color: "#1ED760", fontWeight: 600 }}
+            >
+              <Check size={12} /> Abrir en Spotify
+            </a>
+          )}
+        </div>
+      </div>
+    </Section>
   );
 }
 

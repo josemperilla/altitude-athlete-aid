@@ -13,15 +13,19 @@ import {
 } from "@/lib/spotify";
 import { garminQO } from "@/lib/api";
 import {
+  inRange,
   parseDate,
-  sessionDate,
-  startOfDay,
-  endOfDay,
   sameDay,
+  sessionDate,
   sessionKey,
+  startOfDay,
 } from "@/lib/session-dates";
+import { BIKE, BG, CARD_1, CARD_2, GOLD, MUTED, PANEL, RUN } from "@/lib/theme";
 
-const DAYS = ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"];
+// El backend genera semanas domingo→sábado (week_start = domingo), así que el
+// grid se construye desde week_start tal cual, sin realinear a lunes: realinear
+// haría que las sesiones del lunes-sábado quedaran fuera del grid.
+const DAY_NAMES = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
 
 function getWeekRange(w: any): { start: Date | null; end: Date | null } {
   const start = parseDate(w?.week_start ?? w?.start ?? w?.start_date ?? w?.from);
@@ -32,11 +36,6 @@ function getWeekRange(w: any): { start: Date | null; end: Date | null } {
     return { start, end: e };
   }
   return { start, end };
-}
-
-function inWeek(d: Date, start: Date | null, end: Date | null): boolean {
-  if (!start || !end) return false;
-  return d >= startOfDay(start) && d <= endOfDay(end);
 }
 
 export function WeekBlock({
@@ -64,24 +63,20 @@ export function WeekBlock({
 
   const weekRuns = runs.filter((s) => {
     const d = sessionDate(s);
-    return d && (!start || inWeek(d, start, end));
+    return d && (!start || inRange(d, start, end));
   });
   const weekBikes = bikes.filter((s) => {
     const d = sessionDate(s);
-    return d && (!start || inWeek(d, start, end));
+    return d && (!start || inRange(d, start, end));
   });
 
-  // Build 7 day columns starting on Sunday
+  // Build 7 day columns starting on week_start (backend usa domingo→sábado).
   const cols: { date: Date | null; runs: any[]; bikes: any[] }[] = [];
   if (start) {
     const s = startOfDay(start);
-    // Align to Sunday (getDay 0 = Sun)
-    const dayOffset = s.getDay();
-    const sunday = new Date(s);
-    sunday.setDate(s.getDate() - dayOffset);
     for (let i = 0; i < 7; i++) {
-      const d = new Date(sunday);
-      d.setDate(sunday.getDate() + i);
+      const d = new Date(s);
+      d.setDate(s.getDate() + i);
       cols.push({
         date: d,
         runs: weekRuns.filter((s) => sameDay(sessionDate(s), d)),
@@ -105,8 +100,8 @@ export function WeekBlock({
         <span
           className="px-3 py-1 rounded text-xs"
           style={{
-            background: "#E9CEA9",
-            color: "#020101",
+            background: GOLD,
+            color: BG,
             fontWeight: 700,
             letterSpacing: "0.1em",
             textTransform: "uppercase",
@@ -115,13 +110,13 @@ export function WeekBlock({
           {type}
         </span>
         {start && end && (
-          <span className="text-xs" style={{ color: "#9A9A9A", letterSpacing: "0.06em" }}>
+          <span className="text-xs" style={{ color: MUTED, letterSpacing: "0.06em" }}>
             {fmt(start)} — {fmt(end)}
           </span>
         )}
       </div>
       {purpose && (
-        <p className="text-sm mb-4" style={{ color: "#9A9A9A" }}>
+        <p className="text-sm mb-4" style={{ color: MUTED }}>
           {purpose}
         </p>
       )}
@@ -133,23 +128,23 @@ export function WeekBlock({
               key={i}
               className="rounded p-3 min-h-[140px] flex flex-col gap-2"
               style={{
-                background: "#0D0D0D",
-                border: `1px solid ${isToday ? "#E9CEA9" : "rgba(233,206,169,0.12)"}`,
+                background: PANEL,
+                border: `1px solid ${isToday ? GOLD : "rgba(233,206,169,0.12)"}`,
               }}
             >
               <div className="flex items-baseline justify-between">
                 <span
                   className="text-[10px]"
                   style={{
-                    color: isToday ? "#E9CEA9" : "#9A9A9A",
+                    color: isToday ? GOLD : MUTED,
                     fontWeight: 700,
                     letterSpacing: "0.1em",
                   }}
                 >
-                  {DAYS[i]}
+                  {c.date ? DAY_NAMES[(c.date.getDay() + 6) % 7] : DAY_NAMES[i]}
                 </span>
                 {c.date && (
-                  <span className="text-[10px]" style={{ color: "#9A9A9A" }}>
+                  <span className="text-[10px]" style={{ color: MUTED }}>
                     {c.date.getDate()}
                   </span>
                 )}
@@ -174,7 +169,7 @@ export function WeekBlock({
 }
 
 function SessionCard({ session, kind }: { session: any; kind: "run" | "bike" }) {
-  const color = kind === "run" ? "#3B82F6" : "#10B981";
+  const color = kind === "run" ? RUN : BIKE;
   const name = session?.name ?? (kind === "run" ? "Carrera" : "Ciclismo");
   const duration = session?.duration_min;
   const zone = session?.primary_zone ?? session?.zone;
@@ -204,7 +199,7 @@ function SessionCard({ session, kind }: { session: any; kind: "run" | "bike" }) 
         >
           {String(name)}
         </div>
-        <div className="mt-1 flex flex-wrap gap-1.5 text-[11px]" style={{ color: "#9A9A9A" }}>
+        <div className="mt-1 flex flex-wrap gap-1.5 text-[11px]" style={{ color: MUTED }}>
           {duration != null && <span>{duration} min</span>}
           {zone != null && <span>· {String(zone)}</span>}
           {duration == null && sport != null && <span>{String(sport)}</span>}
@@ -250,7 +245,7 @@ function PlaylistButton({ session }: { session: any }) {
           window.open(created.externalUrl, "_blank");
         }}
         className="mt-1 flex items-center gap-1 text-[10px] self-start"
-        style={{ color: "#9A9A9A" }}
+        style={{ color: MUTED }}
       >
         <Check size={11} />
         Playlist lista
@@ -278,7 +273,7 @@ function PlaylistButton({ session }: { session: any }) {
       onClick={handleClick}
       disabled={mut.isPending}
       className="mt-1 flex items-center gap-1 text-[10px] self-start"
-      style={{ color: "#E9CEA9" }}
+      style={{ color: GOLD }}
     >
       {mut.isPending ? <Loader2 size={11} className="animate-spin" /> : <SpotifyIcon size={11} />}
       {mut.isPending ? "Creando…" : "Playlist"}

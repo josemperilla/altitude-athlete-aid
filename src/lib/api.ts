@@ -72,3 +72,12 @@ export function postUpdate() {
 export function postDiagnose(data: DiagnoseInput) {
   return apiFetch<any>("/diagnose", { method: "POST", body: JSON.stringify(data) });
 }
+
+/** Estado del atleta como string en mayúsculas ("FATIGA", "DESCARGADO"...), sea string u objeto. */
+export function getAthleteState(plan: PlanData | undefined): string {
+  const s =
+    typeof plan?.athlete_state === "string"
+      ? plan.athlete_state
+      : (plan?.athlete_state?.state ?? plan?.athlete_state?.label);
+  return (s ?? "").toString().toUpperCase();
+}

@@ -1,63 +1,32 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { garminQO, planQO, postUpdate } from "@/lib/api";
-import { getReadinessScore, READINESS_COLORS } from "@/lib/readiness";
-
-const tabs = [
-  { to: "/", label: "Plan", icon: "📅" },
-  { to: "/historial", label: "Historial", icon: "📊" },
-  { to: "/diagnostico", label: "Diag.", icon: "🩺" },
-  { to: "/aprende", label: "Aprende", icon: "📘" },
-] as const;
-
-function stateStyle(s: string): { bg: string; color: string } {
-  if (s.includes("FATIG")) return { bg: "rgba(239,68,68,0.15)", color: "#EF4444" };
-  if (s.includes("DESCARG")) return { bg: "rgba(16,185,129,0.15)", color: "#10B981" };
-  if (s.includes("BALANCE")) return { bg: "rgba(251,191,36,0.15)", color: "#FBBF24" };
-  return { bg: "rgba(233,206,169,0.1)", color: "#E9CEA9" };
-}
+import { useQuery } from "@tanstack/react-query";
+import { garminQO, getAthleteState, planQO } from "@/lib/api";
+import { getReadinessScore, latestReading, READINESS_COLORS } from "@/lib/readiness";
+import { NAV_TABS } from "@/lib/navigation";
+import { stateStyle, GOLD, MUTED, PANEL } from "@/lib/theme";
+import { useUpdatePlan } from "@/hooks/use-update-plan";
 
 export function MobileTopBar() {
   const { data: plan } = useQuery(planQO());
   const { data: garmin } = useQuery(garminQO());
-  const qc = useQueryClient();
 
-  const update = useMutation({
-    mutationFn: postUpdate,
-    onSuccess: () => {
-      toast.success("Plan actualizado");
-      qc.invalidateQueries({ queryKey: ["plan"] });
-      qc.invalidateQueries({ queryKey: ["garmin"] });
-    },
-    onError: (e: any) => toast.error(`Error: ${e?.message ?? "no se pudo actualizar"}`),
-  });
+  const update = useUpdatePlan();
 
-  const state = (
-    typeof plan?.athlete_state === "string"
-      ? plan.athlete_state
-      : ((plan?.athlete_state as any)?.state ?? "")
-  )
-    .toString()
-    .toUpperCase();
+  const state = getAthleteState(plan);
   const st = stateStyle(state);
 
-  const hrvArr: any[] = (garmin as any)?.health?.hrv ?? [];
-  const rhrArr: any[] = (garmin as any)?.health?.resting_hr ?? [];
-  const hrv = hrvArr.filter((h: any) => h?.hrv != null).at(-1)?.hrv;
-  const rhr = rhrArr.filter((h: any) => h?.resting_hr != null).at(-1)?.resting_hr;
+  const hrv = latestReading(garmin, "hrv");
+  const rhr = latestReading(garmin, "resting_hr");
   const readiness = getReadinessScore(garmin);
 
   return (
     <header
       className="md:hidden sticky top-0 z-30 flex items-center gap-3 px-4 py-3"
-      style={{ background: "#0D0D0D", borderBottom: "1px solid rgba(233,206,169,0.12)" }}
+      style={{ background: PANEL, borderBottom: "1px solid rgba(233,206,169,0.12)" }}
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span
-            style={{ color: "#E9CEA9", fontWeight: 800, letterSpacing: "0.08em", fontSize: 14 }}
-          >
+          <span style={{ color: GOLD, fontWeight: 800, letterSpacing: "0.08em", fontSize: 14 }}>
             ⚡ ENTRENADOR
           </span>
           {state && (
@@ -76,7 +45,7 @@ export function MobileTopBar() {
         </div>
         <div
           className="mt-1 flex flex-wrap items-center gap-3 text-[11px]"
-          style={{ color: "#9A9A9A" }}
+          style={{ color: MUTED }}
         >
           {readiness && (
             <span
@@ -96,10 +65,10 @@ export function MobileTopBar() {
             </span>
           )}
           <span>
-            HRV <span className="metric-num">{hrv != null ? Math.round(Number(hrv)) : "—"}</span>
+            HRV <span className="metric-num">{hrv}</span>
           </span>
           <span>
-            FC <span className="metric-num">{rhr != null ? Math.round(Number(rhr)) : "—"}</span>
+            FC <span className="metric-num">{rhr}</span>
           </span>
         </div>
       </div>
@@ -120,12 +89,12 @@ export function MobileBottomNav() {
     <nav
       className="md:hidden fixed bottom-0 left-0 right-0 z-30 grid grid-cols-4"
       style={{
-        background: "#0D0D0D",
+        background: PANEL,
         borderTop: "1px solid rgba(233,206,169,0.15)",
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
-      {tabs.map((t) => {
+      {NAV_TABS.map((t) => {
         const active = pathname === t.to;
         return (
           <Link
@@ -133,17 +102,17 @@ export function MobileBottomNav() {
             to={t.to}
             className="flex flex-col items-center justify-center gap-0.5 py-2.5"
             style={{
-              color: active ? "#E9CEA9" : "#9A9A9A",
+              color: active ? GOLD : MUTED,
               fontWeight: active ? 700 : 500,
               letterSpacing: "0.06em",
             }}
           >
             <span className="text-base leading-none">{t.icon}</span>
-            <span className="text-[10px] uppercase">{t.label}</span>
+            <span className="text-[10px] uppercase">{t.short}</span>
             {active && (
               <span
                 className="absolute top-0 h-[2px] w-10 rounded-b"
-                style={{ background: "#E9CEA9" }}
+                style={{ background: GOLD }}
               />
             )}
           </Link>

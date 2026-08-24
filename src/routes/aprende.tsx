@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { insightsQO } from "@/lib/api";
 import { PageHeader } from "@/components/entrenador/PageHeader";
+import { CARD_2, GOLD, MUTED, PANEL } from "@/lib/theme";
 
 export const Route = createFileRoute("/aprende")({
   head: () => ({
@@ -23,10 +24,13 @@ function AprendePage() {
 
   return (
     <div className="p-6 md:p-10 max-w-[1400px] mx-auto">
-      <PageHeader title="Aprende" subtitle="Ciencia del entrenamiento · 5 papers revisados por pares" />
+      <PageHeader
+        title="Aprende"
+        subtitle="Ciencia del entrenamiento · 5 papers revisados por pares"
+      />
 
       {isLoading && (
-        <div className="club-card p-6 mt-6 text-sm" style={{ color: "#9A9A9A" }}>
+        <div className="club-card p-6 mt-6 text-sm" style={{ color: MUTED }}>
           Cargando…
         </div>
       )}
@@ -52,7 +56,7 @@ function AprendePage() {
                     >
                       {cat.title}
                     </div>
-                    <div className="text-xs mt-0.5" style={{ color: "#9A9A9A" }}>
+                    <div className="text-xs mt-0.5" style={{ color: MUTED }}>
                       {cat.subtitle}
                     </div>
                   </div>
@@ -92,13 +96,16 @@ function InsightCard({ ins, accentColor }: { ins: any; accentColor: string }) {
     <article
       className="flex flex-col gap-3 p-4 rounded-lg mt-4"
       style={{
-        background: "#1A1A1A",
+        background: CARD_2,
         border: `1px solid ${accentColor}22`,
       }}
     >
       {/* Source */}
       {ins.source && (
-        <div className="text-[10px] font-bold tracking-widest uppercase" style={{ color: accentColor, opacity: 0.8 }}>
+        <div
+          className="text-[10px] font-bold tracking-widest uppercase"
+          style={{ color: accentColor, opacity: 0.8 }}
+        >
           {ins.source}
         </div>
       )}
@@ -120,7 +127,7 @@ function InsightCard({ ins, accentColor }: { ins: any; accentColor: string }) {
         <div
           className="text-xs font-bold text-center py-2 px-3 rounded"
           style={{
-            background: "#0D0D0D",
+            background: PANEL,
             border: `1px solid ${accentColor}44`,
             color: accentColor,
             letterSpacing: "0.05em",
@@ -133,7 +140,10 @@ function InsightCard({ ins, accentColor }: { ins: any; accentColor: string }) {
       {/* Application */}
       {ins.application && (
         <div style={{ borderTop: "1px solid rgba(233,206,169,.08)", paddingTop: "10px" }}>
-          <div className="text-[10px] font-bold tracking-widest uppercase mb-1.5" style={{ color: "#E9CEA9" }}>
+          <div
+            className="text-[10px] font-bold tracking-widest uppercase mb-1.5"
+            style={{ color: GOLD }}
+          >
             ¿Qué significa para ti?
           </div>
           <p className="text-xs leading-relaxed" style={{ color: "#B0B0B0" }}>
