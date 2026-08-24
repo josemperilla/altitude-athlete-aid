@@ -66,10 +66,21 @@ def fetch_activities(client: garminconnect.Garmin, days: int = 21) -> list:
 
 
 def fetch_scheduled_workouts(client: garminconnect.Garmin, days_ahead: int = 60) -> list:
-    """Fetch Runna-synced scheduled workouts using the calendar API."""
+    """
+    Fetch Runna-synced scheduled workouts using the calendar API.
+
+    OJO — deduplicación obligatoria: el endpoint de calendario devuelve la
+    *rejilla* completa del mes, no el mes exacto, así que incluye días de los
+    meses vecinos. Meses consecutivos se solapan (p. ej. la rejilla de agosto
+    2026 llega hasta el 3 de septiembre y la de septiembre arranca el 25 de
+    agosto), y sin filtrar por identidad la misma sesión entraba dos veces al
+    plan. En el frontend eso se veía como sesiones duplicadas en el calendario,
+    aunque en Garmin solo existiera una.
+    """
     today = date.today()
     cutoff = today + timedelta(days=days_ahead)
     result = []
+    seen = set()
 
     months_to_fetch = set()
     d = today.replace(day=1)
@@ -77,7 +88,7 @@ def fetch_scheduled_workouts(client: garminconnect.Garmin, days_ahead: int = 60)
         months_to_fetch.add((d.year, d.month))
         d = (d.replace(day=28) + timedelta(days=4)).replace(day=1)
 
-    for year, month in months_to_fetch:
+    for year, month in sorted(months_to_fetch):
         try:
             cal = client.get_scheduled_workouts(year, month)
             for item in cal.get("calendarItems", []):
@@ -88,14 +99,22 @@ def fetch_scheduled_workouts(client: garminconnect.Garmin, days_ahead: int = 60)
                     item_date = date.fromisoformat(item_date_str)
                 except ValueError:
                     continue
-                if today <= item_date <= cutoff:
-                    result.append({
-                        "date": item_date_str,
-                        "name": item.get("title", ""),
-                        "sport": item.get("sportTypeKey", ""),
-                        "workout_id": item.get("workoutId"),
-                        "schedule_id": item.get("id"),
-                    })
+                if not (today <= item_date <= cutoff):
+                    continue
+                # `id` es el id de la programación en el calendario: identifica
+                # una sesión concreta en un día concreto. Si faltara, la terna
+                # fecha+workout+título alcanza para no repetir.
+                key = item.get("id") or (item_date_str, item.get("workoutId"), item.get("title", ""))
+                if key in seen:
+                    continue
+                seen.add(key)
+                result.append({
+                    "date": item_date_str,
+                    "name": item.get("title", ""),
+                    "sport": item.get("sportTypeKey", ""),
+                    "workout_id": item.get("workoutId"),
+                    "schedule_id": item.get("id"),
+                })
         except Exception as e:
             print(f"  WARNING: Could not fetch calendar for {year}-{month:02d}: {e}", file=sys.stderr)
 
