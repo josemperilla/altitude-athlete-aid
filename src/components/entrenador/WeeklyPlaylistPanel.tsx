@@ -18,7 +18,7 @@ import {
 import { garminQO } from "@/lib/api";
 import {
   sessionKey,
-  thisWeekRange,
+  currentPlanWeekRange,
   inRange,
   sessionDate,
   dedupeSessions,
@@ -35,8 +35,11 @@ type Row = {
   errorMessage?: string;
 };
 
-function toRows(runs: any[], bikes: any[]): Row[] {
-  const { start, end } = thisWeekRange();
+// `weeks` es `weeks_plan` del backend: la semana que se muestra en el calendario
+// manda sobre cualquier convención de semana calculada aquí (ver
+// currentPlanWeekRange).
+function toRows(runs: any[], bikes: any[], weeks: any[]): Row[] {
+  const { start, end } = currentPlanWeekRange(weeks);
   return dedupeSessions(runs, bikes)
     .filter((s) => {
       const d = sessionDate(s);
@@ -60,13 +63,15 @@ function toRows(runs: any[], bikes: any[]): Row[] {
 export function WeeklyPlaylistPanel({
   runs,
   bikes,
+  weeks,
   onClose,
 }: {
   runs: any[];
   bikes: any[];
+  weeks: any[];
   onClose: () => void;
 }) {
-  const [rows, setRows] = useState<Row[]>(() => toRows(runs, bikes));
+  const [rows, setRows] = useState<Row[]>(() => toRows(runs, bikes, weeks));
   const [running, setRunning] = useState(false);
   const [pruned, setPruned] = useState<PruneResult | null>(null);
   // Garantimos que el ajuste por fatiga (#8) tenga los datos de Garmin.
@@ -155,6 +160,7 @@ export function WeeklyPlaylistPanel({
     runSequentially(failed);
   };
 
+  const { start: weekStart, end: weekEnd } = currentPlanWeekRange(weeks);
   const pendingCount = rows.filter((r) => r.status === "pending").length;
   const doneCount = rows.filter((r) => r.status === "done").length;
   const alreadyCount = rows.filter((r) => r.status === "already").length;
@@ -182,7 +188,7 @@ export function WeeklyPlaylistPanel({
 
       {rows.length === 0 && (
         <p className="text-sm" style={{ color: MUTED }}>
-          No hay sesiones esta semana.
+          No hay sesiones entre el {fmtDay(weekStart)} y el {fmtDay(weekEnd)}.
         </p>
       )}
 
@@ -302,3 +308,5 @@ function RowStatus({ row, onRetry }: { row: Row; onRetry: () => void }) {
     </span>
   );
 }
+
+const fmtDay = (d: Date) => d.toLocaleDateString("es-CO", { day: "2-digit", month: "short" });

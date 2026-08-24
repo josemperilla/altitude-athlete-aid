@@ -22,8 +22,10 @@ import {
 } from "@/lib/session-dates";
 import { BIKE, BG, CARD_1, CARD_2, GOLD, MUTED, PANEL, RUN } from "@/lib/theme";
 
-// Semana iniciando en lunes, consistente con el historial y thisWeekRange.
-const DAYS = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
+// El backend genera semanas domingo→sábado (week_start = domingo), así que el
+// grid se construye desde week_start tal cual, sin realinear a lunes: realinear
+// haría que las sesiones del lunes-sábado quedaran fuera del grid.
+const DAY_NAMES = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
 
 function getWeekRange(w: any): { start: Date | null; end: Date | null } {
   const start = parseDate(w?.week_start ?? w?.start ?? w?.start_date ?? w?.from);
@@ -68,17 +70,13 @@ export function WeekBlock({
     return d && (!start || inRange(d, start, end));
   });
 
-  // Build 7 day columns starting on Monday
+  // Build 7 day columns starting on week_start (backend usa domingo→sábado).
   const cols: { date: Date | null; runs: any[]; bikes: any[] }[] = [];
   if (start) {
     const s = startOfDay(start);
-    // Align to Monday (Mon=0..Sun=6)
-    const dayOffset = (s.getDay() + 6) % 7;
-    const monday = new Date(s);
-    monday.setDate(s.getDate() - dayOffset);
     for (let i = 0; i < 7; i++) {
-      const d = new Date(monday);
-      d.setDate(monday.getDate() + i);
+      const d = new Date(s);
+      d.setDate(s.getDate() + i);
       cols.push({
         date: d,
         runs: weekRuns.filter((s) => sameDay(sessionDate(s), d)),
@@ -143,7 +141,7 @@ export function WeekBlock({
                     letterSpacing: "0.1em",
                   }}
                 >
-                  {DAYS[i]}
+                  {c.date ? DAY_NAMES[(c.date.getDay() + 6) % 7] : DAY_NAMES[i]}
                 </span>
                 {c.date && (
                   <span className="text-[10px]" style={{ color: MUTED }}>

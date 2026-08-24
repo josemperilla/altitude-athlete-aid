@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { planQO } from "@/lib/api";
+import { dedupeSessions } from "@/lib/session-dates";
+import { deriveSport } from "@/lib/spotify-intensity";
 import { PageHeader } from "@/components/entrenador/PageHeader";
 import { ERR, MUTED } from "@/lib/theme";
 import { WeekBlock } from "@/components/entrenador/WeekBlock";
@@ -23,8 +25,22 @@ function PlanPage() {
   const [showWeeklyPanel, setShowWeeklyPanel] = useState(false);
 
   const weeks: any[] = Array.isArray(data?.weeks_plan) ? data!.weeks_plan : [];
-  const runs: any[] = Array.isArray(data?.runna_sessions) ? data!.runna_sessions : [];
-  const bikes: any[] = Array.isArray(data?.cycling_sessions) ? data!.cycling_sessions : [];
+
+  // El plan puede traer la misma sesión más de una vez (ver dedupeSessions).
+  // Se unifica aquí, una sola vez, para que el calendario y el panel de
+  // playlists partan exactamente de la misma lista. El deporte se decide por el
+  // campo `sport`/`type` y no por el arreglo de origen: `runna_sessions`
+  // también trae ciclismo.
+  const { runs, bikes } = useMemo(() => {
+    const all = dedupeSessions(
+      Array.isArray(data?.runna_sessions) ? data!.runna_sessions : [],
+      Array.isArray(data?.cycling_sessions) ? data!.cycling_sessions : [],
+    );
+    return {
+      runs: all.filter((s) => deriveSport(s) === "running"),
+      bikes: all.filter((s) => deriveSport(s) === "cycling"),
+    };
+  }, [data]);
 
   return (
     <div className="p-6 md:p-10 max-w-[1400px] mx-auto">
@@ -42,7 +58,12 @@ function PlanPage() {
         )}
       </div>
       {showWeeklyPanel && (
-        <WeeklyPlaylistPanel runs={runs} bikes={bikes} onClose={() => setShowWeeklyPanel(false)} />
+        <WeeklyPlaylistPanel
+          runs={runs}
+          bikes={bikes}
+          weeks={weeks}
+          onClose={() => setShowWeeklyPanel(false)}
+        />
       )}
       {isLoading && <SkeletonBlock />}
       {error && <ErrorBlock message={(error as Error).message} />}
