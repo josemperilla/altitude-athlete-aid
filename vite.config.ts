@@ -7,8 +7,11 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-// @cloudflare/vite-plugin builds from this — wrangler.jsonc main alone is insufficient.
 export default defineConfig({
+  // Railway, no Cloudflare. El bundle SSR que produce Vite ya exporta un handler
+  // { fetch } estándar de la Web; el plugin de Cloudflare solo aportaba el
+  // adaptador que lo ejecuta. Ese papel lo hace ahora server/index.js sobre Node.
+  cloudflare: false,
   tanstackStart: {
     server: { entry: "server" },
   },

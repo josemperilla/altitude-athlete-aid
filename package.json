@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test": "bun test"
+    "test": "bun test",
+    "start": "node server/index.js"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",
