@@ -4,6 +4,7 @@ import { useState } from "react";
 import { gymQO } from "@/lib/api";
 import { PageHeader } from "@/components/entrenador/PageHeader";
 import { GymSessionPicker } from "@/components/entrenador/gym/GymSessionPicker";
+import { GymSessionCard } from "@/components/entrenador/gym/GymSessionCard";
 import { PICK_RULES } from "@/lib/gym/loads.js";
 import { ERR, MUTED } from "@/lib/theme";
 
@@ -28,11 +29,18 @@ const CASA = ["C1", "C2"];
 function GimnasioPage() {
   const { data, isLoading, error } = useQuery(gymQO());
   const [showPick, setShowPick] = useState(false);
+  const [picked, setPicked] = useState<string | null>(null);
 
   const sessions = data?.sessions ?? {};
   const bloque = BLOQUE.filter((c) => sessions[c]);
   const casa = CASA.filter((c) => sessions[c]);
   const rules = data?.rules ?? [];
+
+  // Sin `picked` todavía (primer render, o los datos aún en vuelo) cae en la
+  // primera del bloque. El estado no se inicializa con bloque[0] porque en el
+  // primer render `sessions` está vacío y ese valor se quedaría congelado.
+  const active = (picked && sessions[picked] && picked) || bloque[0] || casa[0];
+  const session = active ? sessions[active] : null;
 
   return (
     <div className="p-6 md:p-10 max-w-[1400px] mx-auto">
@@ -58,16 +66,28 @@ function GimnasioPage() {
           {bloque.length > 0 && (
             <>
               <h2 className="gym-sec">Las sesiones del bloque</h2>
-              <GymSessionPicker sessions={sessions} codes={bloque} />
+              <GymSessionPicker
+                sessions={sessions}
+                codes={bloque}
+                active={active}
+                onSelect={setPicked}
+              />
             </>
           )}
 
           {casa.length > 0 && (
             <>
               <h2 className="gym-sec">En casa, cuando te sobre energía</h2>
-              <GymSessionPicker sessions={sessions} codes={casa} />
+              <GymSessionPicker
+                sessions={sessions}
+                codes={casa}
+                active={active}
+                onSelect={setPicked}
+              />
             </>
           )}
+
+          {session && <GymSessionCard session={session} />}
 
           <div className="club-card gym-pick">
             <button
