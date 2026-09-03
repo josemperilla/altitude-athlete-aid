@@ -22,3 +22,7 @@ node_modules/
 # OJO: public/ex/ SÍ sube. Son las 26 fotos de los ejercicios y la app las pide
 # por ruta absoluta (/ex/<anim>-0.jpg); sin ellas el desplegable de técnica
 # queda con dos huecos rotos.
+
+# Artefactos de QA. Nunca los pide el servidor; solo alargan el upload.
+.playwright-mcp/
+/*.png

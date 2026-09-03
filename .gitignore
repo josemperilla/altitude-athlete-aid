@@ -36,3 +36,8 @@ dist-ssr
 *.sw?
 .gstack/
 .zcode/
+
+# Artefactos de QA: volcados de Playwright y capturas de pantalla sueltas.
+# No son fuente, pesan (una tanda fueron 936 KB) y viajaban en cada deploy.
+.playwright-mcp/
+/*.png
