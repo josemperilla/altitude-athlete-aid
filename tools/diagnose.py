@@ -18,12 +18,14 @@ from datetime import date
 import anthropic
 from dotenv import load_dotenv
 
+from paths import data_file
+
 ROOT = Path(__file__).parent.parent
 load_dotenv(ROOT / ".env")
 
-GARMIN_DATA = ROOT / ".tmp" / "garmin_data.json"
+GARMIN_DATA = data_file("garmin_data.json")
 RESEARCH_CTX = ROOT / "context" / "research_insights.md"
-OUTPUT_DIAGNOSIS = ROOT / ".tmp" / "diagnosis.json"
+OUTPUT_DIAGNOSIS = data_file("diagnosis.json")
 
 SYSTEM_PROMPT = """You are a sports medicine-informed endurance training advisor. A runner preparing
 for a half marathon in Bogotá (altitude ~2,600m) has described a pain or physical complaint.

@@ -28,19 +28,47 @@ from pydantic import BaseModel
 ROOT = Path(__file__).parent
 load_dotenv(ROOT / ".env")
 
-GARMIN_DATA = ROOT / ".tmp" / "garmin_data.json"
-PLAN_DATA   = ROOT / ".tmp" / "augmented_plan.json"
-DIAGNOSIS   = ROOT / ".tmp" / "diagnosis.json"
+# En Railway el disco del contenedor es efímero: cada deploy lo borra. DATA_DIR
+# apunta al volumen montado allí y cae a .tmp/ en local, así que el mismo código
+# sirve en los dos sitios sin ramas.
+DATA_DIR = Path(os.environ.get("DATA_DIR") or (ROOT / ".tmp"))
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+GARMIN_DATA = DATA_DIR / "garmin_data.json"
+PLAN_DATA   = DATA_DIR / "augmented_plan.json"
+DIAGNOSIS   = DATA_DIR / "diagnosis.json"
+
+# Compartido con el resto de herramientas, que leen .tmp/ por su cuenta.
+os.environ.setdefault("DATA_DIR", str(DATA_DIR))
 
 app = FastAPI(title="Entrenador API", version="1.0")
 
-# Allow Lovable (and any other origin) to call this API
+# Con la API pública, el origen ya no basta como control: cualquiera con la URL
+# podría leer datos de salud o disparar /update, que gasta tokens de Anthropic y
+# golpea el rate limit de Garmin. Si API_TOKEN está definido se exige en cada
+# petición; sin él la API queda abierta, que es lo correcto en local.
+API_TOKEN = os.environ.get("API_TOKEN")
+
+ALLOWED_ORIGINS = [o for o in (os.environ.get("ALLOWED_ORIGINS") or "").split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS or ["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def require_token(request, call_next):
+    # El preflight de CORS nunca lleva cabeceras propias: si se le exige el token
+    # el navegador falla antes de mandar la petición real.
+    open_paths = {"/", "/health"}
+    if API_TOKEN and request.method != "OPTIONS" and request.url.path not in open_paths:
+        sent = request.headers.get("x-api-token") or request.query_params.get("token")
+        if sent != API_TOKEN:
+            from fastapi.responses import JSONResponse
+            return JSONResponse({"detail": "Token inválido o ausente."}, status_code=401)
+    return await call_next(request)
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -55,7 +83,10 @@ def _read(path: Path) -> dict | None:
 
 
 def _run_tool(script: str) -> tuple[bool, str]:
-    python = str(ROOT / ".venv" / "bin" / "python")
+    # sys.executable y no .venv/bin/python: en Railway no hay venv, el intérprete
+    # es el del contenedor. En local sigue siendo el del venv porque uvicorn
+    # arranca desde ahí.
+    python = sys.executable
     result = subprocess.run(
         [python, str(ROOT / "tools" / script)],
         capture_output=True, text=True, cwd=str(ROOT),
@@ -136,6 +167,8 @@ def update_plan() -> dict:
 def diagnose(body: DiagnoseRequest) -> dict:
     """Calls Claude to analyze a physical complaint."""
     import anthropic
+    sys.path.insert(0, str(ROOT / "tools"))
+    from usage_log import log_usage
 
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
@@ -177,9 +210,10 @@ PLAN ACTUAL:
     msg = client.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=1500,
-        system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
+        system=system,
         messages=[{"role": "user", "content": user_msg}],
     )
+    log_usage(msg.usage, "diagnose")
     raw = msg.content[0].text.strip()
     if raw.startswith("```"):
         raw = raw.split("```")[1]

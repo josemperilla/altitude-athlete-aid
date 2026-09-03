@@ -17,10 +17,12 @@ from dotenv import load_dotenv
 import garminconnect
 from garminconnect import GarminConnectTooManyRequestsError
 
+from paths import data_file
+
 ROOT = Path(__file__).parent.parent
 load_dotenv(ROOT / ".env")
 
-OUTPUT = ROOT / ".tmp" / "garmin_data.json"
+OUTPUT = data_file("garmin_data.json")
 
 
 def login() -> garminconnect.Garmin:

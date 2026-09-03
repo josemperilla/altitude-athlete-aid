@@ -1,12 +1,17 @@
 """
-Reads .tmp/garmin_data.json + context/research_insights.md, calls Claude API,
-and generates the augmented weekly training plan with cycling sessions.
+Reads .tmp/garmin_data.json + context/research_principles.md, calls Claude API,
+y genera el plan semanal aumentado con sesiones de ciclismo.
+
+Claude solo decide (fecha, tipo, duración, justificación) de cada sesión de
+ciclismo; el workout completo de Garmin y las runna_sessions se construyen en
+código (ver build_cycling_workout.py y build_runna_sessions()) — el modelo no
+reproduce JSON estructural que el código ya tiene o puede derivar.
 
 Output:
-  .tmp/augmented_plan.json       — full plan + load analysis + rationale
-  .tmp/workouts/<date>_cycling.json  — one Garmin workout JSON per cycling session
+  .tmp/augmented_plan.json       — plan completo + load analysis + rationale
+  .tmp/workouts/<date>_cycling.json  — un workout de Garmin por sesión de ciclismo
 
-Usage: python tools/generate_plan.py
+Usage: .venv/bin/python tools/generate_plan.py
 """
 import json
 import os
@@ -17,81 +22,68 @@ from datetime import date
 import anthropic
 from dotenv import load_dotenv
 
+import build_cycling_workout
+import strength_plan
+from session_intensity import summarise_session
+from usage_log import log_usage
+
+from paths import data_file
+
 ROOT = Path(__file__).parent.parent
 load_dotenv(ROOT / ".env")
 
-GARMIN_DATA = ROOT / ".tmp" / "garmin_data.json"
-RESEARCH_CTX = ROOT / "context" / "research_insights.md"
-OUTPUT_PLAN = ROOT / ".tmp" / "augmented_plan.json"
-WORKOUTS_DIR = ROOT / ".tmp" / "workouts"
+GARMIN_DATA = data_file("garmin_data.json")
+RESEARCH_PRINCIPLES = ROOT / "context" / "research_principles.md"
+OUTPUT_PLAN = data_file("augmented_plan.json")
+WORKOUTS_DIR = data_file("workouts")
 
 SYSTEM_PROMPT = """Eres un optimizador élite de entrenamiento de resistencia especializado en rendimiento
 para un medio maratón en altitud (Bogotá, ~2.600 m). Tomas decisiones basadas en evidencia científica.
 
 IDIOMA: Todos los campos de texto en el JSON de respuesta deben estar escritos en ESPAÑOL.
 
-CONTEXTO CIENTÍFICO (artículos revisados por pares):
+CONTEXTO CIENTÍFICO (principios destilados de literatura revisada por pares):
 {research}
 
-PRINCIPIOS CLAVE DE LA LITERATURA:
+PRINCIPIOS CLAVE:
 - El entrenamiento polarizado (≥75% Z1, <10% Z2, 15-20% Z3) supera a los modelos de umbral.
 - El ciclismo añade volumen aeróbico SIN impacto de carrera — ideal para recuperación en altitud.
 - Z2 en ciclismo es un TECHO, no un piso. Usa Z1 por defecto salvo que el atleta esté claramente fresco.
 - 2-3 sesiones duras por semana (de Runna); el resto es volumen Z1.
 - En altitud: el estrés cardiovascular es mayor → reduce duración Z2 un 10-15% vs nivel del mar.
-- HRV bajo + FC reposo elevada = fatiga → todo el ciclismo debe ser Z1 de recuperación.
+- Fatiga = HRV bajo + FC reposo elevada + sueño pobre + carga acumulada alta → todo el ciclismo Z1 de recuperación.
 
 RESTRICCIONES DEL ATLETA:
 - Planifica ciclismo para las PRÓXIMAS 2 SEMANAS completas (14 días desde hoy).
 - Máximo 1-2 sesiones de ciclismo por semana. Preferir 1 si el atleta está fatigado.
-- Días PREFERIDOS para ciclismo (en orden de prioridad): lunes, domingo sin long run, miércoles sin sesión intensa de Runna, viernes sin sesión intensa de Runna.
-- Martes y jueves son días de fuerza: evitar si hay otras opciones. Si no queda otra opción, se puede poner ciclismo ligero (Z1, máx 45 min).
+- Días PREFERIDOS para ciclismo (en orden de prioridad): jueves, domingo sin long run, viernes sin sesión intensa de Runna.
+- REGLA ABSOLUTA: LUNES y MIÉRCOLES son días de GIMNASIO (bloque de fuerza hacia el medio maratón). NUNCA pongas ciclismo en una fecha que aparezca en la lista PLAN GIMNASIO del mensaje del usuario. El lunes carga fuerza pesada de tren inferior; el miércoles el gimnasio ya va encima de la sesión de calidad de Runna. Meter bici ahí es apilar tres estímulos en un día.
+- Martes: evitar si hay otras opciones. Es el día de recuperación entre el gimnasio pesado del lunes y la calidad del miércoles. Si no queda otra, ciclorruta_en_plano ≤45 min.
 - Sábado: evitar si hay otras opciones disponibles. Solo usar como último recurso si el resto de la semana no deja ningún hueco viable.
-- REGLA ABSOLUTA: NUNCA colocar ciclismo en un día que tenga sesión de Runna. Cero excepciones. Primero revisa la lista completa de runna_sessions y verifica que la fecha del cycling_session NO aparezca en ninguna de ellas.
+- REGLA ABSOLUTA: NUNCA colocar ciclismo en un día que tenga sesión de Runna. Cero excepciones. Revisa la lista completa de PLAN RUNNA y verifica que la fecha del cycling_session NO aparezca ahí.
+- REGLA ABSOLUTA: NUNCA colocar ciclismo el día de una sesión de Runna marcada como intensidad ALTA. Cada sesión en PLAN RUNNA ya trae su intensidad calculada (BAJA/MODERADA/ALTA) — úsala directamente, no la infieras del nombre.
 - Semana 1: evalúa el estado actual del atleta. Semana 2: proyecta la progresión esperada (si está fatigado ahora, la semana 2 puede ser más intensa).
 
 TIPOS DE ENTRENAMIENTO DE CICLISMO (solo estos dos):
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-TIPO A — "Subida a Patios"
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Ruta: Calle 104A #21-66 (Bogotá) → Peaje La Calera
-Distancia solo subida: ~16 km
-Desnivel positivo: ~680 m
-Duración estimada total (ida y vuelta): 90-110 min
+TIPO A — "subida_a_patios": Calle 104A #21-66 (Bogotá) → Peaje La Calera. ~16 km solo de
+subida, ~680 m de desnivel. Duración total ida y vuelta: 90-110 min. Genera un estímulo Z2
+natural por el desnivel. Úsalo con atleta BALANCEADO o DESCARGADO. NO usar si está FATIGADO.
 
-Cuándo usarlo: atleta BALANCEADO o DESCARGADO. Buen estímulo Z2 natural por el desnivel.
-NO usar si el atleta está FATIGADO.
-
-Estructura de fases:
-  Calentamiento (10 min): FC [Z1_min]–[Z1_max] bpm | Pedalea suave desde casa en plano
-  Subida principal (60–75 min): FC [Z2_min]–[Z2_max] bpm | Ritmo constante y controlado en la subida
-  Descenso / vuelta (15–20 min): FC [Z1_min]–[Z1_max] bpm | Baja controlado, sin esfuerzo
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-TIPO B — "Ciclorruta en plano"
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Ruta: Ciclorrutas planas de Bogotá (salida libre desde casa)
-Terreno: plano, sin desnivel significativo
-Duración: 30–60 min según carga semanal
-
-Cuándo usarlo: atleta FATIGADO o día de recuperación. Siempre Z1.
-
-Estructura de fases:
-  Calentamiento (5–10 min): FC [Z1_min]–[Z1_max] bpm | Pedaleo suave hasta encontrar ritmo
-  Parte principal (20–45 min): FC [Z1_min]–[Z1_max] bpm | Ritmo conversacional, sin superar Z1
-  Vuelta / enfriamiento (5–10 min): FC [Z1_min]–[Z1_max] bpm | Reduce cadencia gradualmente
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TIPO B — "ciclorruta_en_plano": ciclorrutas planas de Bogotá, salida libre desde casa. Sin
+desnivel significativo. Duración: 30-60 min según carga semanal. Siempre Z1. Úsalo con
+atleta FATIGADO o en día de recuperación.
 
 REGLA DE SELECCIÓN:
-  Estado fatigado → SIEMPRE Ciclorruta en plano
-  Estado balanceado → Subida a Patios (si el día permite 90-110 min) o Ciclorruta en plano
-  Estado descargado → Subida a Patios preferida
+  Estado fatigado → SIEMPRE ciclorruta_en_plano
+  Estado balanceado → subida_a_patios (si el día permite 90-110 min) o ciclorruta_en_plano
+  Estado descargado → subida_a_patios preferida
 
-LAS SESIONES DE RUNNA SON DE SOLO LECTURA. Nunca modificarlas. Solo añadir ciclismo.
+LAS SESIONES DE RUNNA SON DE SOLO LECTURA. No las incluyas en tu respuesta ni las modifiques
+— el sistema ya las tiene completas. Solo decides las sesiones de ciclismo que se añaden.
 
-FORMATO DE SALIDA — responde con un único objeto JSON válido.
+FORMATO DE SALIDA — responde con un único objeto JSON válido. No incluyas "runna_sessions" ni
+"garmin_workout": el sistema los construye aparte a partir de tu decisión.
 
 El objeto debe incluir un campo "weeks_plan" con una entrada por semana planificada.
 Para cada semana describe:
@@ -100,10 +92,6 @@ Para cada semana describe:
   - purpose: qué se busca lograr esa semana (2-3 oraciones en español, claro y concreto)
   - macro_context: cómo encaja en el plan macro hacia el medio maratón (1-2 oraciones)
   - load_expectation: descripción breve del volumen e intensidad esperados
-
-Reglas de los campos "description" en el workout de Garmin:
-  - workout description: resumen de la sesión con ruta, distancia, desnivel (si aplica) y objetivo
-  - step description de cada paso: debe incluir duración, objetivo de FC en bpm ("FC: X–Y bpm"), zona ("Z1"/"Z2"), e instrucción concreta de qué hacer
 
 {{
   "week_summary": "string en español: resumen semana 1 y proyección semana 2",
@@ -118,58 +106,12 @@ Reglas de los campos "description" en el workout de Garmin:
       "load_expectation": "string en español: descripción del volumen e intensidad esperados"
     }}
   ],
-  "runna_sessions": [...],
   "cycling_sessions": [
     {{
       "date": "YYYY-MM-DD",
-      "name": "Subida a Patios | Ciclorruta en plano",
       "type": "subida_a_patios | ciclorruta_en_plano",
       "duration_min": integer,
-      "primary_zone": "Z1 | Z2",
-      "rationale": "string en español: por qué este tipo en este día",
-      "garmin_workout": {{
-        "workoutName": "Subida a Patios | Ciclorruta en plano",
-        "description": "string: descripción completa con ruta, desnivel, objetivo y fases resumidas",
-        "sportType": {{"sportTypeId": 2, "sportTypeKey": "cycling"}},
-        "workoutSegments": [
-          {{
-            "segmentOrder": 1,
-            "sportType": {{"sportTypeId": 2, "sportTypeKey": "cycling"}},
-            "workoutSteps": [
-              {{
-                "stepOrder": 1,
-                "stepType": {{"stepTypeKey": "warmup"}},
-                "description": "string: instrucción detallada con FC objetivo en bpm, zona y qué hacer",
-                "endCondition": {{"conditionTypeKey": "time"}},
-                "endConditionValue": <segundos>,
-                "targetType": {{"workoutTargetTypeKey": "heart.rate.zone"}},
-                "targetValueOne": <Z1_min_bpm>,
-                "targetValueTwo": <Z1_max_bpm>
-              }},
-              {{
-                "stepOrder": 2,
-                "stepType": {{"stepTypeKey": "interval"}},
-                "description": "string: instrucción detallada con FC objetivo en bpm, zona y qué hacer",
-                "endCondition": {{"conditionTypeKey": "time"}},
-                "endConditionValue": <segundos>,
-                "targetType": {{"workoutTargetTypeKey": "heart.rate.zone"}},
-                "targetValueOne": <zone_min_bpm>,
-                "targetValueTwo": <zone_max_bpm>
-              }},
-              {{
-                "stepOrder": 3,
-                "stepType": {{"stepTypeKey": "cooldown"}},
-                "description": "string: instrucción detallada con FC objetivo en bpm, zona y qué hacer",
-                "endCondition": {{"conditionTypeKey": "time"}},
-                "endConditionValue": <segundos>,
-                "targetType": {{"workoutTargetTypeKey": "heart.rate.zone"}},
-                "targetValueOne": <Z1_min_bpm>,
-                "targetValueTwo": <Z1_max_bpm>
-              }}
-            ]
-          }}
-        ]
-      }}
+      "rationale": "string en español: por qué este tipo en este día, citando las señales concretas (HRV, FC reposo, sueño, carga, intensidad de sesiones cercanas de Runna) que lo justifican"
     }}
   ],
   "load_analysis": {{
@@ -179,10 +121,8 @@ Reglas de los campos "description" en el workout de Garmin:
     "estimated_zone_distribution": {{"Z1_pct": number, "Z2_pct": number, "Z3_pct": number}},
     "fatigue_signals": "string en español"
   }},
-  "scientific_rationale": "string en español: 2-3 oraciones citando artículos"
+  "scientific_rationale": "string en español: 2-3 oraciones citando los principios científicos aplicados"
 }}
-
-Usa los BPM EXACTOS de hr_zones del input. No inventes límites de zonas.
 """
 
 
@@ -190,54 +130,75 @@ def load_inputs() -> tuple[dict, str]:
     if not GARMIN_DATA.exists():
         print(f"ERROR: {GARMIN_DATA} not found. Run tools/fetch_garmin.py first.", file=sys.stderr)
         sys.exit(1)
-    if not RESEARCH_CTX.exists():
-        print(f"ERROR: {RESEARCH_CTX} not found. Run tools/extract_papers.py first.", file=sys.stderr)
+    if not RESEARCH_PRINCIPLES.exists():
+        print(f"ERROR: {RESEARCH_PRINCIPLES} not found.", file=sys.stderr)
         sys.exit(1)
 
     garmin = json.loads(GARMIN_DATA.read_text(encoding="utf-8"))
-    research = RESEARCH_CTX.read_text(encoding="utf-8")
+    research = RESEARCH_PRINCIPLES.read_text(encoding="utf-8")
     return garmin, research
 
 
 def _summarise_garmin(garmin: dict) -> str:
-    """OPT-6: Compress Garmin JSON to a concise summary to reduce input tokens."""
+    """
+    Comprime el JSON de Garmin a un resumen conciso y relevante para decidir
+    el plan. V1: cada sesión de Runna trae su intensidad real ya calculada
+    (session_intensity.py), no solo el nombre. V2: incluye sueño y carga de
+    entrenamiento acumulada, antes descargados y nunca usados.
+    """
     from statistics import mean
 
-    # HR zones — just boundaries
     zones = garmin.get("hr_zones", {})
-    zones_str = " | ".join(f"{k}: {v['min']}–{v['max']} bpm" for k, v in zones.items() if v.get("min"))
+    zones_str = " | ".join(f"{k}: {v['min']}–{v['max']} bpm" for k, v in zones.items() if v.get("min") is not None)
 
-    # Health: last 7 days trends + averages
     health = garmin.get("health", {})
 
     def recent(series, key, n=7):
-        vals = [h[key] for h in series[-n:] if h.get(key) is not None]
-        return vals
+        return [h[key] for h in series[-n:] if h.get(key) is not None]
 
-    hrv_vals = recent(health.get("hrv", []), "hrv")
-    rhr_vals = recent(health.get("resting_hr", []), "resting_hr")
+    def fmt_series(vals):
+        avg = round(mean(vals), 1) if vals else "N/A"
+        trend = "→"
+        if len(vals) >= 2:
+            trend = "↑" if vals[-1] > vals[0] else "↓" if vals[-1] < vals[0] else "→"
+        return avg, trend, ", ".join(str(v) for v in vals)
 
-    hrv_avg  = round(mean(hrv_vals), 1)  if hrv_vals  else "N/A"
-    rhr_avg  = round(mean(rhr_vals), 1)  if rhr_vals  else "N/A"
-    hrv_trend = "↑" if len(hrv_vals) >= 2 and hrv_vals[-1] > hrv_vals[0] else ("↓" if len(hrv_vals) >= 2 and hrv_vals[-1] < hrv_vals[0] else "→")
-    rhr_trend = "↑" if len(rhr_vals) >= 2 and rhr_vals[-1] > rhr_vals[0] else ("↓" if len(rhr_vals) >= 2 and rhr_vals[-1] < rhr_vals[0] else "→")
+    hrv_avg, hrv_trend, hrv_series_str = fmt_series(recent(health.get("hrv", []), "hrv"))
+    rhr_avg, rhr_trend, rhr_series_str = fmt_series(recent(health.get("resting_hr", []), "resting_hr"))
+    sleep_avg, sleep_trend, sleep_series_str = fmt_series(recent(health.get("sleep", []), "sleep_score"))
 
-    hrv_series_str = ", ".join(str(v) for v in hrv_vals)
-    rhr_series_str = ", ".join(str(v) for v in rhr_vals)
-
-    # Activities: compact list
+    # Actividades — resumen compacto + carga acumulada real (V2, antes descargada y sin usar)
     acts = garmin.get("activities_last_3_weeks", [])
     act_lines = []
+    total_load = 0.0
     for a in acts:
         dur = int((a.get("duration_sec") or 0) // 60)
-        km  = round((a.get("distance_m") or 0) / 1000, 1)
-        hr  = a.get("avg_hr", "—")
-        act_lines.append(f"  {a['date']} | {a['type']:<22} | {dur} min | {km} km | HR avg {hr}")
+        km = round((a.get("distance_m") or 0) / 1000, 1)
+        hr = a.get("avg_hr", "—")
+        load = a.get("training_load")
+        aerobic = a.get("aerobic_effect")
+        if isinstance(load, (int, float)):
+            total_load += load
+        extra = " | ".join(
+            filter(None, [f"carga {load}" if load is not None else None, f"efecto aer. {aerobic}" if aerobic is not None else None])
+        )
+        act_lines.append(f"  {a['date']} | {a['type']:<22} | {dur} min | {km} km | HR avg {hr}" + (f" | {extra}" if extra else ""))
     acts_str = "\n".join(act_lines) if act_lines else "  (ninguna)"
 
-    # Runna plan
+    # Plan Runna — con intensidad real por sesión (V1, antes solo llegaba el nombre)
     plan = garmin.get("weekly_plan", [])
-    plan_lines = [f"  {s['date']} | {s['sport']:<10} | {s['name']}" for s in plan]
+    plan_lines = []
+    for s in plan:
+        info = summarise_session(s)
+        label = (info["intensity"] or "sin especificar").upper()
+        parts = [f"  {s.get('date')} | {s.get('sport', ''):<10} | {s.get('name', ''):<45} | {label}"]
+        if info["duration_min"]:
+            parts.append(f"~{info['duration_min']}min")
+        if info["max_zone"]:
+            parts.append(f"Z{info['max_zone']} máx")
+        if info["structure"]:
+            parts.append(info["structure"])
+        plan_lines.append(" | ".join(parts))
     plan_str = "\n".join(plan_lines) if plan_lines else "  (sin sesiones)"
 
     return f"""ZONAS FC: {zones_str}
@@ -245,11 +206,12 @@ def _summarise_garmin(garmin: dict) -> str:
 SALUD — últimos 7 días:
   HRV:      avg={hrv_avg} ms | tendencia={hrv_trend} | serie=[{hrv_series_str}]
   FC reposo: avg={rhr_avg} bpm | tendencia={rhr_trend} | serie=[{rhr_series_str}]
+  Sueño:    avg={sleep_avg}/100 | tendencia={sleep_trend} | serie=[{sleep_series_str}]
 
-ACTIVIDADES — últimas 3 semanas:
+ACTIVIDADES — últimas 3 semanas (carga de entrenamiento acumulada: {round(total_load)}):
 {acts_str}
 
-PLAN RUNNA — próximas semanas:
+PLAN RUNNA — próximas semanas (intensidad ya calculada, no la infieras del nombre):
 {plan_str}"""
 
 
@@ -275,6 +237,9 @@ IMPORTANTE: En el campo weeks_plan, usa exactamente estas fechas:
 
 {_summarise_garmin(garmin)}
 
+PLAN GIMNASIO — fechas bloqueadas, NO pongas ciclismo en ninguna de ellas:
+{strength_plan.prompt_block()}
+
 Genera el plan para las PRÓXIMAS 2 SEMANAS. Devuelve únicamente el objeto JSON."""
 
 
@@ -290,9 +255,12 @@ def _strip_fences(raw: str) -> str:
 
 def call_claude(garmin: dict, research: str) -> dict:
     """
-    OPT-2: Prompt caching — the large research context (~40KB) is sent with
-    cache_control so Anthropic caches it for 5 min. Repeat calls (retries,
-    re-runs within the same window) pay only ~10% of the token cost.
+    Llamada única a Claude, sin caché (las actualizaciones son demasiado
+    espaciadas para que un TTL de 5 min llegue a leerse — solo pagaría el
+    recargo de escritura sin contrapartida) y con un solo reintento, activado
+    únicamente si la respuesta se truncó. Con el output reducido (Claude ya
+    no genera runna_sessions ni el workout completo de ciclismo) 8.000 tokens
+    alcanzan de sobra, así que no hay una tercera llamada de "reparación".
     """
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
@@ -300,96 +268,76 @@ def call_claude(garmin: dict, research: str) -> dict:
         sys.exit(1)
 
     client = anthropic.Anthropic(api_key=api_key)
-    system_text = SYSTEM_PROMPT.format(research=research[:40000])
+    system_text = SYSTEM_PROMPT.format(research=research)
     user_msg = build_user_message(garmin)
 
-    # System prompt as list with cache_control on the large research block
-    system_blocks = [
-        {
-            "type": "text",
-            "text": system_text,
-            "cache_control": {"type": "ephemeral"},
-        }
-    ]
-
-    for max_tokens in [8000, 16000]:
+    max_tokens = 8000
+    for attempt in range(2):
         print(f"Llamando a Claude API (max_tokens={max_tokens})...")
         message = client.messages.create(
             model="claude-sonnet-4-6",
             max_tokens=max_tokens,
-            system=system_blocks,
+            system=system_text,
             messages=[{"role": "user", "content": user_msg}],
         )
-
-        raw = _strip_fences(message.content[0].text.strip())
-
-        # Log cache usage if available
-        usage = message.usage
-        if hasattr(usage, "cache_read_input_tokens") and usage.cache_read_input_tokens:
-            print(f"  → Caché hit: {usage.cache_read_input_tokens} tokens leídos del caché")
-        elif hasattr(usage, "cache_creation_input_tokens") and usage.cache_creation_input_tokens:
-            print(f"  → Caché creado: {usage.cache_creation_input_tokens} tokens almacenados")
+        log_usage(message.usage, "generate_plan")
 
         if message.stop_reason == "max_tokens":
-            print(f"  Respuesta truncada, reintentando con más tokens...")
+            print("  Respuesta truncada, reintentando con más tokens...")
+            max_tokens = 16000
             continue
 
+        raw = _strip_fences(message.content[0].text.strip())
         try:
             return json.loads(raw)
         except json.JSONDecodeError as e:
-            print(f"  JSON inválido con max_tokens={max_tokens}: {e}. Reintentando...")
+            print(f"ERROR: JSON inválido en la respuesta de Claude: {e}", file=sys.stderr)
+            raise
 
-    # Last resort: fix truncated JSON
-    print("  Solicitando corrección del JSON truncado...")
-    fix_msg = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=16000,
-        system=[{"type": "text", "text": "Eres un asistente que corrige JSON incompleto. Devuelve únicamente el JSON completo y válido, sin texto adicional."}],
-        messages=[
-            {"role": "user", "content": user_msg},
-            {"role": "assistant", "content": raw},
-            {"role": "user", "content": "El JSON está incompleto/truncado. Complétalo y devuelve el objeto JSON completo y válido."},
-        ],
-    )
-    return json.loads(_strip_fences(fix_msg.content[0].text.strip()))
+    raise RuntimeError("La respuesta de Claude se truncó incluso con max_tokens=16000.")
 
 
-def _attach_runna_workouts(plan: dict, garmin: dict) -> dict:
+def build_runna_sessions(garmin: dict) -> list[dict]:
     """
-    Pega el garmin_workout descargado (con pasos, ritmos y zonas objetivo) a cada
-    sesión de running del plan. Claude genera runna_sessions a partir del resumen
-    plano que recibe, y no reproduce fielmente la estructura del workout; en cambio,
-    fetch_garmin.py ya descargó el workout real de Garmin por workout_id. Aquí lo
-    casamos por fecha + nombre y lo adjuntamos, así el frontend (y el clasificador
-    de intensidad) ven el detalle real sin depender de que Claude lo copie.
+    Construye la lista de sesiones de Runna directamente desde
+    garmin['weekly_plan'] — Claude ya no las genera (antes las resumía a
+    partir del texto plano que recibía y no reproducía fielmente el detalle;
+    el código ya tiene el workout real descargado por fetch_garmin.py).
 
-    Es tolerante: si no hay match, la sesión queda intacta (sin garmin_workout).
+    OJO: incluye también las sesiones de ciclismo que ya estén programadas en
+    el calendario de Garmin (de una ejecución anterior) — así lo hacía la
+    versión anterior y el frontend depende de eso (ver
+    src/lib/session-dates.ts: dedupeSessions, que existe justamente porque
+    una sesión de ciclismo puede aparecer aquí Y en cycling_sessions).
     """
-    scheduled = garmin.get("weekly_plan", [])
-    # Índice por fecha → garmin_workout (la primera sesión con workout esa fecha).
-    by_date: dict[str, dict] = {}
-    for item in scheduled:
-        d = item.get("date")
-        if d and item.get("garmin_workout") and d not in by_date:
-            by_date[d] = item["garmin_workout"]
-
-    matched = 0
-    for session in plan.get("runna_sessions", []):
-        d = session.get("date")
-        if d and d in by_date and "garmin_workout" not in session:
-            session["garmin_workout"] = by_date[d]
-            session["workout_id"] = next(
-                (s.get("workout_id") for s in scheduled if s.get("date") == d and s.get("workout_id")),
-                None,
-            )
-            matched += 1
-
-    if matched:
-        print(f"Attached garmin_workout to {matched} runna session(s)")
-    return plan
+    sessions = []
+    for item in garmin.get("weekly_plan", []):
+        session = {
+            "date": item.get("date"),
+            "name": item.get("name"),
+            "sport": item.get("sport"),
+        }
+        if item.get("workout_id"):
+            session["workout_id"] = item["workout_id"]
+        if item.get("garmin_workout"):
+            session["garmin_workout"] = item["garmin_workout"]
+        sessions.append(session)
+    return sessions
 
 
-def save_outputs(plan: dict):
+def save_outputs(plan: dict, garmin: dict) -> None:
+    """
+    Construye el garmin_workout completo de cada sesión de ciclismo a partir
+    de la decisión de Claude (date/type/duration_min/rationale) antes de
+    guardar — ver build_cycling_workout.py.
+    """
+    hr_zones = garmin.get("hr_zones", {})
+    for session in plan.get("cycling_sessions", []):
+        built = build_cycling_workout.build(session, hr_zones)
+        session["name"] = built["name"]
+        session["primary_zone"] = built["primary_zone"]
+        session["garmin_workout"] = built["garmin_workout"]
+
     WORKOUTS_DIR.mkdir(parents=True, exist_ok=True)
     OUTPUT_PLAN.write_text(json.dumps(plan, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"Saved plan → {OUTPUT_PLAN}")
@@ -404,11 +352,47 @@ def save_outputs(plan: dict):
         print(f"Saved workout → {fname}")
 
 
+def attach_strength(plan: dict) -> list[str]:
+    """
+    Añade las sesiones de gimnasio al plan y saca del ciclismo cualquier día que
+    choque con ellas.
+
+    El filtro no sobra aunque el prompt ya lo prohíba: el modelo se lo saltó en
+    pruebas cuando la semana quedaba apretada, y una bici encima de la sesión
+    pesada del lunes es justo lo que este bloque intenta evitar. Devuelve la lista
+    de fechas descartadas para que main() las reporte en vez de perderlas en
+    silencio.
+    """
+    gym = strength_plan.gym_dates()
+    plan["strength_sessions"] = [
+        {
+            "date": d,
+            "session": code,
+            "title": strength_plan.SESSIONS[code]["title"],
+            "duration_min": strength_plan.SESSIONS[code]["duration_min"],
+        }
+        for d, code in sorted(gym.items())
+    ]
+
+    dropped = []
+    kept = []
+    for s in plan.get("cycling_sessions", []):
+        if s.get("date") in gym:
+            dropped.append(s["date"])
+        else:
+            kept.append(s)
+    plan["cycling_sessions"] = kept
+    return dropped
+
+
 def main():
     garmin, research = load_inputs()
     plan = call_claude(garmin, research)
-    plan = _attach_runna_workouts(plan, garmin)
-    save_outputs(plan)
+    plan["runna_sessions"] = build_runna_sessions(garmin)
+    dropped = attach_strength(plan)
+    if dropped:
+        print(f"⚠ Ciclismo descartado por chocar con gimnasio: {', '.join(dropped)}")
+    save_outputs(plan, garmin)
 
     print("\n=== WEEK SUMMARY ===")
     print(plan.get("week_summary", ""))
@@ -418,6 +402,11 @@ def main():
     print(f"\nCycling sessions added: {len(sessions)}")
     for s in sessions:
         print(f"  {s['date']} — {s['name']} ({s['duration_min']} min, {s['primary_zone']})")
+
+    strength = plan.get("strength_sessions", [])
+    print(f"\nStrength sessions: {len(strength)}")
+    for s in strength:
+        print(f"  {s['date']} — Gimnasio {s['session']}: {s['title']} ({s['duration_min']} min)")
 
     la = plan.get("load_analysis", {})
     dist = la.get("estimated_zone_distribution", {})

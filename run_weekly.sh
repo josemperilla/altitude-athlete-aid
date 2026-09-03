@@ -27,8 +27,38 @@ run_step() {
     fi
 }
 
-run_step "Fetch Garmin"     "fetch_garmin.py"
-run_step "Generar plan"     "generate_plan.py"
-run_step "Subir workouts"   "upload_workouts.py"
+run_step "Fetch Garmin"      "fetch_garmin.py"
+run_step "Generar plan"      "generate_plan.py"
+run_step "Subir workouts"    "upload_workouts.py"
+run_step "Exportar gimnasio" "export_gym_plan.py"
+
+# ── Publicación ───────────────────────────────────────────────────────────────
+# Todo lo que sigue puede fallar sin romper la semana: el plan local ya quedó
+# bien y los servicios siguen sirviendo la versión anterior. Por eso va fuera de
+# run_step, que aborta con exit 1.
+
+# El backend de Railway lee sus datos de un volumen. Se suben desde aquí y no se
+# regeneran allá a propósito: Garmin hace rate-limit por IP y desde un datacenter
+# el login se cae con 429 mucho antes que desde casa. El servidor nunca llama a
+# Garmin; solo sirve lo que este script le deja.
+echo "\n--- Sincronizar datos con el backend ---" >> "$LOG"
+sync_ok=1
+for f in garmin_data.json augmented_plan.json; do
+    if railway volume files --volume api-volume upload --overwrite \
+        "$APP_DIR/.tmp/$f" "/$f" >> "$LOG" 2>&1; then
+        echo "✓ $f subido al volumen" >> "$LOG"
+    else
+        echo "⚠ No se pudo subir $f" >> "$LOG"
+        sync_ok=0
+    fi
+done
+[ "$sync_ok" = "1" ] || echo "⚠ El backend seguirá con los datos de la semana pasada." >> "$LOG"
+
+echo "\n--- Publicar app del gimnasio ---" >> "$LOG"
+if (cd "$APP_DIR/web" && railway up --detach --service entrenador-gimnasio >> "$LOG" 2>&1); then
+    echo "✓ App del gimnasio publicada" >> "$LOG"
+else
+    echo "⚠ No se pudo publicar en Railway. El plan local sí quedó actualizado." >> "$LOG"
+fi
 
 echo "\n✓ Ejecución completada — $(date '+%Y-%m-%d %H:%M:%S')" >> "$LOG"

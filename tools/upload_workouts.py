@@ -16,9 +16,11 @@ from pathlib import Path
 import garminconnect
 from dotenv import load_dotenv
 
+from paths import data_file
+
 ROOT = Path(__file__).parent.parent
 load_dotenv(ROOT / ".env")
-WORKOUTS_DIR = ROOT / ".tmp" / "workouts"
+WORKOUTS_DIR = data_file("workouts")
 
 # ── Garmin API lookup tables ───────────────────────────────────────────────────
 STEP_TYPES = {
