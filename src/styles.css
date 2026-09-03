@@ -2,20 +2,18 @@
 @source "../src";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
-
 /*
- * Design system definition.
+ * Sistema visual v2 — "premium dark club" evolucionado.
  *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
+ * UNA sola capa de tokens: las variables de :root son la fuente de verdad y
+ * el bloque @theme inline las registra como utilidades Tailwind
+ * (bg-surface, text-muted, border-gold/30…). Antes los colores vivían en
+ * tres sitios (tokens oklch de plantilla, hex crudo, constantes de theme.ts)
+ * y un cambio de marca exigía tocarlos todos.
  *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ * La evolución sobre la piel anterior: negros con temperatura (cálidos) en
+ * vez de gris plano, alphas de borde unificados, y el "wash" dorado
+ * (rgba(233,206,169,0.1)) repetido treinta veces como token propio.
  */
 
 @theme inline {
@@ -23,136 +21,85 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
+
+  /* Superficies y texto — la paleta propia */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
   --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-ring-offset-background: var(--background);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+  --color-border-strong: var(--border-strong);
+  --color-fg: var(--text);
+  --color-muted: var(--text-muted);
+  --color-faint: var(--text-faint);
+
+  /* Marca */
+  --color-gold: var(--gold);
+  --color-gold-deep: var(--gold-deep);
+  --color-gold-light: var(--gold-light);
+
+  /* Semánticos de deporte y estado */
+  --color-run: var(--run);
+  --color-bike: var(--bike);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-err: var(--err);
+  --color-spotify: var(--spotify);
+
+  /* Compatibilidad con las utilidades de plantilla que aún se usan
+     (bg-background, text-foreground…) — apuntan a la paleta real. */
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --color-primary: var(--gold);
+  --color-primary-foreground: var(--bg);
+  --color-accent: var(--surface-2);
+  --color-accent-foreground: var(--text);
+  --color-muted-foreground: var(--text-muted);
+  --color-destructive: var(--err);
+  --color-input: var(--border);
+  --color-ring: var(--gold);
 }
 
 :root {
-  --radius: 0.625rem;
-  /* Entrenador — premium dark club */
-  --background: oklch(0.05 0.002 30);          /* #020101 */
-  --foreground: oklch(1 0 0);                  /* #FFFFFF */
-  --card: oklch(0.16 0.002 30);                /* #111111 */
-  --card-foreground: oklch(1 0 0);
-  --popover: oklch(0.16 0.002 30);
-  --popover-foreground: oklch(1 0 0);
-  --primary: oklch(0.86 0.06 80);              /* #E9CEA9 dorado arena */
-  --primary-foreground: oklch(0.05 0.002 30);
-  --secondary: oklch(0.2 0.002 30);            /* #1A1A1A */
-  --secondary-foreground: oklch(1 0 0);
-  --muted: oklch(0.2 0.002 30);
-  --muted-foreground: oklch(0.66 0 0);         /* #9A9A9A */
-  --accent: oklch(0.78 0.09 75);               /* #CEA970 dorado intenso */
-  --accent-foreground: oklch(0.05 0.002 30);
-  --destructive: oklch(0.65 0.22 27);          /* #EF4444 */
-  --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.86 0.06 80 / 0.15);
-  --input: oklch(0.2 0.002 30);
-  --ring: oklch(0.86 0.06 80);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.13 0.002 30);             /* #0D0D0D */
-  --sidebar-foreground: oklch(1 0 0);
-  --sidebar-primary: oklch(0.86 0.06 80);
-  --sidebar-primary-foreground: oklch(0.05 0.002 30);
-  --sidebar-accent: oklch(0.2 0.002 30);
-  --sidebar-accent-foreground: oklch(0.86 0.06 80);
-  --sidebar-border: oklch(0.86 0.06 80 / 0.1);
-  --sidebar-ring: oklch(0.86 0.06 80);
+  /* Superficies: negro cálido, no gris de monitor */
+  --bg: #070605;
+  --surface: #100e0c;
+  --surface-2: #181511;
 
-  /* brand palette as raw hex for fine control */
-  --bg: #020101;
-  --card-1: #111111;
-  --card-2: #1A1A1A;
-  --gold: #E9CEA9;
-  --gold-deep: #CEA970;
-  --gold-light: #FFBC7D;
-  --text: #FFFFFF;
-  --text-muted: #9A9A9A;
-  --gold-border: rgba(233,206,169,0.15);
-  --gold-border-strong: rgba(233,206,169,0.35);
-  --run: #3B82F6;
-  --bike: #10B981;
-  --err: #EF4444;
-  --warn: #FBBF24;
-  --shadow-club: 0 4px 20px rgba(0,0,0,0.4);
-}
+  /* Bordes con alpha unificada (débil / enfatizada) */
+  --border: rgba(233, 206, 169, 0.13);
+  --border-strong: rgba(233, 206, 169, 0.32);
 
-.dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  /* Texto: blanco cálido; muted cumple AA (≥6:1) sobre --surface */
+  --text: #f7f3ea;
+  --text-muted: #a8a093;
+  --text-faint: #6e675a;
+
+  /* Marca */
+  --gold: #e9cea9;
+  --gold-deep: #cea970;
+  --gold-light: #ffbc7d;
+  /* El tinte dorado de fondos activos/hover, antes copiado en cada inline */
+  --gold-wash: rgba(233, 206, 169, 0.09);
+
+  /* Semánticos */
+  --run: #3b82f6;
+  --bike: #10b981;
+  --ok: #10b981;
+  --warn: #fbbf24;
+  --err: #ef4444;
+  --spotify: #1ed760;
+
+  --shadow-club: 0 4px 24px rgba(0, 0, 0, 0.45);
+  --radius: 10px;
 }
 
 @layer base {
   * {
-    border-color: var(--color-border);
+    border-color: var(--border);
+  }
+
+  html {
+    color-scheme: dark;
   }
 
   body {
@@ -162,22 +109,38 @@
     font-weight: 400;
   }
 
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     font-family: "Hanken Grotesk", system-ui, sans-serif;
     font-weight: 800;
     letter-spacing: 0.04em;
   }
+
+  ::selection {
+    background: rgba(233, 206, 169, 0.28);
+    color: var(--text);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--gold-deep);
+    outline-offset: 2px;
+  }
 }
 
-/* Utility classes */
+/* ── Utilidades propias ────────────────────────────────────────────────────── */
+
 .club-card {
-  background: var(--card-1);
-  border: 1px solid var(--gold-border);
-  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   box-shadow: var(--shadow-club);
   transition: border-color 160ms ease;
 }
-.club-card:hover { border-color: var(--gold); }
+.club-card:hover {
+  border-color: var(--gold);
+}
 
 .btn-gold {
   background: var(--gold);
@@ -185,13 +148,43 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 0.65rem 1rem;
   transition: background-color 160ms ease;
   font-family: "Hanken Grotesk", system-ui, sans-serif;
 }
-.btn-gold:hover:not(:disabled) { background: var(--gold-deep); }
-.btn-gold:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn-gold:hover:not(:disabled) {
+  background: var(--gold-deep);
+}
+.btn-gold:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.55rem 0.9rem;
+  font-weight: 600;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease;
+}
+.btn-ghost:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+/* La etiqueta pequeña en mayúsculas que encabeza cada bloque de la app. */
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
 
 .metric-num {
   font-weight: 700;
@@ -201,204 +194,552 @@
 
 .gold-divider {
   height: 1px;
-  background: var(--gold-border);
+  background: var(--border);
   border: none;
+}
+
+/* Slider de severidad del diagnóstico (antes incrustado con <style> en JSX). */
+.gold-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  outline: none;
+}
+.gold-slider::-webkit-slider-runnable-track {
+  height: 6px;
+  background: var(--gold);
+  border-radius: 999px;
+}
+.gold-slider::-moz-range-track {
+  height: 6px;
+  background: var(--gold);
+  border-radius: 999px;
+}
+.gold-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--gold-deep);
+  border: 2px solid var(--bg);
+  cursor: pointer;
+  margin-top: -6px;
+}
+.gold-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--gold-deep);
+  border: 2px solid var(--bg);
+  cursor: pointer;
 }
 
 /* ── Gimnasio ─────────────────────────────────────────────────────────────
  *
- * Portado de la app de gimnasio que vivía aparte. Dos cosas cambian respecto
- * al original: el acento ámbar pasa a --gold, y las medidas se ajustan a esta
- * app. Lo que NO cambia son los arreglos que costaron una auditoría:
+ * Portado de la app de gimnasio que vivía aparte. Lo que NO cambia son los
+ * arreglos que costaron una auditoría:
  *
  *   - Objetivos táctiles de 44 px en todo lo que se pulsa entre series.
- *   - --text-muted (#9A9A9A) para el texto pequeño, que sobre --card-1 da
- *     6,4:1 y cumple WCAG AA de sobra. El gris más apagado del original
- *     (#64757d) se quedaba en 3,4:1.
+ *   --text-muted para el texto pequeño, que sobre las superficies da ≥6:1
+ *     y cumple WCAG AA de sobra.
  *   - La lista de reglas fija sus hijos a la columna 2. Sin eso, el detalle
  *     se auto-coloca en la fila 2 de la columna del número —40 px— y sale
  *     una palabra por línea.
  */
 
 .gym-sec {
-  display: flex; align-items: center; gap: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 24px 2px 10px;
-  font: 600 11px/1 ui-monospace, Menlo, monospace;
-  letter-spacing: .18em; text-transform: uppercase; color: var(--text-muted);
+  font:
+    600 11px/1 ui-monospace,
+    Menlo,
+    monospace;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
-.gym-sec::after { content: ""; flex: 1; height: 1px; background: var(--gold-border); }
+.gym-sec::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
 
 /* Selector de sesiones */
 .gym-seg {
-  display: flex; gap: 6px; margin: 2px 0 14px;
-  background: var(--card-1); border: 1px solid var(--gold-border);
-  border-radius: 12px; padding: 5px;
+  display: flex;
+  gap: 6px;
+  margin: 2px 0 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 5px;
 }
 .gym-seg button {
-  flex: 1; min-height: 44px;
-  background: none; border: 0; border-radius: 8px; cursor: pointer;
+  flex: 1;
+  min-height: 44px;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
   color: var(--text-muted);
   font: 600 13.5px/1.1 inherit;
 }
 .gym-seg button small {
-  display: block; font: 500 9.5px/1.6 ui-monospace, Menlo, monospace;
-  letter-spacing: .06em; text-transform: uppercase;
+  display: block;
+  font:
+    500 9.5px/1.6 ui-monospace,
+    Menlo,
+    monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 .gym-seg button[aria-selected="true"] {
-  background: rgba(233,206,169,0.1); color: var(--gold);
+  background: var(--gold-wash);
+  color: var(--gold);
 }
 
 /* Tarjeta de sesión */
-.gym-session { padding: 0; overflow: hidden; }
-.gym-session-head { padding: 16px 16px 14px; border-bottom: 1px solid var(--gold-border); }
+.gym-session {
+  padding: 0;
+  overflow: hidden;
+}
+.gym-session-head {
+  padding: 16px 16px 14px;
+  border-bottom: 1px solid var(--border);
+}
 .gym-session-head .sid {
-  display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px;
-  flex-wrap: wrap; row-gap: 6px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+  row-gap: 6px;
 }
 .gym-session-head .code {
-  font: 700 11px/1 ui-monospace, Menlo, monospace; letter-spacing: .12em;
-  background: rgba(233,206,169,0.1); color: var(--gold);
-  padding: 4px 9px; border-radius: 6px;
-  white-space: nowrap;   /* "Casa · fuerza" partía la píldora en dos */
+  font:
+    700 11px/1 ui-monospace,
+    Menlo,
+    monospace;
+  letter-spacing: 0.12em;
+  background: var(--gold-wash);
+  color: var(--gold);
+  padding: 4px 9px;
+  border-radius: 6px;
+  white-space: nowrap; /* "Casa · fuerza" partía la píldora en dos */
 }
-.gym-session-head .meta { font-size: 11.5px; color: var(--text-muted); }
+.gym-session-head .meta {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
 .gym-session-head h3 {
-  margin: 0 0 6px; font-size: 19px; font-weight: 700; letter-spacing: -.015em;
+  margin: 0 0 6px;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
   text-wrap: balance;
 }
-.gym-session-head .summary { margin: 6px 0 0; font-size: 13.5px; color: var(--text-muted); line-height: 1.55; }
+.gym-session-head .summary {
+  margin: 6px 0 0;
+  font-size: 13.5px;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
 
 .gym-block-head {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 10px 16px; background: var(--card-2);
-  font: 700 10.5px/1 ui-monospace, Menlo, monospace;
-  letter-spacing: .16em; text-transform: uppercase; color: var(--gold);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: var(--surface-2);
+  font:
+    700 10.5px/1 ui-monospace,
+    Menlo,
+    monospace;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold);
 }
-.gym-block-head .mins { color: var(--text-muted); font-weight: 500; letter-spacing: .06em; }
+.gym-block-head .mins {
+  color: var(--text-muted);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+}
 .gym-block-note {
-  padding: 8px 16px; font-size: 12.5px; color: var(--text-muted);
-  border-bottom: 1px solid var(--gold-border);
+  padding: 8px 16px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
 }
 
 /* Ejercicio */
-.gym-ex { border-bottom: 1px solid var(--gold-border); padding: 12px 0 14px; }
-.gym-ex:last-child { border-bottom: 0; }
-.gym-ex-row { display: flex; justify-content: space-between; gap: 12px; padding: 0 16px; }
-.gym-ex-id .nm { font-size: 15.5px; font-weight: 650; letter-spacing: -.01em; line-height: 1.25; }
-.gym-ex-id .tgt { margin: 2px 0 0; font-size: 12.5px; color: var(--text-muted); }
-.gym-ex-r { text-align: right; white-space: nowrap; }
-.gym-ex-r .pres { display: block; font-size: 17px; font-weight: 600; color: var(--gold); }
-.gym-ex-r .loadc { display: block; font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+.gym-ex {
+  border-bottom: 1px solid var(--border);
+  padding: 12px 0 14px;
+}
+.gym-ex:last-child {
+  border-bottom: 0;
+}
+.gym-ex-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 16px;
+}
+.gym-ex-id .nm {
+  font-size: 15.5px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+.gym-ex-id .tgt {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+.gym-ex-r {
+  text-align: right;
+  white-space: nowrap;
+}
+.gym-ex-r .pres {
+  display: block;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--gold);
+}
+.gym-ex-r .loadc {
+  display: block;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
 
 .gym-anim {
-  margin: 10px 16px 0; border-radius: 10px; background: var(--bg);
-  border: 1px solid var(--gold-border); aspect-ratio: 2 / 1; overflow: hidden;
+  margin: 10px 16px 0;
+  border-radius: 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  aspect-ratio: 2 / 1;
+  overflow: hidden;
 }
-.gym-anim svg { width: 100%; height: 100%; display: block; }
+.gym-anim svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
 
 /* Semántica de las ilustraciones: escenografía neutra, aparato en contorno,
    carga sólida. Es lo que deja ver de un vistazo qué hay que ir a buscar. */
-.gym-anim .limb { fill: var(--text); stroke: none; }
-.gym-anim .limb.far { fill: var(--text-muted); }
-.gym-anim .head { fill: var(--text); stroke: none; }
-.gym-anim .ground { stroke: var(--gold-border-strong); stroke-width: 2; }
-.gym-anim .prop { fill: var(--card-2); stroke: var(--text-muted); stroke-width: 1.5; }
-.gym-anim .prop-line { stroke: var(--text-muted); stroke-width: 2.5; stroke-dasharray: 4 3; }
-.gym-anim .prop.gear { fill: rgba(233,206,169,0.08); stroke: var(--gold); stroke-width: 1.8; }
-.gym-anim .prop-line.gear { stroke: var(--gold); stroke-width: 3; stroke-dasharray: none; }
-.gym-anim .prop.load { fill: var(--gold); stroke: none; }
-.gym-anim .band { stroke: var(--gold); stroke-width: 2.4; stroke-linecap: round; }
-.gym-anim .load-bar { stroke: var(--gold); stroke-width: 2.6; stroke-linecap: round; }
-.gym-anim .load-plate { fill: var(--gold); }
-.gym-anim .trail { fill: none; stroke: var(--gold); stroke-width: 2; opacity: .45; stroke-linecap: round; stroke-linejoin: round; }
-.gym-anim .arch { stroke: var(--text); stroke-width: 6.5; fill: none; stroke-linecap: round; }
-.gym-anim .arch-base { stroke: var(--text-muted); stroke-width: 1.5; stroke-dasharray: 3 4; }
+.gym-anim .limb {
+  fill: var(--text);
+  stroke: none;
+}
+.gym-anim .limb.far {
+  fill: var(--text-muted);
+}
+.gym-anim .head {
+  fill: var(--text);
+  stroke: none;
+}
+.gym-anim .ground {
+  stroke: var(--border-strong);
+  stroke-width: 2;
+}
+.gym-anim .prop {
+  fill: var(--surface-2);
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+}
+.gym-anim .prop-line {
+  stroke: var(--text-muted);
+  stroke-width: 2.5;
+  stroke-dasharray: 4 3;
+}
+.gym-anim .prop.gear {
+  fill: var(--gold-wash);
+  stroke: var(--gold);
+  stroke-width: 1.8;
+}
+.gym-anim .prop-line.gear {
+  stroke: var(--gold);
+  stroke-width: 3;
+  stroke-dasharray: none;
+}
+.gym-anim .prop.load {
+  fill: var(--gold);
+  stroke: none;
+}
+.gym-anim .band {
+  stroke: var(--gold);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+.gym-anim .load-bar {
+  stroke: var(--gold);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+}
+.gym-anim .load-plate {
+  fill: var(--gold);
+}
+.gym-anim .trail {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 2;
+  opacity: 0.45;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.gym-anim .arch {
+  stroke: var(--text);
+  stroke-width: 6.5;
+  fill: none;
+  stroke-linecap: round;
+}
+.gym-anim .arch-base {
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 4;
+}
 
 /* Guía de carga compacta */
 .gym-load {
-  margin: 10px 16px 0; padding: 10px 12px;
-  background: var(--card-2); border-left: 2px solid var(--gold);
+  margin: 10px 16px 0;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border-left: 2px solid var(--gold);
   border-radius: 0 8px 8px 0;
-  display: grid; grid-template-columns: auto 1fr; gap: 4px 12px;
-  font-size: 13px; line-height: 1.5;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  font-size: 13px;
+  line-height: 1.5;
 }
 .gym-load dt {
-  font: 600 10px/1.5 ui-monospace, Menlo, monospace;
-  letter-spacing: .12em; text-transform: uppercase; color: var(--gold);
+  font:
+    600 10px/1.5 ui-monospace,
+    Menlo,
+    monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
 }
-.gym-load dd { margin: 0; color: var(--text-muted); }
-.gym-load dd b { color: var(--text); font-weight: 600; }
+.gym-load dd {
+  margin: 0;
+  color: var(--text-muted);
+}
+.gym-load dd b {
+  color: var(--text);
+  font-weight: 600;
+}
 
 /* Desplegable */
 .gym-more {
-  display: block; width: calc(100% - 32px); min-height: 44px;
+  display: block;
+  width: calc(100% - 32px);
+  min-height: 44px;
   margin: 10px 16px 0;
-  background: none; border: 1px dashed var(--gold-border-strong);
-  border-radius: 9px; cursor: pointer;
-  color: var(--text-muted); font: 600 11.5px/1 ui-monospace, Menlo, monospace;
-  letter-spacing: .08em;
+  background: none;
+  border: 1px dashed var(--border-strong);
+  border-radius: 9px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font:
+    600 11.5px/1 ui-monospace,
+    Menlo,
+    monospace;
+  letter-spacing: 0.08em;
 }
-.gym-more:hover { background: var(--card-2); color: var(--text); }
+.gym-more:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
 
-.gym-ex-body { padding: 10px 16px 4px; }
+.gym-ex-body {
+  padding: 10px 16px 4px;
+}
 .gym-ex-body h4 {
-  margin: 10px 0 7px; font: 700 10px/1 ui-monospace, Menlo, monospace;
-  letter-spacing: .16em; text-transform: uppercase; color: var(--gold);
+  margin: 10px 0 7px;
+  font:
+    700 10px/1 ui-monospace,
+    Menlo,
+    monospace;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold);
 }
-.gym-ex-body h4.bad { color: var(--err); }
-.gym-ex-body ul { margin: 0; padding-left: 18px; }
-.gym-ex-body li { font-size: 13.5px; line-height: 1.6; color: var(--text-muted); margin-bottom: 6px; }
-.gym-ex-body li::marker { color: var(--gold); }
-.gym-ex-body ul.bad li::marker { color: var(--err); }
+.gym-ex-body h4.bad {
+  color: var(--err);
+}
+.gym-ex-body ul {
+  margin: 0;
+  padding-left: 18px;
+}
+.gym-ex-body li {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.gym-ex-body li::marker {
+  color: var(--gold);
+}
+.gym-ex-body ul.bad li::marker {
+  color: var(--err);
+}
 .gym-alt {
-  margin: 10px 0; padding: 9px 12px; font-size: 13px; color: var(--text-muted);
-  background: var(--card-2); border-left: 2px solid var(--gold-deep); border-radius: 0 8px 8px 0;
+  margin: 10px 0;
+  padding: 9px 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  border-left: 2px solid var(--gold-deep);
+  border-radius: 0 8px 8px 0;
 }
 
-.gym-load-full { margin-top: 12px; }
-.gym-load-full dl { margin: 0; display: grid; gap: 6px 14px; }
-.gym-load-full dl > div { display: grid; grid-template-columns: 92px 1fr; gap: 14px; }
+.gym-load-full {
+  margin-top: 12px;
+}
+.gym-load-full dl {
+  margin: 0;
+  display: grid;
+  gap: 6px 14px;
+}
+.gym-load-full dl > div {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 14px;
+}
 .gym-load-full dt {
-  font: 600 10px/1.5 ui-monospace, Menlo, monospace;
-  letter-spacing: .12em; text-transform: uppercase; color: var(--gold);
+  font:
+    600 10px/1.5 ui-monospace,
+    Menlo,
+    monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
 }
-.gym-load-full dd { margin: 0; font-size: 13.5px; color: var(--text-muted); line-height: 1.55; }
+.gym-load-full dd {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
 
-.gym-refpair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.gym-refpair figure { margin: 0; }
-.gym-refpair img { width: 100%; border-radius: 8px; display: block; border: 1px solid var(--gold-border); }
-.gym-refpair figcaption {
-  margin-top: 5px; text-align: center;
-  font: 500 10px/1 ui-monospace, Menlo, monospace;
-  letter-spacing: .14em; text-transform: uppercase; color: var(--text-muted);
+.gym-refpair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
-.gym-caveat { margin: 8px 0 0; font-size: 12.5px; color: var(--text-muted); line-height: 1.5; }
+.gym-refpair figure {
+  margin: 0;
+}
+.gym-refpair img {
+  width: 100%;
+  border-radius: 8px;
+  display: block;
+  border: 1px solid var(--border);
+}
+.gym-refpair figcaption {
+  margin-top: 5px;
+  text-align: center;
+  font:
+    500 10px/1 ui-monospace,
+    Menlo,
+    monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.gym-caveat {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
 
 /* Cómo elegir el peso */
-.gym-pick { margin-top: 16px; overflow: hidden; }
-.gym-pick-head {
-  width: 100%; min-height: 44px;
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 13px 16px; background: none; border: 0; cursor: pointer;
-  color: var(--text); font-size: 14px; font-weight: 700;
+.gym-pick {
+  margin-top: 16px;
+  overflow: hidden;
 }
-.gym-pick-head .chev { color: var(--gold); font-size: 11px; }
-.gym-pick-body { margin: 0; padding: 0 16px 14px 34px; }
-.gym-pick-body li { font-size: 13px; line-height: 1.6; color: var(--text-muted); margin-bottom: 7px; }
-.gym-pick-body li::marker { color: var(--gold); font-weight: 600; }
+.gym-pick-head {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 13px 16px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+}
+.gym-pick-head .chev {
+  color: var(--gold);
+  font-size: 11px;
+}
+.gym-pick-body {
+  margin: 0;
+  padding: 0 16px 14px 34px;
+}
+.gym-pick-body li {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  margin-bottom: 7px;
+}
+.gym-pick-body li::marker {
+  color: var(--gold);
+  font-weight: 600;
+}
 
 /* Reglas */
-.gym-rules { list-style: none; counter-reset: r; padding: 4px 16px; margin: 0; }
-.gym-rules li {
-  counter-increment: r; display: grid; grid-template-columns: 40px 1fr;
-  column-gap: 12px; row-gap: 3px;
-  padding: 14px 0; border-bottom: 1px solid var(--gold-border);
+.gym-rules {
+  list-style: none;
+  counter-reset: r;
+  padding: 4px 16px;
+  margin: 0;
 }
-.gym-rules li:last-child { border-bottom: 0; }
+.gym-rules li {
+  counter-increment: r;
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  column-gap: 12px;
+  row-gap: 3px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.gym-rules li:last-child {
+  border-bottom: 0;
+}
 .gym-rules li::before {
   content: counter(r, decimal-leading-zero);
-  grid-column: 1; grid-row: 1 / span 2;
-  font: 600 15px ui-monospace, Menlo, monospace; color: var(--gold); padding-top: 2px;
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  font:
+    600 15px ui-monospace,
+    Menlo,
+    monospace;
+  color: var(--gold);
+  padding-top: 2px;
 }
-.gym-rules b { grid-column: 2; font-size: 15px; font-weight: 650; line-height: 1.35; }
-.gym-rules span { grid-column: 2; font-size: 13.5px; color: var(--text-muted); line-height: 1.6; }
+.gym-rules b {
+  grid-column: 2;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+.gym-rules span {
+  grid-column: 2;
+  font-size: 13.5px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}

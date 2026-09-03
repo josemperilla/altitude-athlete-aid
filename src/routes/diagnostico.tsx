@@ -141,13 +141,6 @@ function DiagnosticoPage() {
 
       {mut.data && <DiagnoseResultView result={mut.data} />}
 
-      <style>{`
-        .gold-slider { -webkit-appearance:none; appearance:none; height:6px; border-radius:999px; background:#1A1A1A; outline:none; }
-        .gold-slider::-webkit-slider-runnable-track { height:6px; background:#E9CEA9; border-radius:999px; }
-        .gold-slider::-moz-range-track { height:6px; background:#E9CEA9; border-radius:999px; }
-        .gold-slider::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:18px; height:18px; border-radius:50%; background:#CEA970; border:2px solid #020101; cursor:pointer; margin-top:-6px; }
-        .gold-slider::-moz-range-thumb { width:18px; height:18px; border-radius:50%; background:#CEA970; border:2px solid #020101; cursor:pointer; }
-      `}</style>
     </PageShell>
   );
 }
