@@ -23,12 +23,12 @@ const SEG = {
   shin: 22,
   thigh: 22,
   trunk: 26,
-  neck: 11,     // hombro → centro de la cabeza
-  head: 6.5,    // radio
+  neck: 11, // hombro → centro de la cabeza
+  head: 6.5, // radio
   uarm: 12,
   farm: 12,
-  toe: 11,      // tobillo → punta
-  heel: 6,      // tobillo → talón
+  toe: 11, // tobillo → punta
+  heel: 6, // tobillo → talón
 };
 
 const rad = (d) => (d * Math.PI) / 180;
@@ -53,7 +53,10 @@ function solveStand(p) {
   const footDeg = p.foot ?? 0;
   let ankle;
   if (p.toe) {
-    ankle = [p.toe[0] - SEG.toe * Math.cos(rad(footDeg)), p.toe[1] - SEG.toe * Math.sin(rad(footDeg))];
+    ankle = [
+      p.toe[0] - SEG.toe * Math.cos(rad(footDeg)),
+      p.toe[1] - SEG.toe * Math.sin(rad(footDeg)),
+    ];
   } else {
     ankle = p.ankle;
   }
@@ -85,7 +88,7 @@ function solveStand(p) {
 }
 
 function solve(pose) {
-  return pose.mode === 'raw' ? pose.joints : solveStand(pose);
+  return pose.mode === "raw" ? pose.joints : solveStand(pose);
 }
 
 // ── Interpolación ────────────────────────────────────────────────────────────
@@ -108,10 +111,18 @@ function lerpPt(a, b, t) {
 // Jerarquía hueso a hueso: [padre, hijo]. La longitud no va aquí porque las
 // poses raw traen coordenadas propias: se mide de cada pose resuelta.
 const BONES = [
-  ['ankle', 'knee'], ['knee', 'hip'], ['hip', 'sh'], ['sh', 'head'],
-  ['sh', 'el'], ['el', 'hand'],
-  ['ankle', 'toe'], ['ankle', 'heel'],
-  ['hip', 'knee2'], ['knee2', 'ankle2'], ['ankle2', 'toe2'], ['ankle2', 'heel2'],
+  ["ankle", "knee"],
+  ["knee", "hip"],
+  ["hip", "sh"],
+  ["sh", "head"],
+  ["sh", "el"],
+  ["el", "hand"],
+  ["ankle", "toe"],
+  ["ankle", "heel"],
+  ["hip", "knee2"],
+  ["knee2", "ankle2"],
+  ["ankle2", "toe2"],
+  ["ankle2", "heel2"],
 ];
 
 /**
@@ -139,7 +150,10 @@ function blendPose(A, B, t) {
     done.add(j);
     let parent = null;
     for (const [p, c] of BONES) {
-      if (c === j && A[c] && B[c] && A[p] && B[p]) { parent = p; break; }
+      if (c === j && A[c] && B[c] && A[p] && B[p]) {
+        parent = p;
+        break;
+      }
     }
     if (!parent) return (out[j] = lerpPt(A[j], B[j], t));
 
@@ -193,10 +207,10 @@ function buildTimeline(spec, n) {
   const holds = spec.holds || [];
   const duration = spec.duration || 2600;
 
-  const segs = [];  // {from, to, weight, ms, ease}
+  const segs = []; // {from, to, weight, ms, ease}
   const stops = []; // {pose, ms} — pausa al llegar a esa pose
 
-  if (spec.loop === 'cycle') {
+  if (spec.loop === "cycle") {
     const ws = spec.weights || [];
     const es = spec.ease || [];
     for (let i = 0; i < n; i++) {
@@ -211,14 +225,30 @@ function buildTimeline(spec, n) {
     // P0…Pn−1 y de regreso Pn−2…P0. La pausa de la pose profunda la aporta el
     // primer stop de la vuelta — agregarla también aquí la duplicaba y, con
     // ella, el regreso de golpe al fondo cada ciclo.
-    const sumF = Math.max(1e-6, wFwd.reduce((s, x) => s + (x ?? 1), 0));
-    const sumB = Math.max(1e-6, wBack.reduce((s, x) => s + (x ?? 1), 0));
+    const sumF = Math.max(
+      1e-6,
+      wFwd.reduce((s, x) => s + (x ?? 1), 0),
+    );
+    const sumB = Math.max(
+      1e-6,
+      wBack.reduce((s, x) => s + (x ?? 1), 0),
+    );
     for (let i = 0; i < n - 1; i++) {
-      segs.push({ from: i, to: i + 1, ms: (duration * (wFwd[i] ?? 1)) / sumF, ease: EASE[eFwd[i]] || EASE.io });
+      segs.push({
+        from: i,
+        to: i + 1,
+        ms: (duration * (wFwd[i] ?? 1)) / sumF,
+        ease: EASE[eFwd[i]] || EASE.io,
+      });
       stops.push({ pose: i, ms: holds[i] || 0 });
     }
     for (let i = 0; i < n - 1; i++) {
-      segs.push({ from: n - 1 - i, to: n - 2 - i, ms: (duration * (wBack[i] ?? 1)) / sumB, ease: EASE[eBack[i]] || EASE.io });
+      segs.push({
+        from: n - 1 - i,
+        to: n - 2 - i,
+        ms: (duration * (wBack[i] ?? 1)) / sumB,
+        ease: EASE[eBack[i]] || EASE.io,
+      });
       stops.push({ pose: n - 1 - i, ms: holds[n - 1 - i] || 0 });
     }
     stops.push({ pose: 0, ms: holds[0] || 0 });
@@ -253,7 +283,7 @@ function sampleTimeline(tl, elapsed) {
 
 // ── Dibujo ───────────────────────────────────────────────────────────────────
 
-const NS = 'http://www.w3.org/2000/svg';
+const NS = "http://www.w3.org/2000/svg";
 
 function el(tag, attrs) {
   const node = document.createElementNS(NS, tag);
@@ -272,25 +302,38 @@ function el(tag, attrs) {
  *               .load-plate, que es lo que ya dibuja la barra y las mancuernas.
  */
 function propClass(p, base) {
-  return p.kind === 'gear' || p.kind === 'load' ? `${base} ${p.kind}` : base;
+  return p.kind === "gear" || p.kind === "load" ? `${base} ${p.kind}` : base;
 }
 
 function drawProps(svg, props = []) {
   for (const p of props) {
-    if (p.type === 'box') {
-      svg.appendChild(el('rect', {
-        x: p.x, y: p.y, width: p.w, height: p.h, rx: 1.5, class: propClass(p, 'prop'),
-      }));
-    } else if (p.type === 'line') {
-      svg.appendChild(el('line', {
-        x1: p.x1, y1: p.y1, x2: p.x2, y2: p.y2, class: propClass(p, 'prop-line'),
-      }));
+    if (p.type === "box") {
+      svg.appendChild(
+        el("rect", {
+          x: p.x,
+          y: p.y,
+          width: p.w,
+          height: p.h,
+          rx: 1.5,
+          class: propClass(p, "prop"),
+        }),
+      );
+    } else if (p.type === "line") {
+      svg.appendChild(
+        el("line", {
+          x1: p.x1,
+          y1: p.y1,
+          x2: p.x2,
+          y2: p.y2,
+          class: propClass(p, "prop-line"),
+        }),
+      );
     }
   }
 }
 
 function polyline(pts, cls) {
-  return el('polyline', { points: pts.map((p) => p.join(',')).join(' '), class: cls });
+  return el("polyline", { points: pts.map((p) => p.join(",")).join(" "), class: cls });
 }
 
 // Grosor de cada hueso en su extremo proximal y distal. Un muslo que sale ancho
@@ -309,7 +352,7 @@ const BONE = {
  * para que las articulaciones queden redondeadas y los huesos contiguos se
  * fundan sin costura visible.
  */
-function bone(g, a, b, [wa, wb], cls = 'limb') {
+function bone(g, a, b, [wa, wb], cls = "limb") {
   const dx = b[0] - a[0];
   const dy = b[1] - a[1];
   const len = Math.hypot(dx, dy) || 1;
@@ -321,13 +364,13 @@ function bone(g, a, b, [wa, wb], cls = 'limb') {
     [b[0] - nx * wb, b[1] - ny * wb],
     [a[0] - nx * wa, a[1] - ny * wa],
   ];
-  g.appendChild(el('polygon', { points: pts.map((p) => p.join(',')).join(' '), class: cls }));
-  g.appendChild(el('circle', { cx: a[0], cy: a[1], r: wa, class: cls }));
-  g.appendChild(el('circle', { cx: b[0], cy: b[1], r: wb, class: cls }));
+  g.appendChild(el("polygon", { points: pts.map((p) => p.join(",")).join(" "), class: cls }));
+  g.appendChild(el("circle", { cx: a[0], cy: a[1], r: wa, class: cls }));
+  g.appendChild(el("circle", { cx: b[0], cy: b[1], r: wb, class: cls }));
 }
 
 /** Tronco: hombros anchos, cintura estrecha. */
-function torso(g, sh, hip, s = 1, cls = 'limb') {
+function torso(g, sh, hip, s = 1, cls = "limb") {
   const dx = hip[0] - sh[0];
   const dy = hip[1] - sh[1];
   const len = Math.hypot(dx, dy) || 1;
@@ -346,13 +389,13 @@ function torso(g, sh, hip, s = 1, cls = 'limb') {
     [mx - nx * wm, my - ny * wm],
     [sh[0] - nx * ws, sh[1] - ny * ws],
   ];
-  g.appendChild(el('polygon', { points: pts.map((p) => p.join(',')).join(' '), class: cls }));
-  g.appendChild(el('circle', { cx: sh[0], cy: sh[1], r: ws, class: cls }));
-  g.appendChild(el('circle', { cx: hip[0], cy: hip[1], r: wh, class: cls }));
+  g.appendChild(el("polygon", { points: pts.map((p) => p.join(",")).join(" "), class: cls }));
+  g.appendChild(el("circle", { cx: sh[0], cy: sh[1], r: ws, class: cls }));
+  g.appendChild(el("circle", { cx: hip[0], cy: hip[1], r: wh, class: cls }));
 }
 
 /** Pie: cuña del talón a la punta, más gruesa atrás. */
-function foot(g, heel, ankle, toe, s = 1, cls = 'limb') {
+function foot(g, heel, ankle, toe, s = 1, cls = "limb") {
   bone(g, heel, ankle, [3.4 * s, 3.4 * s], cls);
   bone(g, ankle, toe, [3.4 * s, 2.2 * s], cls);
 }
@@ -365,16 +408,25 @@ function foot(g, heel, ankle, toe, s = 1, cls = 'limb') {
  * línea ES la altura del arco, y sin ella el ojo no tiene contra qué medir.
  */
 function archCloseup(g, heel, ankle, toe, s = 1) {
-  g.appendChild(el('line', {
-    x1: heel[0], y1: heel[1], x2: toe[0], y2: toe[1], class: 'arch-base',
-  }));
+  g.appendChild(
+    el("line", {
+      x1: heel[0],
+      y1: heel[1],
+      x2: toe[0],
+      y2: toe[1],
+      class: "arch-base",
+    }),
+  );
   const cx = 2 * ankle[0] - (heel[0] + toe[0]) / 2;
   const cy = 2 * ankle[1] - (heel[1] + toe[1]) / 2;
-  g.appendChild(el('path', {
-    d: `M ${heel[0]} ${heel[1]} Q ${cx} ${cy} ${toe[0]} ${toe[1]}`, class: 'limb arch',
-    style: `stroke-width:${6.5 * s}`,
-  }));
-  g.appendChild(el('circle', { cx: ankle[0], cy: ankle[1], r: 3.2 * s, class: 'limb' }));
+  g.appendChild(
+    el("path", {
+      d: `M ${heel[0]} ${heel[1]} Q ${cx} ${cy} ${toe[0]} ${toe[1]}`,
+      class: "limb arch",
+      style: `stroke-width:${6.5 * s}`,
+    }),
+  );
+  g.appendChild(el("circle", { cx: ankle[0], cy: ankle[1], r: 3.2 * s, class: "limb" }));
 }
 
 /**
@@ -394,7 +446,7 @@ function archCloseup(g, heel, ankle, toe, s = 1) {
 const DEFAULT_WIDTH = 0.82;
 
 function renderFrame(j, spec, trailPts) {
-  const g = el('g', {});
+  const g = el("g", {});
   const S = spec.width ?? DEFAULT_WIDTH;
   // Tolerante a articulaciones ausentes: los primeros planos (el arco del pie)
   // sólo declaran tobillo, talón y punta, y no deben pintar un cuerpo degenerado.
@@ -402,29 +454,73 @@ function renderFrame(j, spec, trailPts) {
 
   // Estela de la trayectoria (barra, mano): detrás de la figura para que la
   // figura pase por encima y la estela se lea como el camino recorrido.
-  if (trailPts && trailPts.length > 1) g.appendChild(polyline(trailPts, 'trail'));
+  if (trailPts && trailPts.length > 1) g.appendChild(polyline(trailPts, "trail"));
 
   if (j.knee2) {
     // La pierna de atrás se pinta primero y en un tono más apagado: sin eso las
     // dos piernas se confunden en una sola masa y no se entiende cuál trabaja.
-    if (has('hip', 'knee2')) bone(g, j.hip, j.knee2, BONE.thigh.map((w) => w * S), 'limb far');
-    if (has('knee2', 'ankle2')) bone(g, j.knee2, j.ankle2, BONE.shin.map((w) => w * S), 'limb far');
-    if (has('heel2', 'ankle2', 'toe2')) foot(g, j.heel2, j.ankle2, j.toe2, S, 'limb far');
+    if (has("hip", "knee2"))
+      bone(
+        g,
+        j.hip,
+        j.knee2,
+        BONE.thigh.map((w) => w * S),
+        "limb far",
+      );
+    if (has("knee2", "ankle2"))
+      bone(
+        g,
+        j.knee2,
+        j.ankle2,
+        BONE.shin.map((w) => w * S),
+        "limb far",
+      );
+    if (has("heel2", "ankle2", "toe2")) foot(g, j.heel2, j.ankle2, j.toe2, S, "limb far");
   }
 
-  if (has('heel', 'ankle', 'toe') && !j.knee) {
+  if (has("heel", "ankle", "toe") && !j.knee) {
     archCloseup(g, j.heel, j.ankle, j.toe, S);
   } else {
-    if (has('sh', 'hip')) torso(g, j.sh, j.hip, S);
-    if (has('hip', 'knee')) bone(g, j.hip, j.knee, BONE.thigh.map((w) => w * S));
-    if (has('knee', 'ankle')) bone(g, j.knee, j.ankle, BONE.shin.map((w) => w * S));
-    if (has('heel', 'ankle', 'toe')) foot(g, j.heel, j.ankle, j.toe, S);
-    if (has('sh', 'head')) bone(g, j.sh, j.head, BONE.neck.map((w) => w * S));
-    if (has('sh', 'el')) bone(g, j.sh, j.el, BONE.uarm.map((w) => w * S));
-    if (has('el', 'hand')) bone(g, j.el, j.hand, BONE.farm.map((w) => w * S));
+    if (has("sh", "hip")) torso(g, j.sh, j.hip, S);
+    if (has("hip", "knee"))
+      bone(
+        g,
+        j.hip,
+        j.knee,
+        BONE.thigh.map((w) => w * S),
+      );
+    if (has("knee", "ankle"))
+      bone(
+        g,
+        j.knee,
+        j.ankle,
+        BONE.shin.map((w) => w * S),
+      );
+    if (has("heel", "ankle", "toe")) foot(g, j.heel, j.ankle, j.toe, S);
+    if (has("sh", "head"))
+      bone(
+        g,
+        j.sh,
+        j.head,
+        BONE.neck.map((w) => w * S),
+      );
+    if (has("sh", "el"))
+      bone(
+        g,
+        j.sh,
+        j.el,
+        BONE.uarm.map((w) => w * S),
+      );
+    if (has("el", "hand"))
+      bone(
+        g,
+        j.el,
+        j.hand,
+        BONE.farm.map((w) => w * S),
+      );
 
     if (j.head) {
-      g.appendChild(el('circle', { cx: j.head[0], cy: j.head[1], r: SEG.head * S, class: 'head' }));
+      g.appendChild(el("circle", { cx: j.head[0], cy: j.head[1], r: SEG.head * S, class: "head" }));
     }
   }
 
@@ -435,7 +531,7 @@ function renderFrame(j, spec, trailPts) {
     // Cada extremo es o un punto fijo ([x, y], un anclaje) o el nombre de una
     // articulación, que es como la banda del monster walk se estira sola al
     // abrirse la pierna.
-    const end = (e) => (typeof e === 'string' ? j[e] : e);
+    const end = (e) => (typeof e === "string" ? j[e] : e);
     const a = end(spec.band.from);
     const b = end(spec.band.to);
     if (a && b) {
@@ -443,27 +539,53 @@ function renderFrame(j, spec, trailPts) {
       // realidad sobre la pantorrilla baja, y ahí además no se confunde con la
       // silueta del pie.
       const lift = spec.band.lift || 0;
-      g.appendChild(el('line', {
-        x1: a[0], y1: a[1] - lift, x2: b[0], y2: b[1] - lift, class: 'band',
-      }));
+      g.appendChild(
+        el("line", {
+          x1: a[0],
+          y1: a[1] - lift,
+          x2: b[0],
+          y2: b[1] - lift,
+          class: "band",
+        }),
+      );
     }
   }
 
   // Carga. Va al final para que se vea encima de las manos.
-  if (spec.load === 'bar') {
-    const anchor = spec.loadAt === 'sh' ? j.sh : j.hand;
-    g.appendChild(el('line', {
-      x1: anchor[0] - 15, y1: anchor[1], x2: anchor[0] + 15, y2: anchor[1], class: 'load-bar',
-    }));
+  if (spec.load === "bar") {
+    const anchor = spec.loadAt === "sh" ? j.sh : j.hand;
+    g.appendChild(
+      el("line", {
+        x1: anchor[0] - 15,
+        y1: anchor[1],
+        x2: anchor[0] + 15,
+        y2: anchor[1],
+        class: "load-bar",
+      }),
+    );
     for (const dx of [-13, 13]) {
-      g.appendChild(el('rect', {
-        x: anchor[0] + dx - 1.6, y: anchor[1] - 6, width: 3.2, height: 12, rx: 1, class: 'load-plate',
-      }));
+      g.appendChild(
+        el("rect", {
+          x: anchor[0] + dx - 1.6,
+          y: anchor[1] - 6,
+          width: 3.2,
+          height: 12,
+          rx: 1,
+          class: "load-plate",
+        }),
+      );
     }
-  } else if (spec.load === 'db') {
-    g.appendChild(el('rect', {
-      x: j.hand[0] - 2, y: j.hand[1] - 5.5, width: 4, height: 11, rx: 1.4, class: 'load-plate',
-    }));
+  } else if (spec.load === "db") {
+    g.appendChild(
+      el("rect", {
+        x: j.hand[0] - 2,
+        y: j.hand[1] - 5.5,
+        width: 4,
+        height: 11,
+        rx: 1.4,
+        class: "load-plate",
+      }),
+    );
   }
 
   return g;
@@ -482,9 +604,9 @@ export function animate(svg, spec) {
   const n = poses.length;
   // Con margen arriba: al exagerar la altura de los saltos (pogos, cajón) la
   // cabeza se salía por el borde superior y la figura aparecía decapitada.
-  const view = spec.view || '-3 -20 136 142';
-  svg.setAttribute('viewBox', view);
-  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  const view = spec.view || "-3 -20 136 142";
+  svg.setAttribute("viewBox", view);
+  svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
 
   const tl = buildTimeline(spec, n);
 
@@ -494,7 +616,7 @@ export function animate(svg, spec) {
   const trail = [];
   const TRAIL_MAX = 34;
 
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   function draw(joints) {
     if (spec.trail && joints[spec.trail]) {
@@ -514,14 +636,20 @@ export function animate(svg, spec) {
   }
 
   function frame(now) {
-    const base = svg.querySelector('.base');
+    const base = svg.querySelector(".base");
     if (!base) {
       // El <svg> se reconstruye entero la primera vez: fondo, suelo y props.
-      const b = el('g', { class: 'base' });
+      const b = el("g", { class: "base" });
       if (spec.ground !== false) {
-        b.appendChild(el('line', {
-          x1: 4, y1: spec.groundY ?? 104, x2: 126, y2: spec.groundY ?? 104, class: 'ground',
-        }));
+        b.appendChild(
+          el("line", {
+            x1: 4,
+            y1: spec.groundY ?? 104,
+            x2: 126,
+            y2: spec.groundY ?? 104,
+            class: "ground",
+          }),
+        );
       }
       svg.appendChild(b);
       drawProps(b, spec.props);

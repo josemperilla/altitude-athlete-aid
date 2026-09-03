@@ -3,17 +3,16 @@ import { useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { deriveIntensity, deriveSport, type IntensityLevel } from "@/lib/spotify-intensity";
 import { sessionDate } from "@/lib/session-dates";
-import { extractSteps, mmss, stepLabel, stepMeasure } from "@/lib/workout-steps";
+import { extractSteps, mmss, stepLabel, stepMeasure, type Step } from "@/lib/workout-steps";
 import { garminQO } from "@/lib/api";
-import type { GarminData } from "@/lib/schemas";
-import { BIKE, CARD_1, ERR, GOLD, MUTED, PANEL, RUN, WARN } from "@/lib/theme";
+import type { GarminData, PlanSession } from "@/lib/schemas";
 import { PlaylistControl } from "./PlaylistControl";
 
-const SPORT_COLOR = { running: RUN, cycling: BIKE } as const;
+const SPORT_COLOR = { running: "var(--run)", cycling: "var(--bike)" } as const;
 const INTENSITY_COLOR: Record<IntensityLevel, string> = {
-  baja: BIKE,
-  moderada: WARN,
-  alta: ERR,
+  baja: "var(--bike)",
+  moderada: "var(--warn)",
+  alta: "var(--err)",
 };
 
 /** Ritmo: Garmin lo entrega en m/s, y más rápido es un valor más alto. */
@@ -26,7 +25,7 @@ function paceRange(lo: number, hi: number): string {
     : `${mmss(1000 / fast)}–${mmss(1000 / slow)} /km`;
 }
 
-function stepTarget(step: any): string | null {
+function stepTarget(step: Step): string | null {
   const key = String(step?.targetType?.workoutTargetTypeKey ?? "").toLowerCase();
   const lo = Number(step?.targetValueOne);
   const hi = Number(step?.targetValueTwo);
@@ -43,7 +42,7 @@ function stepTarget(step: any): string | null {
 }
 
 /** Zona escrita en la descripción del paso ("FC: 100–125 bpm (Z1)"). */
-function stepZone(step: any): string | null {
+function stepZone(step: Step): string | null {
   const m = /\bz\s?([1-5])\b/i.exec(String(step?.description ?? ""));
   return m ? `Z${m[1]}` : null;
 }
@@ -69,7 +68,7 @@ export function SessionDetailModal({
   kind,
   onClose,
 }: {
-  session: any;
+  session: PlanSession | undefined;
   kind?: "run" | "bike";
   onClose: () => void;
 }) {
@@ -92,7 +91,9 @@ export function SessionDetailModal({
   const sport = kind ? (kind === "bike" ? "cycling" : "running") : deriveSport(session);
   const accent = SPORT_COLOR[sport];
   const intensity = deriveIntensity(session);
-  const intensityColor = intensity.specified ? INTENSITY_COLOR[intensity.level] : MUTED;
+  const intensityColor = intensity.specified
+    ? INTENSITY_COLOR[intensity.level]
+    : "var(--text-muted)";
 
   const name = String(session?.name ?? (sport === "cycling" ? "Ciclismo" : "Carrera"));
   const date = sessionDate(session);
@@ -114,17 +115,14 @@ export function SessionDetailModal({
         onClick={(e) => e.stopPropagation()}
         className="w-full sm:max-w-lg max-h-[88vh] overflow-y-auto rounded-t-xl sm:rounded-lg"
         style={{
-          background: PANEL,
-          border: "1px solid rgba(233,206,169,0.15)",
+          background: "var(--surface)",
+          border: "1px solid var(--border)",
           borderTop: `3px solid ${accent}`,
         }}
       >
         <div
           className="sticky top-0 flex items-start gap-3 px-5 py-4"
-          style={{
-            background: PANEL,
-            borderBottom: "1px solid rgba(233,206,169,0.1)",
-          }}
+          style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)" }}
         >
           <div className="flex-1 min-w-0">
             <div
@@ -133,16 +131,13 @@ export function SessionDetailModal({
             >
               {sport === "cycling" ? "CICLISMO" : "CARRERA"}
             </div>
-            <h2 className="text-base mt-1 leading-snug break-words" style={{ color: "#fff" }}>
-              {name}
-            </h2>
+            <h2 className="text-base mt-1 leading-snug break-words text-fg">{name}</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="shrink-0 mt-1"
-            style={{ color: MUTED }}
+            className="shrink-0 mt-1 text-muted"
           >
             <X size={18} />
           </button>
@@ -161,24 +156,20 @@ export function SessionDetailModal({
 
           {rationale && (
             <Section title="Objetivo">
-              <p className="text-sm leading-relaxed" style={{ color: "#C9C9C9" }}>
-                {String(rationale)}
-              </p>
+              <p className="text-sm leading-relaxed text-muted">{String(rationale)}</p>
             </Section>
           )}
 
           {workoutDescription && (
             <Section title="Descripción">
-              <p className="text-sm leading-relaxed" style={{ color: "#C9C9C9" }}>
-                {String(workoutDescription)}
-              </p>
+              <p className="text-sm leading-relaxed text-muted">{String(workoutDescription)}</p>
             </Section>
           )}
 
           {steps.length > 0 && (
             <Section title="Paso a paso">
               <div className="flex flex-col gap-2">
-                {steps.map((step: any, i: number) => (
+                {steps.map((step, i) => (
                   <StepRow key={i} step={step} />
                 ))}
               </div>
@@ -187,11 +178,11 @@ export function SessionDetailModal({
 
           {steps.length === 0 && (
             <Section title="Tipo de sesión">
-              <p className="text-sm" style={{ color: "#C9C9C9" }}>
+              <p className="text-sm text-muted">
                 {runTypeFromName(name)} ·{" "}
                 <span style={{ color: intensityColor }}>{intensity.label.toLowerCase()}</span>
               </p>
-              <p className="text-xs mt-2" style={{ color: "#777" }}>
+              <p className="text-xs mt-2 text-faint">
                 {intensity.specified
                   ? `Ritmo objetivo aproximado ${intensity.targetTempoBpm[0]}–${intensity.targetTempoBpm[1]} bpm de música.`
                   : "Esta sesión no declara zona ni pasos; la intensidad es una estimación."}
@@ -207,26 +198,20 @@ export function SessionDetailModal({
 }
 
 /** Los grupos de repetición traen sus propios pasos anidados. */
-function StepRow({ step, depth = 0 }: { step: any; depth?: number }) {
-  const children: any[] = Array.isArray(step?.workoutSteps) ? step.workoutSteps : [];
+function StepRow({ step, depth = 0 }: { step: Step; depth?: number }) {
+  const children: Step[] = Array.isArray(step?.workoutSteps) ? step.workoutSteps : [];
   const iterations = Number(step?.numberOfIterations);
 
   if (children.length > 0) {
     return (
       <div className="flex flex-col gap-2">
-        <div
-          className="text-[11px]"
-          style={{ color: GOLD, fontWeight: 700, letterSpacing: "0.08em" }}
-        >
+        <div className="text-[11px] text-gold font-bold tracking-[0.08em]">
           {Number.isFinite(iterations) && iterations > 1
             ? `REPETIR ×${iterations}`
             : stepLabel(step).toUpperCase()}
         </div>
-        <div
-          className="flex flex-col gap-2 pl-3"
-          style={{ borderLeft: "1px solid rgba(233,206,169,0.15)" }}
-        >
-          {children.map((child: any, i: number) => (
+        <div className="flex flex-col gap-2 pl-3" style={{ borderLeft: "1px solid var(--border)" }}>
+          {children.map((child, i) => (
             <StepRow key={i} step={child} depth={depth + 1} />
           ))}
         </div>
@@ -240,34 +225,21 @@ function StepRow({ step, depth = 0 }: { step: any; depth?: number }) {
   const description = step?.description ? String(step.description) : null;
 
   return (
-    <div className="rounded px-3 py-2" style={{ background: CARD_1 }}>
+    <div className="rounded px-3 py-2 bg-surface-2">
       <div className="flex items-baseline justify-between gap-2">
-        <span className="text-xs" style={{ color: "#fff", fontWeight: 600 }}>
-          {stepLabel(step)}
-        </span>
-        {measure && (
-          <span className="text-xs metric-num shrink-0" style={{ color: GOLD }}>
-            {measure}
-          </span>
-        )}
+        <span className="text-xs text-fg font-semibold">{stepLabel(step)}</span>
+        {measure && <span className="text-xs metric-num shrink-0">{measure}</span>}
       </div>
       {(target || zone) && (
-        <div className="mt-1 flex flex-wrap gap-1.5 text-[11px]" style={{ color: MUTED }}>
+        <div className="mt-1 flex flex-wrap gap-1.5 text-[11px] text-muted">
           {zone && (
-            <span
-              className="px-1.5 rounded"
-              style={{ background: "rgba(233,206,169,0.1)", color: GOLD, fontWeight: 600 }}
-            >
-              {zone}
-            </span>
+            <span className="px-1.5 rounded bg-gold/10 text-gold font-semibold">{zone}</span>
           )}
           {target && <span>{target}</span>}
         </div>
       )}
       {description && (
-        <p className="mt-1.5 text-[11px] leading-relaxed" style={{ color: "#8A8A8A" }}>
-          {description}
-        </p>
+        <p className="mt-1.5 text-[11px] leading-relaxed text-muted">{description}</p>
       )}
     </div>
   );
@@ -276,22 +248,22 @@ function StepRow({ step, depth = 0 }: { step: any; depth?: number }) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3
-        className="text-[10px] mb-2"
-        style={{ color: MUTED, fontWeight: 700, letterSpacing: "0.12em" }}
-      >
-        {title.toUpperCase()}
-      </h3>
+      <h3 className="eyebrow mb-2">{title}</h3>
       {children}
     </div>
   );
 }
 
-function Chip({ children, color = GOLD }: { children: React.ReactNode; color?: string }) {
+function Chip({ children, color = "var(--gold)" }: { children: React.ReactNode; color?: string }) {
   return (
     <span
       className="px-2 py-1 rounded text-[11px]"
-      style={{ background: `${color}1A`, color, fontWeight: 600, letterSpacing: "0.04em" }}
+      style={{
+        background: `color-mix(in srgb, ${color} 10%, transparent)`,
+        color,
+        fontWeight: 600,
+        letterSpacing: "0.04em",
+      }}
     >
       {children}
     </span>

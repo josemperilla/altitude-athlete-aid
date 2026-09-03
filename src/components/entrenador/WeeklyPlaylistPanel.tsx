@@ -17,6 +17,7 @@ import {
 } from "@/lib/spotify";
 import { garminQO } from "@/lib/api";
 import type { GarminData } from "@/lib/schemas";
+import type { PlanSession, PlanWeek } from "@/lib/schemas";
 import {
   sessionKey,
   currentPlanWeekRange,
@@ -25,18 +26,21 @@ import {
   dedupeSessions,
 } from "@/lib/session-dates";
 import { deriveSport } from "@/lib/spotify-intensity";
-import { ERR, GOLD, MUTED } from "@/lib/theme";
 
 type Row = {
   key: string;
-  session: any;
+  session: PlanSession;
   label: string;
   status: "pending" | "creating" | "done" | "error" | "already";
   result?: CreatedPlaylist;
   errorMessage?: string;
 };
 
-function toRows(runs: any[], bikes: any[], range: { start: Date; end: Date }): Row[] {
+function toRows(
+  runs: PlanSession[],
+  bikes: PlanSession[],
+  range: { start: Date; end: Date },
+): Row[] {
   const { start, end } = range;
   return dedupeSessions(runs, bikes)
     .filter((s) => {
@@ -64,9 +68,9 @@ export function WeeklyPlaylistPanel({
   weeks,
   onClose,
 }: {
-  runs: any[];
-  bikes: any[];
-  weeks: any[];
+  runs: PlanSession[];
+  bikes: PlanSession[];
+  weeks: PlanWeek[];
   onClose: () => void;
 }) {
   // `weeks` es `weeks_plan` del backend: la semana que se muestra en el
@@ -92,8 +96,8 @@ export function WeeklyPlaylistPanel({
   // startSpotifyLogin es async: sin este catch, un fallo de configuración
   // (Client ID ausente) deja el botón sin hacer absolutamente nada.
   const connect = () =>
-    startSpotifyLogin().catch((e: any) =>
-      toast.error(e?.message ?? "No se pudo conectar con Spotify"),
+    startSpotifyLogin().catch((e) =>
+      toast.error(e instanceof Error ? e.message : "No se pudo conectar con Spotify"),
     );
 
   const runSequentially = async (targets: Row[]) => {
@@ -105,7 +109,7 @@ export function WeeklyPlaylistPanel({
         setRows((prev) =>
           prev.map((r) => (r.key === row.key ? { ...r, status: "done", result } : r)),
         );
-      } catch (e: any) {
+      } catch (e) {
         if (e instanceof SpotifyNotConnectedError) {
           setRows((prev) =>
             prev.map((r) =>
@@ -121,7 +125,9 @@ export function WeeklyPlaylistPanel({
         const errorMessage =
           e instanceof SpotifyRateLimitError
             ? `Límite de Spotify, intenta en ${e.retryAfterSeconds}s`
-            : (e?.message ?? "Error al crear la playlist");
+            : e instanceof Error
+              ? e.message
+              : "Error al crear la playlist";
         setRows((prev) =>
           prev.map((r) => (r.key === row.key ? { ...r, status: "error", errorMessage } : r)),
         );
@@ -178,12 +184,12 @@ export function WeeklyPlaylistPanel({
   const errorCount = rows.filter((r) => r.status === "error").length;
 
   return (
-    <div className="club-card p-5 mt-4" style={{ borderLeft: `3px solid ${GOLD}` }}>
+    <div className="club-card p-5 mt-4" style={{ borderLeft: "3px solid var(--gold)" }}>
       <div className="flex items-center justify-between mb-3">
         <h3
           className="text-sm flex items-center gap-2"
           style={{
-            color: GOLD,
+            color: "var(--gold)",
             fontWeight: 700,
             letterSpacing: "0.08em",
             textTransform: "uppercase",
@@ -192,19 +198,19 @@ export function WeeklyPlaylistPanel({
           <SpotifyIcon size={16} />
           Playlists de esta semana
         </h3>
-        <button type="button" onClick={onClose} style={{ color: MUTED }} aria-label="Cerrar">
+        <button type="button" onClick={onClose} className="text-muted" aria-label="Cerrar">
           <X size={16} />
         </button>
       </div>
 
       {rows.length === 0 && (
-        <p className="text-sm" style={{ color: MUTED }}>
+        <p className="text-sm text-muted">
           No hay sesiones entre el {fmtDay(weekStart)} y el {fmtDay(weekEnd)}.
         </p>
       )}
 
       {pruned && pruned.removed > 0 && (
-        <p className="text-[11px] mb-3" style={{ color: MUTED }}>
+        <p className="text-[11px] mb-3 text-muted">
           {pruned.removed} playlist{pruned.removed === 1 ? "" : "s"} de semanas pasadas retirada
           {pruned.removed === 1 ? "" : "s"} de tu biblioteca
           {pruned.kept > 0 &&
@@ -221,14 +227,14 @@ export function WeeklyPlaylistPanel({
               <div
                 key={row.key}
                 className="flex flex-col gap-1 py-1.5"
-                style={{ borderBottom: "1px solid rgba(233,206,169,0.08)" }}
+                style={{ borderBottom: "1px solid var(--border)" }}
               >
                 <div className="flex items-center justify-between text-sm">
-                  <span style={{ color: "#fff" }}>{row.label}</span>
+                  <span className="text-fg">{row.label}</span>
                   <RowStatus row={row} onRetry={() => retryOne(row.key)} />
                 </div>
                 {row.errorMessage && (
-                  <p className="text-[11px] break-words" style={{ color: ERR }}>
+                  <p className="text-[11px] break-words" style={{ color: "var(--err)" }}>
                     {row.errorMessage}
                   </p>
                 )}
@@ -243,14 +249,14 @@ export function WeeklyPlaylistPanel({
           )}
 
           {running && (
-            <div className="flex items-center gap-2 text-sm" style={{ color: MUTED }}>
+            <div className="flex items-center gap-2 text-sm text-muted">
               <Loader2 size={14} className="animate-spin" /> Generando…
             </div>
           )}
 
           {!running && pendingCount === 0 && (
             <div className="flex flex-wrap items-center gap-3">
-              <p className="text-xs" style={{ color: MUTED }}>
+              <p className="text-xs text-muted">
                 {doneCount} creadas · {alreadyCount} ya existían
                 {errorCount > 0 ? ` · ${errorCount} con error` : ""}
               </p>
@@ -266,8 +272,7 @@ export function WeeklyPlaylistPanel({
                     disconnectSpotify();
                     connect();
                   }}
-                  className="text-xs underline"
-                  style={{ color: MUTED }}
+                  className="text-xs underline text-muted"
                 >
                   Reconectar Spotify
                 </button>
@@ -286,8 +291,7 @@ function RowStatus({ row, onRetry }: { row: Row; onRetry: () => void }) {
       <button
         type="button"
         onClick={() => row.result && window.open(row.result.externalUrl, "_blank")}
-        className="flex items-center gap-1 text-[11px]"
-        style={{ color: MUTED }}
+        className="flex items-center gap-1 text-[11px] text-muted"
       >
         <Check size={12} /> {row.status === "already" ? "Ya generada" : "Lista"}
       </button>
@@ -295,7 +299,7 @@ function RowStatus({ row, onRetry }: { row: Row; onRetry: () => void }) {
   }
   if (row.status === "creating") {
     return (
-      <span className="flex items-center gap-1 text-[11px]" style={{ color: GOLD }}>
+      <span className="flex items-center gap-1 text-[11px]" style={{ color: "var(--gold)" }}>
         <Loader2 size={12} className="animate-spin" /> Creando…
       </span>
     );
@@ -306,7 +310,7 @@ function RowStatus({ row, onRetry }: { row: Row; onRetry: () => void }) {
         type="button"
         onClick={onRetry}
         className="flex items-center gap-1 text-[11px]"
-        style={{ color: ERR }}
+        style={{ color: "var(--err)" }}
         title={row.errorMessage}
       >
         Error · reintentar
@@ -314,7 +318,7 @@ function RowStatus({ row, onRetry }: { row: Row; onRetry: () => void }) {
     );
   }
   return (
-    <span className="flex items-center gap-1 text-[11px]" style={{ color: "#555" }}>
+    <span className="flex items-center gap-1 text-[11px]" style={{ color: "var(--text-faint)" }}>
       <SpotifyIcon size={12} /> Pendiente
     </span>
   );

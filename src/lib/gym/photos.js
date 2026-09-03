@@ -13,26 +13,30 @@
  * equivocado.
  */
 export const PHOTOS = {
-  squat:        'Barbell_Squat',
-  rdl:          'Romanian_Deadlift',
-  slrdl:        'Kettlebell_One-Legged_Deadlift',
-  bulgarian:    'Split_Squat_with_Dumbbells',
-  stepup:       'Dumbbell_Step_Ups',
-  boxjump:      'Front_Box_Jump',
-  calfstanding: 'Rocking_Standing_Calf_Raise',
-  legcurl:      'Lying_Leg_Curls',
-  sideplank:    'Side_Bridge',
-  pallof:       'Pallof_Press',
-  deadbug:      'Dead_Bug',
-  dbpress:      'Dumbbell_Shoulder_Press',
-  row:          'Bent_Over_Two-Dumbbell_Row',
+  squat: "Barbell_Squat",
+  rdl: "Romanian_Deadlift",
+  slrdl: "Kettlebell_One-Legged_Deadlift",
+  bulgarian: "Split_Squat_with_Dumbbells",
+  stepup: "Dumbbell_Step_Ups",
+  boxjump: "Front_Box_Jump",
+  calfstanding: "Rocking_Standing_Calf_Raise",
+  legcurl: "Lying_Leg_Curls",
+  sideplank: "Side_Bridge",
+  pallof: "Pallof_Press",
+  deadbug: "Dead_Bug",
+  dbpress: "Dumbbell_Shoulder_Press",
+  row: "Bent_Over_Two-Dumbbell_Row",
 };
 
 // Dónde la foto no calza del todo con lo que pide el plan. Se muestra bajo la
 // animación para que el atleta no copie el detalle equivocado.
 export const PHOTO_CAVEATS = {
-  slrdl: 'La foto usa kettlebell; tú lo haces con mancuerna en la mano contraria a la pierna de apoyo.',
-  calfstanding: 'La foto es con barra. Sirve igual la máquina o el escalón: lo que importa es el rango completo.',
-  sideplank: 'La foto muestra la plancha lateral sin la abducción. Tú además subes la pierna de arriba.',
-  bulgarian: 'En la foto el pie de atrás va en el suelo; el tuyo va elevado en un banco a la altura de la rodilla.',
+  slrdl:
+    "La foto usa kettlebell; tú lo haces con mancuerna en la mano contraria a la pierna de apoyo.",
+  calfstanding:
+    "La foto es con barra. Sirve igual la máquina o el escalón: lo que importa es el rango completo.",
+  sideplank:
+    "La foto muestra la plancha lateral sin la abducción. Tú además subes la pierna de arriba.",
+  bulgarian:
+    "En la foto el pie de atrás va en el suelo; el tuyo va elevado en un banco a la altura de la rodilla.",
 };

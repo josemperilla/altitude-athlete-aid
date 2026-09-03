@@ -15,15 +15,29 @@ export type Step = {
 };
 
 /** Pasos aplanados del workout (segments → steps), ignorando el anidado. */
-export function extractSteps(session: any): Step[] {
-  const segments = session?.garmin_workout?.workoutSegments;
+export function extractSteps(
+  session: { garmin_workout?: { workoutSegments?: unknown } | null } | unknown,
+): Step[] {
+  const workout =
+    typeof session === "object" && session !== null
+      ? (session as Record<string, unknown>).garmin_workout
+      : undefined;
+  const segments =
+    typeof workout === "object" && workout !== null
+      ? (workout as Record<string, unknown>).workoutSegments
+      : undefined;
   if (!Array.isArray(segments)) return [];
-  return segments.flatMap((seg: any) => (Array.isArray(seg?.workoutSteps) ? seg.workoutSteps : []));
+  return segments.flatMap((seg) => {
+    const steps = (seg as Record<string, unknown>)?.workoutSteps;
+    return Array.isArray(steps) ? (steps as Step[]) : [];
+  });
 }
 
 export function stepTypeKey(step: Step): string {
-  const t = step?.stepType as any;
-  return String(typeof t === "string" ? t : (t?.stepTypeKey ?? "")).toLowerCase();
+  const t = step?.stepType as { stepTypeKey?: unknown } | string | undefined | null;
+  return String(
+    typeof t === "string" ? t : ((t as { stepTypeKey?: unknown })?.stepTypeKey ?? ""),
+  ).toLowerCase();
 }
 
 const STEP_LABELS: [RegExp, string][] = [
@@ -71,9 +85,11 @@ export function resolveStepSeconds(step: Step, sport: "running" | "cycling"): nu
   const value = Number(step?.endConditionValue);
   if (!Number.isFinite(value) || value <= 0 || value >= 1_000_000) return 0;
 
-  const raw = step?.endCondition;
+  const raw = step?.endCondition as { conditionTypeKey?: unknown } | string | undefined | null;
   const key = String(
-    typeof raw === "string" ? raw : ((raw as any)?.conditionTypeKey ?? ""),
+    typeof raw === "string"
+      ? raw
+      : ((raw as { conditionTypeKey?: unknown })?.conditionTypeKey ?? ""),
   ).toLowerCase();
   if (!key.includes("distance")) {
     // Tiempo, lap.button o condición ausente: el valor ya son segundos.
@@ -134,9 +150,11 @@ export function stepMeasure(step: Step): string | null {
   const value = Number(step?.endConditionValue);
   if (!Number.isFinite(value) || value <= 0) return null;
 
-  const raw = step?.endCondition;
+  const raw = step?.endCondition as { conditionTypeKey?: unknown } | string | undefined | null;
   const key = String(
-    typeof raw === "string" ? raw : ((raw as any)?.conditionTypeKey ?? ""),
+    typeof raw === "string"
+      ? raw
+      : ((raw as { conditionTypeKey?: unknown })?.conditionTypeKey ?? ""),
   ).toLowerCase();
   if (key.includes("distance")) {
     return value >= 1000 ? `${Number((value / 1000).toFixed(2))} km` : `${Math.round(value)} m`;

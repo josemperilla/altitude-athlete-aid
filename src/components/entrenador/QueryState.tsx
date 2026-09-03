@@ -1,5 +1,3 @@
-import { ERR, MUTED } from "@/lib/theme";
-
 /**
  * Estados de query unificados: skeleton, error y vacío con el mismo lenguaje
  * visual. `skeleton` y `empty` permiten pasar un bloque custom cuando la página
@@ -28,19 +26,19 @@ export function QueryState({
     return (
       <>
         {skeleton ?? (
-          <div className="club-card p-8 mt-6 text-center" style={{ color: MUTED }}>
-            {loadingMessage}
-          </div>
+          <div className="club-card p-8 mt-6 text-center text-muted">{loadingMessage}</div>
         )}
       </>
     );
   }
   if (error) {
     return (
-      <div className="club-card p-6 mt-6" style={{ borderLeft: `3px solid ${ERR}` }}>
-        <div style={{ color: ERR, fontWeight: 700 }}>No se pudo cargar</div>
-        <div className="text-sm mt-1" style={{ color: MUTED }}>
-          {(error as Error)?.message ?? String(error)}
+      <div className="club-card p-6 mt-6" style={{ borderLeft: "3px solid var(--err)" }}>
+        <div className="font-bold" style={{ color: "var(--err)" }}>
+          No se pudo cargar
+        </div>
+        <div className="text-sm mt-1 text-muted">
+          {error instanceof Error ? error.message : String(error)}
         </div>
       </div>
     );
@@ -52,9 +50,5 @@ export function QueryState({
 }
 
 function defaultEmpty(message: string) {
-  return (
-    <div className="club-card p-8 mt-6 text-center" style={{ color: MUTED }}>
-      {message}
-    </div>
-  );
+  return <div className="club-card p-8 mt-6 text-center text-muted">{message}</div>;
 }

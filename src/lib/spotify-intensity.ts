@@ -6,9 +6,29 @@ import {
   stepTypeKey,
   type Step,
 } from "@/lib/workout-steps";
+import type { GarminWorkout } from "@/lib/schemas";
 
 export type IntensityLevel = "baja" | "moderada" | "alta";
 export type Sport = "running" | "cycling";
+
+/**
+ * Sesión del plan vista por este módulo: los campos que lee, todos opcionales.
+ * Las sesiones reales (PlanSession del esquema) son asignables; los objetos de
+ * test también.
+ */
+export type SessionLike = {
+  name?: unknown;
+  sport?: unknown;
+  type?: unknown;
+  date?: unknown;
+  scheduled_date?: unknown;
+  duration_min?: unknown;
+  distance_km?: unknown;
+  primary_zone?: unknown;
+  zone?: unknown;
+  rationale?: unknown;
+  garmin_workout?: unknown;
+};
 
 export type SessionIntensity = {
   level: IntensityLevel;
@@ -34,7 +54,7 @@ const DEFAULT_MINUTES: Record<Sport, number> = { running: 60, cycling: 70 };
  * El plan usa "running" / "cycling" en `sport`, y las sesiones de ciclismo generadas
  * localmente traen en cambio un `type` como "ciclorruta_en_plano".
  */
-export function deriveSport(session: any): Sport {
+export function deriveSport(session: SessionLike | undefined): Sport {
   const raw = String(session?.sport ?? session?.type ?? "").toLowerCase();
   if (/cycl|bike|bici|ciclo|ciclorruta|rodillo/.test(raw)) return "cycling";
   if (/run|carrera|trote/.test(raw)) return "running";
@@ -44,7 +64,7 @@ export function deriveSport(session: any): Sport {
 }
 
 /** Zona declarada en `primary_zone`/`zone`, o embebida en el nombre ("… Z2"). */
-function parseZone(session: any): number | null {
+function parseZone(session: SessionLike | undefined): number | null {
   const field = session?.primary_zone ?? session?.zone;
   if (field != null) {
     const m = /([1-5])/.exec(String(field));
@@ -88,7 +108,7 @@ function levelFromSteps(steps: Step[]): IntensityLevel | null {
   const hasRealRepeat = body.some((s) => {
     const key = stepTypeKey(s);
     if (key !== "repeat") return false;
-    const iters = Number((s as any)?.numberOfIterations);
+    const iters = Number(s?.numberOfIterations);
     return Number.isFinite(iters) && iters > 1;
   });
   if (hasRealRepeat) return "alta";
@@ -105,10 +125,11 @@ function levelFromSteps(steps: Step[]): IntensityLevel | null {
  * descripciones por paso ("ritmo conversacional", "no superes 125 bpm"), que dicen
  * mucho más que el título.
  */
-function sessionText(session: any): string {
+function sessionText(session: SessionLike | undefined): string {
   const parts = [String(session?.name ?? "")];
   if (session?.rationale) parts.push(String(session.rationale));
-  if (session?.garmin_workout?.description) parts.push(String(session.garmin_workout.description));
+  const workout = session?.garmin_workout as GarminWorkout | null | undefined;
+  if (workout?.description) parts.push(String(workout.description));
   for (const step of extractSteps(session)) {
     if (step?.description) parts.push(String(step.description));
   }
@@ -217,7 +238,7 @@ function profile(level: IntensityLevel, sport: Sport) {
  * vía el ritmo del target), si no la distancia por el ritmo promedio, y si no un
  * valor por defecto.
  */
-function estimateMinutes(session: any, sport: Sport): number {
+function estimateMinutes(session: SessionLike | undefined, sport: Sport): number {
   const duration = Number(session?.duration_min);
   if (Number.isFinite(duration) && duration > 0) return duration;
 
@@ -241,7 +262,7 @@ function estimateMinutes(session: any, sport: Sport): number {
  *
  * Prioridad: zona declarada > pasos del workout > texto de la sesión > moderada.
  */
-export function deriveIntensity(session: any): SessionIntensity {
+export function deriveIntensity(session: SessionLike | undefined): SessionIntensity {
   const sport = deriveSport(session);
   const estimatedMinutes = estimateMinutes(session, sport);
 
@@ -414,7 +435,10 @@ function phasesFromLevel(level: IntensityLevel, minutes: number): SessionPhase[]
  * `garmin_workout`, se construye a partir de los pasos reales; si no, se usa
  * una curva genérica según el nivel de intensidad derivado.
  */
-export function buildSessionPhases(session: any, intensity: SessionIntensity): SessionPhase[] {
+export function buildSessionPhases(
+  session: SessionLike | undefined,
+  intensity: SessionIntensity,
+): SessionPhase[] {
   const fromSteps = phasesFromSteps(extractSteps(session), intensity.sport);
   if (fromSteps && fromSteps.length > 0) return fromSteps;
   return phasesFromLevel(intensity.level, intensity.estimatedMinutes);

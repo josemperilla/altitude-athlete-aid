@@ -3,11 +3,12 @@
  * como fecha local para evitar el shift UTC), un Date, o un objeto de sesión con
  * campos de fecha.
  */
-export function parseDate(d: any): Date | null {
+export function parseDate(d: unknown): Date | null {
   if (d == null) return null;
   if (d instanceof Date) return isNaN(d.getTime()) ? null : d;
   if (typeof d === "object") {
-    return parseDate(d?.date ?? d?.day ?? d?.scheduled_date ?? d?.start ?? d?.datetime);
+    const o = d as Record<string, unknown>;
+    return parseDate(o.date ?? o.day ?? o.scheduled_date ?? o.start ?? o.datetime);
   }
   const s = String(d);
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
@@ -16,7 +17,7 @@ export function parseDate(d: any): Date | null {
 }
 
 /** Fecha de una sesión del plan (acepta sesión, string o Date). */
-export function sessionDate(s: any): Date | null {
+export function sessionDate(s: unknown): Date | null {
   return parseDate(s);
 }
 
@@ -64,7 +65,10 @@ export function thisWeekRange(now: Date = new Date()): { start: Date; end: Date 
  * idéntica, con el riesgo de que un alias nuevo del backend se actualizara en
  * un solo lugar y no en el otro.
  */
-export function parseWeekRange(w: any): { start: Date | null; end: Date | null } {
+export function parseWeekRange(w: Record<string, unknown> | null | undefined): {
+  start: Date | null;
+  end: Date | null;
+} {
   const start = parseDate(w?.week_start ?? w?.start ?? w?.start_date ?? w?.from);
   const end = parseDate(w?.week_end ?? w?.end ?? w?.end_date ?? w?.to);
   if (start && !end) {
@@ -82,7 +86,7 @@ export function parseWeekRange(w: any): { start: Date | null; end: Date | null }
  * `thisWeekRange`.
  */
 export function currentPlanWeekRange(
-  weeks: any[] | undefined,
+  weeks: Record<string, unknown>[] | undefined,
   now: Date = new Date(),
 ): { start: Date; end: Date } {
   const today = startOfDay(now);
@@ -94,12 +98,13 @@ export function currentPlanWeekRange(
 }
 
 /** Deterministic key identifying a session, stable across reloads (sessions have no reliable id). */
-export function sessionKey(session: any): string {
+export function sessionKey(session: unknown): string {
   const d = sessionDate(session);
   const dateStr = d
     ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
     : "unknown-date";
-  const name = String(session?.name ?? session?.sport ?? session?.type ?? "session");
+  const s = session as Record<string, unknown> | null | undefined;
+  const name = String(s?.name ?? s?.sport ?? s?.type ?? "session");
   return `${dateStr}:${name}`;
 }
 
@@ -125,8 +130,8 @@ export function sessionKey(session: any): string {
  * que esto no se ha disparado nunca; queda anotado por si un campo nuevo del
  * backend rompe ese supuesto.
  */
-export function dedupeSessions(...groups: any[][]): any[] {
-  const byKey = new Map<string, any>();
+export function dedupeSessions<T extends Record<string, unknown>>(...groups: T[][]): T[] {
+  const byKey = new Map<string, T>();
   for (const session of groups.flat()) {
     const key = sessionKey(session);
     const existing = byKey.get(key);
@@ -135,7 +140,9 @@ export function dedupeSessions(...groups: any[][]): any[] {
       continue;
     }
     for (const [field, value] of Object.entries(session)) {
-      if (value != null && existing[field] == null) existing[field] = value;
+      if (value != null && (existing as Record<string, unknown>)[field] == null) {
+        (existing as Record<string, unknown>)[field] = value;
+      }
     }
   }
   return [...byKey.values()];

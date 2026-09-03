@@ -34,7 +34,7 @@ function SpotifyCallbackPage() {
     }
     completeSpotifyLogin(code)
       .then(() => toast.success("Spotify conectado"))
-      .catch((e: any) => toast.error(e?.message ?? "No se pudo conectar Spotify"))
+      .catch((e) => toast.error(e instanceof Error ? e.message : "No se pudo conectar Spotify"))
       .finally(() => navigate({ to: "/" }));
   }, [code, error, navigate]);
 

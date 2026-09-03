@@ -76,7 +76,7 @@ export function applyFatigueWithScore(
  */
 export async function applyFatigue(
   intensity: SessionIntensity,
-  garmin?: any,
+  garmin?: unknown,
 ): Promise<SessionIntensity> {
   if (!garmin) return intensity;
   const readiness = getReadinessScore(garmin);

@@ -5,7 +5,6 @@ import { ChevronDown } from "lucide-react";
 import { insightsQO } from "@/lib/api";
 import type { Insight, InsightCategory } from "@/lib/schemas";
 import { PageShell } from "@/components/entrenador/PageShell";
-import { CARD_2, GOLD, MUTED, PANEL } from "@/lib/theme";
 
 export const Route = createFileRoute("/aprende")({
   head: () => ({
@@ -25,11 +24,7 @@ function AprendePage() {
 
   return (
     <PageShell title="Aprende" subtitle="Ciencia del entrenamiento · 5 papers revisados por pares">
-      {isLoading && (
-        <div className="club-card p-6 mt-6 text-sm" style={{ color: MUTED }}>
-          Cargando…
-        </div>
-      )}
+      {isLoading && <div className="club-card p-6 mt-6 text-sm text-muted">Cargando…</div>}
 
       <div className="flex flex-col gap-4 mt-6">
         {categories.map((cat, i) => {
@@ -48,19 +43,17 @@ function AprendePage() {
                   <div>
                     <div
                       className="text-sm font-bold tracking-widest uppercase"
-                      style={{ color: cat.color ?? GOLD }}
+                      style={{ color: cat.color ?? "var(--gold)" }}
                     >
                       {cat.title}
                     </div>
-                    <div className="text-xs mt-0.5" style={{ color: MUTED }}>
-                      {cat.subtitle}
-                    </div>
+                    <div className="text-xs mt-0.5 text-muted">{cat.subtitle}</div>
                   </div>
                 </div>
                 <ChevronDown
                   size={18}
                   style={{
-                    color: cat.color ?? GOLD,
+                    color: cat.color ?? "var(--gold)",
                     transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
                     transition: "transform 0.2s",
                     flexShrink: 0,
@@ -72,10 +65,10 @@ function AprendePage() {
               {isOpen && (
                 <div
                   className="px-4 pb-4 grid md:grid-cols-2 gap-4"
-                  style={{ borderTop: "1px solid rgba(233,206,169,.1)" }}
+                  style={{ borderTop: "1px solid var(--border)" }}
                 >
-                  {insights.map((ins: any, i: number) => (
-                    <InsightCard key={i} ins={ins} accentColor={cat.color ?? GOLD} />
+                  {insights.map((ins, i) => (
+                    <InsightCard key={i} ins={ins} accentColor={cat.color ?? "var(--gold)"} />
                   ))}
                 </div>
               )}
@@ -92,7 +85,7 @@ function InsightCard({ ins, accentColor }: { ins: Insight; accentColor: string }
     <article
       className="flex flex-col gap-3 p-4 rounded-lg mt-4"
       style={{
-        background: CARD_2,
+        background: "var(--surface-2)",
         border: `1px solid ${accentColor}22`,
       }}
     >
@@ -107,24 +100,18 @@ function InsightCard({ ins, accentColor }: { ins: Insight; accentColor: string }
       )}
 
       {/* Title */}
-      <div className="text-sm font-bold" style={{ color: "#FFFFFF" }}>
-        {ins.title}
-      </div>
+      <div className="text-sm font-bold text-fg">{ins.title}</div>
 
       {/* Finding */}
-      {ins.finding && (
-        <p className="text-xs leading-relaxed" style={{ color: "#C0C0C0" }}>
-          {ins.finding}
-        </p>
-      )}
+      {ins.finding && <p className="text-xs leading-relaxed text-muted">{ins.finding}</p>}
 
       {/* Stat badge */}
       {ins.number && (
         <div
           className="text-xs font-bold text-center py-2 px-3 rounded"
           style={{
-            background: PANEL,
-            border: `1px solid ${accentColor}44`,
+            background: "var(--surface)",
+            border: `1px solid color-mix(in srgb, ${accentColor} 27%, transparent)`,
             color: accentColor,
             letterSpacing: "0.05em",
           }}
@@ -135,16 +122,14 @@ function InsightCard({ ins, accentColor }: { ins: Insight; accentColor: string }
 
       {/* Application */}
       {ins.application && (
-        <div style={{ borderTop: "1px solid rgba(233,206,169,.08)", paddingTop: "10px" }}>
+        <div style={{ borderTop: "1px solid var(--border)", paddingTop: "10px" }}>
           <div
             className="text-[10px] font-bold tracking-widest uppercase mb-1.5"
-            style={{ color: GOLD }}
+            style={{ color: "var(--gold)" }}
           >
             ¿Qué significa para ti?
           </div>
-          <p className="text-xs leading-relaxed" style={{ color: "#B0B0B0" }}>
-            {ins.application}
-          </p>
+          <p className="text-xs leading-relaxed text-muted">{ins.application}</p>
         </div>
       )}
     </article>

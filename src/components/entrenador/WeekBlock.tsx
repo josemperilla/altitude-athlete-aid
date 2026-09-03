@@ -7,7 +7,7 @@ import { SessionDetailModal } from "@/components/entrenador/SessionDetailModal";
 import { getCreatedPlaylist, isSpotifyConnected, startSpotifyLogin } from "@/lib/spotify";
 import { usePlaylistMutation } from "@/hooks/use-playlist-mutation";
 import { garminQO } from "@/lib/api";
-import type { GarminData } from "@/lib/schemas";
+import type { GarminData, PlanSession, PlanWeek } from "@/lib/schemas";
 import {
   inRange,
   parseWeekRange,
@@ -16,12 +16,13 @@ import {
   sessionKey,
   startOfDay,
 } from "@/lib/session-dates";
-import { BIKE, BG, GOLD, MUTED, PANEL, RUN } from "@/lib/theme";
 
 // El backend genera semanas domingo→sábado (week_start = domingo), así que el
 // grid se construye desde week_start tal cual, sin realinear a lunes: realinear
 // haría que las sesiones del lunes-sábado quedaran fuera del grid.
 const DAY_NAMES = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
+
+const SPORT_COLOR = { run: "var(--run)", bike: "var(--bike)" } as const;
 
 export function WeekBlock({
   week,
@@ -29,20 +30,15 @@ export function WeekBlock({
   bikes,
   index,
 }: {
-  week: any;
-  runs: any[];
-  bikes: any[];
+  week: PlanWeek;
+  runs: PlanSession[];
+  bikes: PlanSession[];
   index: number;
 }) {
   const { start, end } = parseWeekRange(week);
-  const rawType = (
-    week?.week_type ??
-    week?.type ??
-    week?.label ??
-    `Semana ${index + 1}`
-  ).toString();
+  const rawType = (week?.type ?? `Semana ${index + 1}`).toString();
   const type = rawType.replace(/_/g, " ").toUpperCase();
-  const purpose = week?.purpose ?? week?.goal ?? week?.description ?? "";
+  const purpose = week?.purpose ?? "";
 
   const today = startOfDay(new Date());
 
@@ -56,7 +52,7 @@ export function WeekBlock({
   });
 
   // Build 7 day columns starting on week_start (backend usa domingo→sábado).
-  const cols: { date: Date | null; runs: any[]; bikes: any[] }[] = [];
+  const cols: { date: Date | null; runs: PlanSession[]; bikes: PlanSession[] }[] = [];
   if (start) {
     const s = startOfDay(start);
     for (let i = 0; i < 7; i++) {
@@ -88,8 +84,8 @@ export function WeekBlock({
         <span
           className="px-3 py-1 rounded text-xs"
           style={{
-            background: GOLD,
-            color: BG,
+            background: "var(--gold)",
+            color: "var(--bg)",
             fontWeight: 700,
             letterSpacing: "0.1em",
             textTransform: "uppercase",
@@ -98,16 +94,12 @@ export function WeekBlock({
           {type}
         </span>
         {start && end && (
-          <span className="text-xs" style={{ color: MUTED, letterSpacing: "0.06em" }}>
+          <span className="text-xs text-muted tracking-[0.06em]">
             {fmt(start)} — {fmt(end)}
           </span>
         )}
       </div>
-      {purpose && (
-        <p className="text-sm mb-4" style={{ color: MUTED }}>
-          {purpose}
-        </p>
-      )}
+      {purpose && <p className="text-sm mb-4 text-muted">{purpose}</p>}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
         {cols.map((c, i) => {
           const isToday = c.date && sameDay(c.date, today);
@@ -116,36 +108,30 @@ export function WeekBlock({
               key={i}
               className="rounded p-3 min-h-[140px] flex flex-col gap-2"
               style={{
-                background: PANEL,
-                border: `1px solid ${isToday ? GOLD : "rgba(233,206,169,0.12)"}`,
+                background: "var(--surface)",
+                border: `1px solid ${isToday ? "var(--gold)" : "var(--border)"}`,
               }}
             >
               <div className="flex items-baseline justify-between">
                 <span
                   className="text-[10px]"
                   style={{
-                    color: isToday ? GOLD : MUTED,
+                    color: isToday ? "var(--gold)" : "var(--text-muted)",
                     fontWeight: 700,
                     letterSpacing: "0.1em",
                   }}
                 >
                   {c.date ? DAY_NAMES[(c.date.getDay() + 6) % 7] : DAY_NAMES[i]}
                 </span>
-                {c.date && (
-                  <span className="text-[10px]" style={{ color: MUTED }}>
-                    {c.date.getDate()}
-                  </span>
-                )}
+                {c.date && <span className="text-[10px] text-muted">{c.date.getDate()}</span>}
               </div>
               {c.runs.length === 0 && c.bikes.length === 0 && (
-                <div className="text-[11px] mt-2" style={{ color: "#555" }}>
-                  —
-                </div>
+                <div className="text-[11px] mt-2 text-faint">—</div>
               )}
-              {c.runs.map((s: any, idx: number) => (
+              {c.runs.map((s, idx) => (
                 <SessionCard key={`r-${idx}`} session={s} kind="run" />
               ))}
-              {c.bikes.map((s: any, idx: number) => (
+              {c.bikes.map((s, idx) => (
                 <SessionCard key={`b-${idx}`} session={s} kind="bike" />
               ))}
             </div>
@@ -156,12 +142,11 @@ export function WeekBlock({
   );
 }
 
-function SessionCard({ session, kind }: { session: any; kind: "run" | "bike" }) {
-  const color = kind === "run" ? RUN : BIKE;
+function SessionCard({ session, kind }: { session: PlanSession; kind: "run" | "bike" }) {
+  const color = SPORT_COLOR[kind];
   const name = session?.name ?? (kind === "run" ? "Carrera" : "Ciclismo");
   const duration = session?.duration_min;
   const zone = session?.primary_zone ?? session?.zone;
-  const sport = session?.sport ?? session?.type;
 
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
@@ -178,19 +163,19 @@ function SessionCard({ session, kind }: { session: any; kind: "run" | "bike" }) 
             setOpen(true);
           }
         }}
-        className="rounded px-2.5 py-2 text-xs cursor-pointer transition-colors bg-[#111] hover:bg-[#1A1A1A]"
+        className="rounded px-2.5 py-2 text-xs cursor-pointer transition-colors bg-surface-2 hover:bg-gold/10"
         style={{ borderLeft: `3px solid ${color}` }}
       >
         <div
-          className="text-white font-semibold leading-snug break-words"
+          className="text-fg font-semibold leading-snug break-words"
           style={{ whiteSpace: "normal" }}
         >
           {String(name)}
         </div>
-        <div className="mt-1 flex flex-wrap gap-1.5 text-[11px]" style={{ color: MUTED }}>
+        <div className="mt-1 flex flex-wrap gap-1.5 text-[11px] text-muted">
           {duration != null && <span>{duration} min</span>}
           {zone != null && <span>· {String(zone)}</span>}
-          {duration == null && sport != null && <span>{String(sport)}</span>}
+          {duration == null && <span>{kind === "run" ? "Carrera" : "Ciclismo"}</span>}
         </div>
         <PlaylistButton session={session} />
       </div>
@@ -199,7 +184,7 @@ function SessionCard({ session, kind }: { session: any; kind: "run" | "bike" }) 
   );
 }
 
-function PlaylistButton({ session }: { session: any }) {
+function PlaylistButton({ session }: { session: PlanSession }) {
   const key = sessionKey(session);
   const existing = getCreatedPlaylist(key);
   // Leemos el garmin cacheado para que el ajuste por fatiga (#8) tenga datos.
@@ -218,8 +203,7 @@ function PlaylistButton({ session }: { session: any }) {
           e.stopPropagation();
           window.open(created.externalUrl, "_blank");
         }}
-        className="mt-1 flex items-center gap-1 text-[10px] self-start"
-        style={{ color: MUTED }}
+        className="mt-1 flex items-center gap-1 text-[10px] self-start text-muted"
       >
         <Check size={11} />
         Playlist lista
@@ -233,8 +217,8 @@ function PlaylistButton({ session }: { session: any }) {
     if (!isSpotifyConnected()) {
       // startSpotifyLogin es async: sin este catch, un fallo de configuración
       // (Client ID ausente) deja el botón sin hacer absolutamente nada.
-      startSpotifyLogin().catch((e: any) =>
-        toast.error(e?.message ?? "No se pudo conectar con Spotify"),
+      startSpotifyLogin().catch((e) =>
+        toast.error(e instanceof Error ? e.message : "No se pudo conectar con Spotify"),
       );
       return;
     }
@@ -246,8 +230,7 @@ function PlaylistButton({ session }: { session: any }) {
       type="button"
       onClick={handleClick}
       disabled={mut.isPending}
-      className="mt-1 flex items-center gap-1 text-[10px] self-start"
-      style={{ color: GOLD }}
+      className="mt-1 flex items-center gap-1 text-[10px] self-start text-gold"
     >
       {mut.isPending ? <Loader2 size={11} className="animate-spin" /> : <SpotifyIcon size={11} />}
       {mut.isPending ? "Creando…" : "Playlist"}

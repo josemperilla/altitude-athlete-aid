@@ -29,10 +29,10 @@ type Reading = { time: number; value: number };
  * Serie diaria ordenada y sin duplicados. Garmin puede repetir una fecha (varias
  * lecturas del mismo día); en ese caso gana la última del arreglo.
  */
-function readSeries(raw: any, field: string): Reading[] {
+function readSeries(raw: unknown, field: string): Reading[] {
   if (!Array.isArray(raw)) return [];
   const byDay = new Map<number, Reading>();
-  for (const entry of raw) {
+  for (const entry of raw as Record<string, unknown>[]) {
     const value = Number(entry?.[field]);
     const date = parseDate(entry);
     if (!date || !Number.isFinite(value) || value <= 0) continue;
@@ -73,9 +73,14 @@ function classify(score: number): { label: string; color: ReadinessResult["color
  * de los últimos 7 días. HRV alto = recuperado; FC en reposo baja = recuperado.
  * Devuelve null cuando no hay historial suficiente para que la base tenga sentido.
  */
-export function getReadinessScore(garmin: any): ReadinessResult | null {
-  const hrv = split(readSeries(garmin?.health?.hrv ?? garmin?.hrv, "hrv"));
-  const rhr = split(readSeries(garmin?.health?.resting_hr ?? garmin?.resting_hr, "resting_hr"));
+/** `garmin` es la respuesta de GET /garmin (o cualquier objeto con health.hrv/resting_hr). */
+export function getReadinessScore(garmin: unknown): ReadinessResult | null {
+  const g = garmin as
+    | { health?: { hrv?: unknown; resting_hr?: unknown }; hrv?: unknown; resting_hr?: unknown }
+    | null
+    | undefined;
+  const hrv = split(readSeries(g?.health?.hrv ?? g?.hrv, "hrv"));
+  const rhr = split(readSeries(g?.health?.resting_hr ?? g?.resting_hr, "resting_hr"));
   if (!hrv || !rhr) return null;
 
   const hrvScore = normalize((hrv.today - hrv.base) / hrv.base, HRV_FULL_SWING);
@@ -92,21 +97,22 @@ export function getReadinessScore(garmin: any): ReadinessResult | null {
   };
 }
 
-/** Colores de la paleta para cada nivel, compartidos por barra lateral y nav móvil. */
+/** Tokens de color para cada nivel, compartidos por chrome, Hoy y Cuerpo. */
 export const READINESS_COLORS: Record<ReadinessResult["color"], string> = {
-  red: "#EF4444",
-  amber: "#FBBF24",
-  green: "#10B981",
+  red: "var(--err)",
+  amber: "var(--warn)",
+  green: "var(--ok)",
 };
 
 /**
  * Última lectura disponible de una métrica, formateada como string. Garmin repite
  * fechas y los datos llegan con retraso, así que se toma la última entrada no nula.
  */
-export function latestReading(garmin: any, field: "hrv" | "resting_hr"): string {
-  const arr = garmin?.health?.[field];
+export function latestReading(garmin: unknown, field: "hrv" | "resting_hr"): string {
+  const g = garmin as { health?: Record<string, unknown> } | null | undefined;
+  const arr = g?.health?.[field];
   if (!Array.isArray(arr)) return "—";
-  const last = arr.filter((h: any) => h?.[field] != null).at(-1);
+  const last = (arr as Record<string, unknown>[]).filter((h) => h?.[field] != null).at(-1);
   const v = last?.[field];
   return v != null && !isNaN(Number(v)) ? String(Math.round(Number(v))) : "—";
 }
