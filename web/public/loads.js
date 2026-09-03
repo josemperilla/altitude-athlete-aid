@@ -43,12 +43,12 @@ export const WEIGHT_GUIDE = {
     techo: 'Máximo 4 pins arriba del arranque, siempre con bajada de 3 s.',
     aviso: 'Si rebotas o no llegas completo a la punta, vuelve al pin anterior. Semana de carrera: 2×8 con un pin menos.',
   },
-  calfseated: {
-    inicio: 'Peso con el que las últimas 2 de 15 cuesten pero suban completo.',
-    arranque: 'Arranca con 10 kg en cada rodilla, una mancuerna por pierna.',
-    progresion: 'Sube 2 kg por rodilla cada semana.',
-    techo: '25 kg por rodilla. De ahí en adelante pásalo a una pierna a la vez.',
-    aviso: 'Si el rango se acorta, el talón deja de bajar del disco o te ayudas con los brazos, quita 2 kg.',
+  calfsinglebent: {
+    inicio: 'Rodilla doblada 25° y sostenida ahí: las últimas 2 de 12 deben costar sin que la rodilla se enderece.',
+    arranque: 'Solo tu peso, una pierna. Si no llegas a 12 limpias, haz las que salgan y anota cuántas.',
+    progresion: 'Suma 2 repeticiones por serie cada semana hasta llegar a 3 × 15.',
+    techo: 'En 3 × 15 limpias, ponte una mochila con 5 kg y vuelve a 12.',
+    aviso: 'Si la rodilla se estira al subir o el brazo de la pared empieza a empujar, baja repeticiones.',
   },
   pallof: {
     inicio: 'Banda con la que las últimas 2 reps por lado exijan sin girar la cadera.',

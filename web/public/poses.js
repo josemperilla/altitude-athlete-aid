@@ -149,39 +149,22 @@ export const POSES = {
     ],
   },
 
-  calfseated: {
-    mode: 'raw', duration: 1500,
-    groundY: 104,
-    weights: [1], weightsBack: [1.4], holds: [300, 400],
-    props: [
-      { type: 'box', x: 18, y: 74, w: 34, h: 6, kind: 'gear' },   // banco
-      { type: 'box', x: 62, y: 96, w: 26, h: 8, kind: 'gear' },   // plataforma para el antepié
-      // Mancuerna parada sobre la rodilla, de perfil: disco, mango, disco. Tres
-      // cajas y no una, porque una sola caja al lado del muslo lee como parte
-      // del banco.
-      { type: 'box', x: 43, y: 68, w: 11, h: 3.3, kind: 'load' },
-      { type: 'box', x: 47, y: 60.5, w: 3.5, h: 7.5, kind: 'load' },
-      { type: 'box', x: 43, y: 57.2, w: 11, h: 3.3, kind: 'load' },
-    ],
+  /*
+   * Misma mecánica que calfsingle —la punta fija en el escalón y el pie rotando—
+   * pero con la rodilla doblada ~28°: la tibia se inclina adelante (shin 20) y el
+   * muslo compensa hacia atrás (thigh -8) para que la cadera no se salga de la
+   * base de apoyo. Esa flexión es el ejercicio entero: acorta el gemelo y deja el
+   * trabajo en el sóleo. El ángulo se mantiene igual en los tres fotogramas,
+   * porque enderezar la rodilla al subir es justo el error que hay que no enseñar.
+   */
+  calfsinglebent: {
+    duration: 1600,
+    props: [{ type: 'box', x: 58, y: 96, w: 34, h: 8, kind: 'gear' }],
+    weights: [1, 1], weightsBack: [1.5, 1.5], holds: [300, 0, 500],
     poses: [
-      // Rodilla a 90°: muslo horizontal sobre el banco, tibia vertical, y la
-      // mano encima de la mancuerna que descansa sobre la rodilla.
-      {
-        mode: 'raw',
-        joints: {
-          head: [30, 46], sh: [31, 60], el: [39, 57], hand: [48.5, 55.5],
-          hip: [28, 74], knee: [52, 74], ankle: [52, 98],
-          heel: [46, 100], toe: [63, 94],
-        },
-      },
-      {
-        mode: 'raw',
-        joints: {
-          head: [30, 46], sh: [31, 60], el: [39, 57], hand: [48.5, 55.5],
-          hip: [28, 74], knee: [52, 74], ankle: [52, 90],
-          heel: [46, 86], toe: [63, 96],
-        },
-      },
+      { toe: [64, 96], foot: -34, shin: 22, thigh: -10, trunk: 4, uarm: 180, farm: 180, thigh2: 200, shin2: 252 },
+      { toe: [64, 96], foot: 12, shin: 22, thigh: -10, trunk: 4, uarm: 180, farm: 180, thigh2: 200, shin2: 252 },
+      { toe: [64, 96], foot: 56, shin: 22, thigh: -10, trunk: 4, uarm: 180, farm: 180, thigh2: 200, shin2: 252 },
     ],
   },
 

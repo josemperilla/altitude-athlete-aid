@@ -140,19 +140,22 @@ EXERCISES = {
             "Medio rango. El tendón se adapta al rango que le cargas.",
         ],
     },
-    "calf_seated": {
-        "name": "Elevación de talón sentado con mancuernas",
+    # Sustituye a la elevación de talón sentado, que exigía máquina de sóleo o
+    # aguantar mancuernas sobre las rodillas. Mismo objetivo (sóleo con la rodilla
+    # doblada) sin nada más que un escalón y una pared.
+    "calf_single_bent": {
+        "name": "Elevación de talón a una pierna con rodilla flexionada",
         "target": "Sóleo (rodilla flexionada)",
-        "anim": "calfseated",
-        "alt": "Si aparece máquina de sóleo, úsala: carga más y te ahorra sostener las mancuernas.",
+        "anim": "calfsinglebent",
+        "alt": "Si te falta equilibrio al principio: las dos piernas a la vez, con la rodilla igual de doblada.",
         "cues": [
-            "Sentado en el banco, antepié sobre un disco o escalón y rodilla a 90°: con la rodilla doblada el gemelo se acorta y el trabajo cae en el sóleo.",
-            "Una mancuerna parada sobre cada rodilla, sujeta con la mano. Una toalla doblada debajo si el mango molesta.",
-            "Este es el músculo que corre la media maratón. Mismo tempo: 3 segundos de bajada, pausa abajo con el talón por debajo del escalón.",
+            "Antepié en el borde de un escalón y rodilla doblada unos 25°, mantenida ahí toda la serie: con la rodilla doblada el gemelo se acorta y el trabajo cae en el sóleo.",
+            "Una sola pierna; la otra cruzada por detrás. La mano en la pared es para equilibrio, no para empujarte hacia arriba.",
+            "Este es el músculo que corre la media maratón. Baja en 3 segundos hasta estirar del todo y haz pausa abajo.",
         ],
         "errors": [
-            "Ponerle poco peso porque “es un accesorio”. El sóleo aguanta varias veces tu peso corporal en cada zancada.",
-            "Apoyar el antepié en el suelo plano. Sin el disco pierdes la mitad de abajo del rango, que es la que importa.",
+            "Estirar la rodilla al subir. Si se endereza, el trabajo se va al gemelo y el sóleo se queda sin estímulo.",
+            "Apoyar el antepié en suelo plano. Sin el escalón pierdes la mitad de abajo del rango, que es la que importa.",
         ],
     },
     "bulgarian_home": {
@@ -377,7 +380,7 @@ SESSION_A = {
             "minutes": 6,
             "items": [
                 {"ex": "calf_standing", "prescription": "3 × 8", "load": "Pesado · 3 s de bajada · 90 s"},
-                {"ex": "calf_seated", "prescription": "3 × 15", "load": "Pesado · 3 s de bajada · 60 s"},
+                {"ex": "calf_single_bent", "prescription": "3 × 12 / pierna", "load": "Peso corporal · 3 s de bajada · 60 s"},
             ],
         },
         {

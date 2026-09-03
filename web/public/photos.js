@@ -20,7 +20,6 @@ export const PHOTOS = {
   stepup:       'Dumbbell_Step_Ups',
   boxjump:      'Front_Box_Jump',
   calfstanding: 'Rocking_Standing_Calf_Raise',
-  calfseated:   'Seated_Calf_Raise',
   legcurl:      'Lying_Leg_Curls',
   sideplank:    'Side_Bridge',
   pallof:       'Pallof_Press',
@@ -33,7 +32,6 @@ export const PHOTOS = {
 // animación para que el atleta no copie el detalle equivocado.
 export const PHOTO_CAVEATS = {
   slrdl: 'La foto usa kettlebell; tú lo haces con mancuerna en la mano contraria a la pierna de apoyo.',
-  calfseated: 'La foto es en máquina de sóleo. Tú lo haces sentado en un banco, con el antepié en un disco y una mancuerna parada sobre cada rodilla.',
   calfstanding: 'La foto es con barra. Sirve igual la máquina o el escalón: lo que importa es el rango completo.',
   sideplank: 'La foto muestra la plancha lateral sin la abducción. Tú además subes la pierna de arriba.',
   bulgarian: 'En la foto el pie de atrás va en el suelo; el tuyo va elevado en un banco a la altura de la rodilla.',
