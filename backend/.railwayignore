@@ -10,7 +10,6 @@ __pycache__/
 .git/
 .DS_Store
 Running_papers/
-web/
 
 # OJO: no excluir *.md. context/research_principles.md lo lee generate_plan.py y
 # context/research_insights.md lo lee /diagnose. Excluirlos rompe el deploy en

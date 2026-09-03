@@ -1,12 +1,16 @@
 # Altitude Athlete Aid — Sports Performance Web App
 
-TanStack Start (React/TypeScript) app for altitude training and athlete performance management. Deployed on Cloudflare.
+TanStack Start (React/TypeScript) app for altitude training and athlete performance
+management, plus the FastAPI backend that feeds it. Both deploy to Railway from this
+repo: the frontend from the root, the API from `backend/`.
 
 ## Stack
 
 - **Frontend**: React 19, TanStack Start, TypeScript, shadcn/ui
-- **Backend**: Cloudflare Workers
-- **Deploy**: Cloudflare Pages via Wrangler
+- **Backend**: FastAPI (Python) en `backend/`
+- **Deploy**: Railway, dos servicios. `railway up` desde la raíz publica el
+  frontend (`server/index.js` sirve `dist/` sobre Node); desde `backend/`
+  publica el API. Cada uno tiene su `.railwayignore`.
 
 ## Structure
 

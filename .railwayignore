@@ -1,0 +1,24 @@
+# Qué NO sube al servicio web (el frontend Node).
+#
+# El repo es un monorepo con dos servicios: este, que se despliega desde la raíz,
+# y el API de Python, que se despliega desde backend/ y tiene su propio
+# .railwayignore. Sin esta exclusión, cada deploy del frontend subiría también
+# todo el backend y los papers.
+
+backend/
+
+# Se reconstruye en el build; subirlo solo alarga el upload.
+dist/
+node_modules/
+
+# Credenciales y datos regenerables.
+.env
+.env.*
+.tmp/
+
+.git/
+.DS_Store
+
+# OJO: public/ex/ SÍ sube. Son las 26 fotos de los ejercicios y la app las pide
+# por ruta absoluta (/ex/<anim>-0.jpg); sin ellas el desplegable de técnica
+# queda con dos huecos rotos.
