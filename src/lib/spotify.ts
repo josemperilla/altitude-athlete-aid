@@ -1,11 +1,19 @@
 import {
   buildSessionPhases,
   deriveIntensity,
+  searchTermsFor,
   withLevel,
   type IntensityLevel,
   type SessionIntensity,
-  type SessionPhase,
 } from "@/lib/spotify-intensity";
+import {
+  buildTimeline,
+  DEFAULT_TRACK_MS,
+  fillTimeline,
+  type BandPools,
+  type Segment,
+} from "@/lib/playlist-timeline";
+import { mmss } from "@/lib/workout-steps";
 import { applyFatigue } from "@/lib/apply-fatigue";
 
 const AUTH_BASE = "https://accounts.spotify.com";
@@ -371,23 +379,33 @@ async function safeArray<T>(
 }
 
 /**
- * Pista con su popularidad (0-100). Como /v1/audio-features está deprecado para
- * apps nuevas, usamos `popularity` como proxy grosero de energía: las pistas
- * más populares tienden a ser más enérgicas, y combinado con el término de
- * búsqueda que las trajo (que ya filtra por mood) basta para ordenar la
- * playlist siguiendo la curva de la sesión.
+ * Pista con su popularidad normalizada (0-1) y su duración real. Como
+ * /v1/audio-features está deprecado para apps nuevas, usamos `popularity` como
+ * proxy grosero de energía: las pistas más populares tienden a ser más
+ * enérgicas, y combinado con el término de búsqueda que las trajo (que ya
+ * filtra por mood) basta para ordenar la playlist siguiendo la curva de la
+ * sesión. La duración sí viene en /search y /me/top/tracks, y es la que
+ * permite sincronizar los bloques de canciones con las fases del entrenamiento.
  */
-type ScoredTrack = { uri: string; popularity: number };
+type ScoredTrack = { uri: string; popularity: number; durationMs: number };
 
 /**normaliza la popularidad a 0-1; si falta, asume un valor medio neutro. */
 const normPop = (p: number | undefined): number =>
   Number.isFinite(p) && p! >= 0 ? Math.min(1, p! / 100) : 0.5;
 
+/** Duración de la pista; sin duration_ms se asume la media (3.5 min). */
+const normDur = (ms: number | undefined): number =>
+  Number.isFinite(ms) && ms! > 0 ? ms! : DEFAULT_TRACK_MS;
+
 async function fetchTopTrackScored(limit = 30): Promise<ScoredTrack[]> {
-  const data = await spotifyFetch<{ items?: { uri: string; popularity?: number }[] }>(
-    `/me/top/tracks?limit=${limit}&time_range=medium_term`,
-  );
-  return (data.items ?? []).map((t) => ({ uri: t.uri, popularity: normPop(t.popularity) }));
+  const data = await spotifyFetch<{
+    items?: { uri: string; popularity?: number; duration_ms?: number }[];
+  }>(`/me/top/tracks?limit=${limit}&time_range=medium_term`);
+  return (data.items ?? []).map((t) => ({
+    uri: t.uri,
+    popularity: normPop(t.popularity),
+    durationMs: normDur(t.duration_ms),
+  }));
 }
 
 /**
@@ -399,10 +417,14 @@ const MAX_SEARCH_LIMIT = 10;
 
 async function searchTrackScored(term: string, limit = MAX_SEARCH_LIMIT): Promise<ScoredTrack[]> {
   const capped = Math.min(limit, MAX_SEARCH_LIMIT);
-  const data = await spotifyFetch<{ tracks?: { items?: { uri: string; popularity?: number }[] } }>(
-    `/search?type=track&market=${MARKET}&limit=${capped}&q=${encodeURIComponent(term)}`,
-  );
-  return (data.tracks?.items ?? []).map((t) => ({ uri: t.uri, popularity: normPop(t.popularity) }));
+  const data = await spotifyFetch<{
+    tracks?: { items?: { uri: string; popularity?: number; duration_ms?: number }[] };
+  }>(`/search?type=track&market=${MARKET}&limit=${capped}&q=${encodeURIComponent(term)}`);
+  return (data.tracks?.items ?? []).map((t) => ({
+    uri: t.uri,
+    popularity: normPop(t.popularity),
+    durationMs: normDur(t.duration_ms),
+  }));
 }
 
 function shuffle<T>(items: T[]): T[] {
@@ -412,90 +434,6 @@ function shuffle<T>(items: T[]): T[] {
     [out[i], out[j]] = [out[j], out[i]];
   }
   return out;
-}
-
-// ── Curva de energía (#1) ──────────────────────────────────────────────────
-
-/**
- * Ordena las canciones siguiendo la curva de energía de la sesión (calentamiento
- * → picos de calidad → enfriamiento) en vez de dejarlas al azar.
- *
- * Reparte `tracks` entre las fases proporcionalmente a la duración de cada una.
- * Dentro de cada fase, ordena por cercanía de su `popularity` a la energía
- * objetivo de la fase: las fases de alta energía reciben las pistas más
- * populares, las de baja las más suaves. Como la búsqueda ya filtra por mood
- * (los searchTerms traen "chill", "high energy", etc.), la popularidad actúa
- * como un refinamiento, no como el único criterio.
- *
- * `personal` se reparte entre las fases como acentos, sin amontonarse.
- */
-function buildEnergyCurve(
-  tracks: ScoredTrack[],
-  phases: SessionPhase[],
-  personal: string[],
-  target: number,
-): string[] {
-  if (tracks.length === 0) return [];
-
-  // Cuántas canciones toca a cada fase, proporcional a sus minutos.
-  const totalMinutes = phases.reduce((a, p) => a + Math.max(1, p.minutes), 0);
-  // Reservamos espacio para los acentos personales antes de repartir.
-  const coreTarget = Math.max(1, target - personal.length);
-  const phaseQuota = phases.map((p) =>
-    Math.max(1, Math.round((Math.max(1, p.minutes) / totalMinutes) * coreTarget)),
-  );
-
-  // Pool ordenado por popularidad (descendente). De aquí vamos sacando para cada
-  // fase según su energía: fases de más energía piden las más populares.
-  const pool = [...tracks].sort((a, b) => b.popularity - a.popularity);
-  // Índices de "extremos": las fases de alta energía consumen desde el inicio
-  // del pool (más populares), las de baja desde el final (menos populares).
-  let hi = 0; // puntero para pistas enérgicas
-  let lo = pool.length - 1; // puntero para pistas suaves
-  const used = new Set<string>();
-  const takeN = (energy: number, n: number): ScoredTrack[] => {
-    const out: ScoredTrack[] = [];
-    // energy > 0.5 → tomamos del frente (populares); si no, del final (suaves).
-    const fromFront = energy >= 0.5;
-    while (out.length < n) {
-      const idx = fromFront ? hi : lo;
-      if (hi > lo) break;
-      const t = pool[idx];
-      // Avanzamos el puntero correspondiente saltando los ya usados.
-      if (fromFront) hi++;
-      else lo--;
-      if (!t || used.has(t.uri)) continue;
-      used.add(t.uri);
-      out.push(t);
-    }
-    return out;
-  };
-
-  const ordered: string[] = [];
-  for (let i = 0; i < phases.length; i++) {
-    const phase = phases[i];
-    const picked = takeN(phase.energy, phaseQuota[i] ?? 1);
-    // Intercalamos un acento personal en medio de la fase si toca.
-    const accentIdx = Math.floor((ordered.length / Math.max(1, coreTarget)) * personal.length);
-    const accent =
-      personal[accentIdx] && !used.has(personal[accentIdx]) ? personal[accentIdx] : null;
-    const half = Math.floor(picked.length / 2);
-    ordered.push(...picked.slice(0, half).map((t) => t.uri));
-    if (accent) {
-      ordered.push(accent);
-      used.add(accent);
-    }
-    ordered.push(...picked.slice(half).map((t) => t.uri));
-  }
-
-  // Acentos personales que no entraron aún: se añaden al final antes de cortar.
-  for (const uri of personal) {
-    if (!used.has(uri) && ordered.length < target) {
-      ordered.push(uri);
-      used.add(uri);
-    }
-  }
-  return ordered.slice(0, target);
 }
 
 // ── Diversidad entre semanas (#3) ──────────────────────────────────────────
@@ -579,79 +517,97 @@ function rotateSearchTerms(terms: string[], session: any): string[] {
 }
 
 /**
- * Arma la lista de canciones de una sesión.
+ * Arma la lista de canciones de una sesión, sincronizada con sus fases.
  *
- * Lo que manda es la intensidad: al menos el 70% sale de las búsquedas por
- * `searchTerms`, y el gusto personal (top tracks/artists) entra solo como sazón. Antes
- * era al revés — los top tracks iban primero y la lista se cortaba en 25 — y por eso
- * todas las sesiones producían prácticamente la misma playlist.
+ * Cada fase define una banda de energía (suave / media / fuerte) y una ventana
+ * de tiempo con arranque absoluto; la playlist se llena fase por fase con
+ * canciones de su banda cuyas duraciones reales cubren la ventana (±45 s), de
+ * modo que la primera canción fuerte arranca en el minuto en que empiezan los
+ * intervalos. Las búsquedas se hacen por banda con sus propios términos: el
+ * calentamiento de una sesión de intervalos pide música suave aunque la sesión
+ * sea "alta". El gusto personal (top tracks) entra como acentos (~30%)
+ * intercalados, y su duración también cuenta para la sincronización.
  *
- * El orden final sigue la curva de energía de la sesión (#1): calentamiento,
- * picos de calidad, enfriamiento. Y las canciones ya usadas en semanas recientes
- * se penalizan (#3) para que dos sesiones repetidas no suenen idénticas.
+ * Las canciones ya usadas en semanas recientes se penalizan (#3) para que dos
+ * sesiones repetidas no suenen idénticas.
  */
-export async function buildTrackPool(
+async function buildSessionPlaylist(
   intensity: SessionIntensity,
   session?: any,
-): Promise<string[]> {
+): Promise<{ uris: string[]; segments: Segment[] }> {
+  const phases = buildSessionPhases(session, intensity);
+  const windows = buildTimeline(phases);
+
+  // Solo se busca en las bandas que la sesión realmente usa: una sesión de
+  // recuperación no gasta llamadas pidiendo EDM.
+  const totalMs = windows.reduce((a, w) => a + (w.endMs - w.startMs), 0) || 1;
+  const bandList = (["baja", "moderada", "alta"] as IntensityLevel[]).filter((band) =>
+    windows.some((w) => w.band === band),
+  );
+
+  // Tamaño total de referencia (tope de llamadas y de playlist).
   const target = Math.min(
     MAX_TRACKS,
     Math.max(MIN_TRACKS, Math.ceil(intensity.estimatedMinutes / MINUTES_PER_TRACK)),
   );
   const personalTarget = Math.round(target * PERSONAL_SHARE);
 
-  // Rotación de searchTerms por fecha (#3): dos Easy Run en semanas distintas
-  // empiezan por términos distintos y así no reciben los mismos resultados.
-  const terms = rotateSearchTerms(intensity.searchTerms, session);
-
-  // Se pide el doble de lo necesario para tener de dónde escoger tras deduplicar,
-  // dentro del tope de 10 por búsqueda que impone el modo desarrollo.
-  const perTerm = Math.min(MAX_SEARCH_LIMIT, Math.max(6, Math.ceil((target * 2) / terms.length)));
-
-  // El gusto personal sale solo de /me/top/tracks (el endpoint de artistas favoritos
-  // fue eliminado en la migración de febrero de 2026). Va envuelto en safeArray y puede
-  // quedar vacío: en ese caso la playlist se arma solo con las búsquedas por intensidad.
   const failures: string[] = [];
-  const [searched, topTracks] = await Promise.all([
-    Promise.all(
-      terms.map((t) => safeArray(`search "${t}"`, () => searchTrackScored(t, perTerm), failures)),
-    ),
-    safeArray("me/top/tracks", () => fetchTopTrackScored(), failures),
-  ]);
+  // Todas las búsquedas se disparan en paralelo (la de top tracks incluida).
+  const jobs = bandList.map((band) => {
+    const bandMs = windows
+      .filter((w) => w.band === band)
+      .reduce((a, w) => a + (w.endMs - w.startMs), 0);
+    // ~2 pistas por cada una necesaria para poder escoger, juntadas con 1-3
+    // búsquedas de ≤10 resultados dentro del tope del modo desarrollo.
+    const needed = Math.max(2, Math.round((bandMs / totalMs) * target));
+    const nTerms = Math.min(3, Math.max(1, Math.ceil((needed * 2) / MAX_SEARCH_LIMIT)));
+    const terms = rotateSearchTerms(searchTermsFor(intensity.sport, band), session).slice(
+      0,
+      nTerms,
+    );
+    return {
+      band,
+      done: Promise.all(
+        terms.map((t) => safeArray(`search "${t}"`, () => searchTrackScored(t), failures)),
+      ),
+    };
+  });
+  const topTracksDone = safeArray("me/top/tracks", () => fetchTopTrackScored(), failures);
 
   // (#3) URIs usados en las últimas semanas → penalizados (quedan últimos).
   const recent = recentlyUsedUris();
 
-  // Pool por intensidad: deduplica por URI y empuja los recientes al final.
+  // Pool por banda: deduplica entre bandas (la primera banda en encontrarla la
+  // conserva) y empuja los recientes al final.
   const seenUri = new Set<string>();
-  const intensityPool: ScoredTrack[] = [];
-  for (const t of searched.flat()) {
-    if (seenUri.has(t.uri)) continue;
-    seenUri.add(t.uri);
-    intensityPool.push(t);
+  const pools: BandPools = { baja: [], moderada: [], alta: [] };
+  for (const { band, done } of jobs) {
+    const fresh = (await done).flat().filter((t) => {
+      if (seenUri.has(t.uri)) return false;
+      seenUri.add(t.uri);
+      return true;
+    });
+    pools[band] = deprioritizeRecent(shuffle(fresh), recent);
   }
-  const intensityFresh = deprioritizeRecent(shuffle(intensityPool), recent);
 
-  // Pool personal: top tracks del usuario.
-  const personalPool = shuffle([...topTracks]);
-  const personalFresh = deprioritizeRecent(personalPool, recent).map((t) => t.uri);
+  // Pool personal: top tracks del usuario, como acentos.
+  const topTracks = await topTracksDone;
+  const personal = deprioritizeRecent(shuffle([...topTracks]), recent).slice(0, personalTarget);
 
-  // Curva de energía de la sesión (#1): fases con su energía y duración.
-  const phases = buildSessionPhases(session, intensity);
-
-  // Reservamos el cupo personal y el resto va al core que ordena la curva.
-  const personal = personalFresh.slice(0, personalTarget);
-  const core = intensityFresh.slice(0, Math.max(0, target - personal.length));
-
-  // Construimos el orden siguiendo la curva; los personales se intercalan.
-  let uris = buildEnergyCurve(core, phases, personal, target);
+  // Llenado sincronizado con las fases (ver playlist-timeline.ts).
+  const filled = fillTimeline(pools, personal, phases);
+  let uris = filled.uris;
+  const segments = filled.segments;
 
   // Déficit: si faltaron canciones (búsqueda pobre, sin historial), rellenamos
-  // sin importar la curva —mejor una playlist completa algo desordenada que corta—.
-  if (uris.length < Math.min(target, 8)) {
+  // sin importar la sincronización —mejor una playlist completa algo desordenada
+  // que corta—. Los segmentos siguen reflejando los bloques sincronizados.
+  if (uris.length < Math.min(target, MIN_TRACKS)) {
     const usedSet = new Set(uris);
-    const fallbackCore = intensityFresh.map((t) => t.uri);
-    const fallback = [...fallbackCore, ...personalFresh].filter((u) => !usedSet.has(u));
+    const fallback = [...pools.baja, ...pools.moderada, ...pools.alta, ...personal]
+      .map((t) => t.uri)
+      .filter((u) => !usedSet.has(u));
     uris = [...uris, ...fallback].slice(0, target);
   }
 
@@ -662,14 +618,42 @@ export async function buildTrackPool(
         : "Spotify no devolvió canciones para esta sesión.",
     );
   }
-  return uris;
+  return { uris, segments };
 }
+
+/** Bloque sincronizado con una fase, para previsualizar la línea de tiempo. */
+export type PlaylistPhase = {
+  label: string;
+  /** Banda de energía del bloque, para colorear la previsualización. */
+  band: IntensityLevel;
+  /** Segundo en que arranca el bloque al reproducir la playlist. */
+  startSec: number;
+  tracks: number;
+  /** Desfase del bloque frente a la duración de su fase, en segundos. */
+  errorSec: number;
+};
 
 export type CreatedPlaylist = {
   playlistId: string;
   externalUrl: string;
   intensityLabel: string;
+  timeline?: PlaylistPhase[];
 };
+
+/** Spotify corta las descripciones en 300 caracteres. */
+const MAX_DESCRIPTION = 300;
+
+/**
+ * Línea de tiempo compacta para la descripción: "⏱ 0:00 Calentamiento ·
+ * 8:00 Intervalos · 20:00 Enfriamiento". Solo bloques con canciones — una fase
+ * que no acumuló ninguna es una frontera que se atraviesa, no un bloque.
+ */
+function timelineDescription(segments: Segment[]): string {
+  return segments
+    .filter((s) => s.uris.length > 0)
+    .map((s) => `${mmss(s.startSec)} ${s.label}`)
+    .join(" · ");
+}
 
 export async function createIntensityPlaylist(
   session: any,
@@ -681,21 +665,24 @@ export async function createIntensityPlaylist(
   const intensity = levelOverride ? withLevel(base, levelOverride) : base;
   const adjusted = await applyFatigue(intensity, garmin);
 
-  const uris = await buildTrackPool(adjusted, session);
+  const { uris, segments } = await buildSessionPlaylist(adjusted, session);
 
   // `POST /users/{id}/playlists` fue eliminado en la migración de febrero de 2026 y
   // responde 403 a todo el mundo desde el 9 de marzo. El reemplazo es `/me/playlists`,
   // que ya no necesita el id del usuario — por eso tampoco se llama a `/me`.
   const sessionName = String(session?.name ?? session?.sport ?? "Entrenamiento").slice(0, 70);
+  const description =
+    `Generado por Entrenador · ${adjusted.label} · ~${adjusted.estimatedMinutes} min · ` +
+    `${adjusted.targetTempoBpm[0]}-${adjusted.targetTempoBpm[1]} BPM`;
+  const timelineText = timelineDescription(segments);
+  const fullDescription = timelineText ? `${description} · ⏱ ${timelineText}` : description;
   const playlist = await spotifyFetch<{ id: string; external_urls?: { spotify?: string } }>(
     "/me/playlists",
     {
       method: "POST",
       body: JSON.stringify({
         name: `Entrenador · ${sessionName} · ${adjusted.label}`,
-        description:
-          `Generado por Entrenador · ${adjusted.label} · ~${adjusted.estimatedMinutes} min · ` +
-          `${adjusted.targetTempoBpm[0]}-${adjusted.targetTempoBpm[1]} BPM`,
+        description: fullDescription.slice(0, MAX_DESCRIPTION),
         public: false,
       }),
     },
@@ -715,6 +702,15 @@ export async function createIntensityPlaylist(
     externalUrl:
       playlist.external_urls?.spotify ?? `https://open.spotify.com/playlist/${playlist.id}`,
     intensityLabel: adjusted.label,
+    timeline: segments
+      .filter((s) => s.uris.length > 0)
+      .map((s) => ({
+        label: s.label,
+        band: s.band,
+        startSec: s.startSec,
+        tracks: s.uris.length,
+        errorSec: s.errorSec,
+      })),
   };
   if (sessionKey) recordCreatedPlaylist(sessionKey, created);
   return created;

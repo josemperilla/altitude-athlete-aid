@@ -50,6 +50,73 @@ export function stepSeconds(step: Step): number {
   return Number.isFinite(v) && v > 0 && v < 1_000_000 ? v : 0;
 }
 
+/**
+ * Ritmo medio del deporte para estimar pasos por distancia sin target legible.
+ * (6 min/km corriendo, 2.4 min/km en bici — mismos supuestos que MIN_PER_KM.)
+ */
+const AVG_SPEED: Record<"running" | "cycling", number> = {
+  running: 1000 / 360,
+  cycling: 1000 / 144,
+};
+
+/**
+ * Segundos reales de un paso, resolviendo la unidad de `endConditionValue`:
+ * tiempo → segundos tal cual; distancia → metros ÷ ritmo del target (pace/speed
+ * vienen en m/s), con fallback al ritmo medio del deporte. `lap.button` y pasos
+ * sin duración medible devuelven 0. `stepSeconds` se queda para el render, donde
+ * el valor crudo se muestra con su unidad (`stepMeasure`); este es el que hay
+ * que usar para sumar duraciones.
+ */
+export function resolveStepSeconds(step: Step, sport: "running" | "cycling"): number {
+  const value = Number(step?.endConditionValue);
+  if (!Number.isFinite(value) || value <= 0 || value >= 1_000_000) return 0;
+
+  const raw = step?.endCondition;
+  const key = String(
+    typeof raw === "string" ? raw : ((raw as any)?.conditionTypeKey ?? ""),
+  ).toLowerCase();
+  if (!key.includes("distance")) {
+    // Tiempo, lap.button o condición ausente: el valor ya son segundos.
+    return key.includes("lap") || key.includes("iteration") ? 0 : value;
+  }
+
+  // Distancia: a qué velocidad, según el target del paso.
+  const targetKey = String(step?.targetType?.workoutTargetTypeKey ?? "").toLowerCase();
+  const lo = Number(step?.targetValueOne);
+  const hi = Number(step?.targetValueTwo);
+  const speeds = [lo, hi].filter((v) => Number.isFinite(v) && v > 0 && v < 30);
+  const speed =
+    targetKey.includes("pace") || targetKey.includes("speed")
+      ? speeds.reduce((a, v) => a + v, 0) / Math.max(1, speeds.length) || AVG_SPEED[sport]
+      : AVG_SPEED[sport];
+  return value / speed;
+}
+
+/** Tope de seguridad para expandir grupos de repetición corruptos. */
+const MAX_ITERATIONS = 50;
+
+/**
+ * Aplana los grupos de repetición multiplicando sus hijos por
+ * `numberOfIterations`, para que series como "8×(2 min fuerte / 1 min suave)"
+ * aporten sus 24 minutos a las duraciones en vez de desaparecer (el paso
+ * `repeat` en sí no trae duración). Los hijos pueden anidar otros grupos.
+ */
+export function expandSteps(steps: Step[], depth = 0): Step[] {
+  const out: Step[] = [];
+  for (const step of steps ?? []) {
+    const children = Array.isArray(step?.workoutSteps) ? step.workoutSteps : [];
+    const isRepeat = stepTypeKey(step) === "repeat" || /repeat/.test(stepTypeKey(step));
+    if (!isRepeat || children.length === 0 || depth >= 3) {
+      out.push(step);
+      continue;
+    }
+    const iters = Number(step?.numberOfIterations);
+    const n = Number.isFinite(iters) ? Math.min(Math.max(1, Math.round(iters)), MAX_ITERATIONS) : 1;
+    for (let i = 0; i < n; i++) out.push(...expandSteps(children, depth + 1));
+  }
+  return out;
+}
+
 // Redondea una sola vez y deriva minutos y segundos del mismo total: redondear
 // por separado (floor en minutos, round en segundos) desalinea los dos cuando
 // s%60 cae en [59.5, 60) — p. ej. 179.6s daba "2:00" en vez de "3:00".

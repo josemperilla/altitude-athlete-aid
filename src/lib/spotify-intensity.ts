@@ -1,8 +1,8 @@
 import {
+  expandSteps,
   extractSteps,
-  mmss,
+  resolveStepSeconds,
   stepMaxZone,
-  stepSeconds,
   stepTypeKey,
   type Step,
 } from "@/lib/workout-steps";
@@ -212,18 +212,19 @@ function profile(level: IntensityLevel, sport: Sport) {
 }
 
 /**
- * Minutos de la sesión: duración declarada, si no la suma de los pasos del workout,
- * si no la distancia por el ritmo promedio, y si no un valor por defecto.
+ * Minutos de la sesión: duración declarada, si no la suma de los pasos del workout
+ * (con grupos de repetición expandidos y pasos por distancia resueltos a segundos
+ * vía el ritmo del target), si no la distancia por el ritmo promedio, y si no un
+ * valor por defecto.
  */
 function estimateMinutes(session: any, sport: Sport): number {
   const duration = Number(session?.duration_min);
   if (Number.isFinite(duration) && duration > 0) return duration;
 
-  // `endConditionValue` viene en segundos cuando la condición es de tiempo.
-  const seconds = extractSteps(session).reduce((total, step) => {
-    const v = Number(step?.endConditionValue);
-    return total + (Number.isFinite(v) && v > 0 && v < 1_000_000 ? v : 0);
-  }, 0);
+  const seconds = expandSteps(extractSteps(session)).reduce(
+    (total, step) => total + resolveStepSeconds(step, sport),
+    0,
+  );
   if (seconds > 0) return Math.round(seconds / 60);
 
   const km = Number(session?.distance_km);
@@ -287,9 +288,11 @@ export function withLevel(intensity: SessionIntensity, level: IntensityLevel): S
 export type SessionPhase = {
   /** Energía objetivo de la fase, 0-1. */
   energy: number;
-  /** Minutos que dura la fase en la sesión. */
+  /** Minutos que dura la fase en la sesión (redondeado, para mostrar). */
   minutes: number;
-  /** Etiqueta legible para logs / debug ("Calentamiento", "Bloque principal"...). */
+  /** Duración exacta en segundos, cuando se conoce (p. ej. desde los pasos). */
+  seconds?: number;
+  /** Etiqueta legible para logs / debug ("Calentamiento", "Intervalo 2"...). */
   label: string;
 };
 
@@ -304,12 +307,14 @@ function energyFromZone(zone: number): number {
 
 /**
  * Construye las fases de la sesión a partir de los pasos del workout de Garmin.
- * Agrupa pasos consecutivos del mismo rol (calentamiento / cuerpo / enfriamiento)
- * y les asigna la energía de la zona que exigen. Si un paso no declara zona,
- * hereda la del bloque al que pertenece.
+ * Los grupos de repetición se expanden (cada serie aporta sus minutos) y los
+ * pasos por distancia se resuelven a segundos con el ritmo del target, para que
+ * la línea de tiempo refleje el entrenamiento real. Si un paso no declara zona,
+ * hereda la energía por defecto de su rol.
  */
-function phasesFromSteps(steps: Step[]): SessionPhase[] | null {
-  if (steps.length === 0) return null;
+function phasesFromSteps(steps: Step[], sport: Sport): SessionPhase[] | null {
+  const expanded = expandSteps(steps);
+  if (expanded.length === 0) return null;
   const phases: SessionPhase[] = [];
 
   // Energía por defecto de cada rol, por si el paso no declara zona.
@@ -319,20 +324,26 @@ function phasesFromSteps(steps: Step[]): SessionPhase[] | null {
     return 0.7;
   };
 
-  for (const step of steps) {
+  let intervalCount = 0;
+  let recoveryCount = 0;
+  for (const step of expanded) {
     const key = stepTypeKey(step);
-    const sec = stepSeconds(step);
+    const sec = resolveStepSeconds(step, sport);
     if (sec <= 0) continue; // ignoramos pasos sin duración medible
     const zone = stepMaxZone(step);
     const energy = zone != null ? energyFromZone(zone) : roleEnergy(key);
-    const label = /warmup/.test(key)
-      ? "Calentamiento"
-      : /cooldown/.test(key)
-        ? "Enfriamiento"
-        : /rest|recovery/.test(key)
-          ? "Recuperación"
-          : "Bloque principal";
-    phases.push({ energy, minutes: Math.round(sec / 60), label: `${label} · ${mmss(sec)}` });
+    let label: string;
+    if (/warmup/.test(key)) label = "Calentamiento";
+    else if (/cooldown/.test(key)) label = "Enfriamiento";
+    else if (/recovery/.test(key)) label = `Recuperación ${++recoveryCount}`;
+    else if (/rest/.test(key)) label = `Descanso ${++recoveryCount}`;
+    else label = `Intervalo ${++intervalCount}`;
+    phases.push({
+      energy,
+      minutes: Math.max(1, Math.round(sec / 60)),
+      seconds: Math.round(sec),
+      label,
+    });
   }
 
   return phases.length > 0 ? phases : null;
@@ -404,7 +415,16 @@ function phasesFromLevel(level: IntensityLevel, minutes: number): SessionPhase[]
  * una curva genérica según el nivel de intensidad derivado.
  */
 export function buildSessionPhases(session: any, intensity: SessionIntensity): SessionPhase[] {
-  const fromSteps = phasesFromSteps(extractSteps(session));
+  const fromSteps = phasesFromSteps(extractSteps(session), intensity.sport);
   if (fromSteps && fromSteps.length > 0) return fromSteps;
   return phasesFromLevel(intensity.level, intensity.estimatedMinutes);
+}
+
+/**
+ * Términos de búsqueda de una banda de energía concreta (no solo del nivel
+ * global de la sesión): el calentamiento de una sesión de intervalos pide
+ * canciones suaves aunque la sesión sea "alta".
+ */
+export function searchTermsFor(sport: Sport, level: IntensityLevel): string[] {
+  return SEARCH_TERMS[sport][level];
 }
