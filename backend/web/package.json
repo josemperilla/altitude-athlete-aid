@@ -1,0 +1,13 @@
+{
+  "name": "entrenador-gimnasio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Guía de gimnasio para el medio maratón del 4-oct-2026. Estático, se consulta desde el celular en el gimnasio.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

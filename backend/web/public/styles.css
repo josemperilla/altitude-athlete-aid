@@ -1,0 +1,478 @@
+/* Guía de gimnasio — rediseño 2026-09.
+   Pensada para un celular, en un gimnasio, con manos ocupadas y sudor en la
+   pantalla: oscuro, tipografía grande, números en mono (que es lo que se lee
+   entre series), objetivos táctiles amplios. El acento ámbar distingue lo que
+   es del gimnasio; correr y bici tienen su propio color en el calendario. */
+
+:root {
+  --bg:        #0b0d10;
+  --panel:     #14181d;
+  --panel-2:   #1a2026;
+  --line:      #273039;
+  --line-soft: #1e252c;
+  --ink:       #edf2ef;
+  --muted:     #9aabb0;
+  --faint:     #788b94;   /* era #64757d: 3,43:1 sobre --panel-2 y 4,06 sobre
+                            --bg, por debajo del 4,5 que pide WCAG AA. Es el
+                            color de las etiquetas de las pestañas, las fechas
+                            y los minutos de bloque, o sea el texto más
+                            pequeño de la app. Ahora 4,63 en el peor fondo. */
+  --accent:    #f5a742;
+  --accent-dim:#2e2410;
+  --run:       #7fc4e8;
+  --run-dim:   #18242c;
+  --bike:      #cbb968;
+  --bike-dim:  #262315;
+  --race:      #ff7a5c;
+  --race-dim:  #2e1a15;
+  --tap: 44px;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Archivo, "Helvetica Neue", -apple-system, system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  padding-bottom: 88px; /* espacio para la barra de pestañas */
+  overscroll-behavior-y: contain;
+}
+
+.mono { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; }
+
+.shell { max-width: 640px; margin: 0 auto; padding: 0 14px; }
+
+/* ── Cabecera ─────────────────────────────────────────────────────────── */
+
+.masthead {
+  padding: 18px 0 14px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 16px;
+}
+/* Envuelve a propósito: con las píldoras de conteo en la misma línea, el h1 se
+   quedaba con ~180 px y partía "Fuerza para la media maratón" en 4 líneas en
+   todo ancho ≤390 px, o sea todo iPhone que no sea Pro Max. Al envolver, el
+   título usa el ancho completo y la cabecera baja de 130 px a ~90 px. */
+.mast-top {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  gap: 12px; flex-wrap: wrap;
+}
+.mast-id { flex: 1 1 100%; }
+@media (min-width: 420px) { .mast-id { flex: 1 1 auto; } }
+.eyebrow {
+  margin: 0 0 4px;
+  font: 600 10px/1 "IBM Plex Mono", monospace;
+  letter-spacing: .22em; text-transform: uppercase; color: var(--accent);
+}
+.masthead h1 {
+  margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1;
+  text-wrap: balance;   /* reparte las líneas en vez de dejar una palabra huérfana */
+}
+
+.count { display: flex; gap: 10px; flex-shrink: 0; }
+.count-cell {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 10px; padding: 7px 11px;
+}
+.count-cell b {
+  font-family: "IBM Plex Mono", monospace; font-size: 22px; font-weight: 600;
+  line-height: 1; color: var(--ink);
+}
+.count-cell span {
+  font-size: 8.5px; line-height: 1.25; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--faint);
+}
+
+/* Barra de progreso del bloque completo. */
+.track {
+  margin-top: 14px; height: 4px; border-radius: 2px;
+  background: var(--panel-2); overflow: hidden;
+}
+.track i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 2px; transition: width .4s ease; }
+
+/* ── Secciones y vistas ───────────────────────────────────────────────── */
+
+.view { display: none; }
+.view.active { display: block; }
+
+h2.sec {
+  display: flex; align-items: center; gap: 10px;
+  margin: 24px 2px 10px;
+  font: 600 11px/1 "IBM Plex Mono", monospace;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--faint);
+}
+h2.sec::after { content: ""; flex: 1; height: 1px; background: var(--line-soft); }
+
+/* ── Tarjeta de sesión ────────────────────────────────────────────────── */
+
+.session {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+/* Letra gigante de la sesión, al agua: le da identidad de "ficha" a cada
+   sesión sin gastar espacio útil. */
+.session::before {
+  content: attr(data-code);
+  position: absolute; right: 6px; top: -22px;
+  font: 800 110px/1 Archivo, sans-serif;
+  color: var(--ink); opacity: .05;
+  pointer-events: none;
+  z-index: 0;
+}
+.session > * { position: relative; z-index: 1; }
+
+.session-head { padding: 16px 16px 12px; border-bottom: 1px solid var(--line-soft); }
+.session-head .sid {
+  display: inline-flex; align-items: baseline; gap: 8px; margin-bottom: 6px;
+}
+.session-head .sid .code {
+  font: 700 11px/1 "IBM Plex Mono", monospace; letter-spacing: .12em;
+  background: var(--accent-dim); color: var(--accent);
+  padding: 4px 9px; border-radius: 6px;
+  white-space: nowrap;   /* "Casa · fuerza" no cabe y partía la píldora en dos */
+}
+/* Con etiqueta larga la fila necesita poder envolver: si no, la fecha y los
+   minutos se salen de la tarjeta. */
+.session-head .sid { flex-wrap: wrap; row-gap: 6px; }
+.session-head .sid .meta { font: 500 11.5px/1 "IBM Plex Mono", monospace; color: var(--faint); }
+.session-head h3 { margin: 0 0 6px; font-size: 19px; font-weight: 700; letter-spacing: -.015em; text-wrap: balance; }
+.session-head p.summary { margin: 6px 0 0; font-size: 13.5px; color: var(--muted); line-height: 1.55; }
+
+/* Progreso de la sesión (check de ejercicios). */
+.session-prog {
+  display: flex; align-items: center; gap: 10px; margin-top: 12px;
+}
+.session-prog .bar { flex: 1; height: 5px; background: var(--panel-2); border-radius: 3px; overflow: hidden; }
+.session-prog .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s ease; }
+.session-prog .num { font: 600 11.5px "IBM Plex Mono", monospace; color: var(--faint); }
+.session-prog .num b { color: var(--accent); }
+.session-prog .done-tag {
+  font: 600 10px/1 "IBM Plex Mono", monospace; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--accent); background: var(--accent-dim);
+  padding: 4px 8px; border-radius: 5px;
+}
+
+.block-head {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+  padding: 11px 16px 9px;
+  border-bottom: 1px solid var(--line-soft);
+  font: 700 10.5px/1 "IBM Plex Mono", monospace;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--accent);
+}
+.block-head .mins { color: var(--faint); font-weight: 500; letter-spacing: .06em; }
+.block-note {
+  padding: 9px 16px; font-size: 12.5px; color: var(--faint);
+  border-bottom: 1px solid var(--line-soft); line-height: 1.5;
+}
+
+/* ── Ejercicio ────────────────────────────────────────────────────────── */
+
+.ex { border-bottom: 1px solid var(--line-soft); padding: 2px 0 8px; }
+.ex:last-child { border-bottom: 0; }
+
+.ex-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px 8px 8px;
+}
+
+/* Marcar ejercicio hecho: es la interacción número uno entre series. */
+.check {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 2px solid var(--line);
+  background: none; cursor: pointer; color: transparent;
+  display: grid; place-items: center;
+  transition: border-color .15s, background .15s, transform .1s;
+}
+.check:active { transform: scale(.9); }
+.check svg { width: 17px; height: 17px; }
+.ex.done .check { border-color: var(--accent); background: var(--accent); color: #1a1206; }
+.ex.nochk .ex-row { grid-template-columns: 1fr auto; padding-left: 14px; }
+
+.ex-id { min-width: 0; }
+.ex-id .nm { font-size: 15.5px; font-weight: 650; letter-spacing: -.01em; line-height: 1.25; }
+.ex.done .ex-id .nm { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--faint); }
+.ex-id .tgt { margin: 2px 0 0; font-size: 11.5px; color: var(--faint); line-height: 1.35; }
+
+.ex-r { text-align: right; }
+.ex-r .pres {
+  display: block; font: 600 15px/1.2 "IBM Plex Mono", monospace;
+  white-space: nowrap; color: var(--ink);
+}
+.ex-r .loadc {
+  display: inline-block; margin-top: 4px;
+  font: 500 10.5px/1 "IBM Plex Mono", monospace;
+  color: var(--muted); white-space: nowrap;
+}
+
+/* Guía de carga: siempre visible, es la respuesta a "¿cuánto me pongo?". */
+.ex-load {
+  margin: 2px 14px 4px;
+  display: grid; grid-template-columns: auto 1fr; gap: 4px 10px;
+  background: var(--panel-2);
+  border: 1px solid var(--line-soft);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  padding: 9px 11px;
+  font-size: 12.5px; line-height: 1.45; color: var(--muted);
+}
+.ex-load .lb {
+  font: 600 9.5px/1.7 "IBM Plex Mono", monospace; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--accent); white-space: nowrap;
+}
+.ex-load b { color: var(--ink); font-weight: 600; }
+
+/* Animación: siempre visible — nadie toca un botón para ver algo que no
+   sabe que está ahí. */
+.anim {
+  background: var(--bg);
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  margin: 6px 14px 8px;
+  overflow: hidden;
+}
+.anim svg { display: block; width: 100%; height: 190px; }
+
+.anim .limb { fill: var(--ink); stroke: none; }
+.anim .limb.far { fill: var(--faint); }   /* pierna de atrás, para distinguirla */
+.anim .head { fill: var(--ink); stroke: none; }
+.anim .ground { stroke: var(--line); stroke-width: 2; }
+/* Escenografía: suelo, pared, poste. Gris, pero visible — antes usaba --line
+   sobre --bg y desaparecía. */
+.anim .prop { fill: var(--panel-2); stroke: var(--faint); stroke-width: 1.5; }
+.anim .prop-line { stroke: var(--faint); stroke-width: 2.5; stroke-dasharray: 4 3; }
+
+/* Aparato que hay que ir a buscar (banco, cajón, escalón, máquina, banda) y la
+   carga misma (mancuerna, disco). Ámbar, el color con el que la app ya marca
+   todo lo que es del gimnasio. */
+.anim .prop.gear { fill: var(--accent-dim); stroke: var(--accent); stroke-width: 1.8; }
+.anim .prop-line.gear { stroke: var(--accent); stroke-width: 3; stroke-dasharray: none; }
+.anim .prop.load { fill: var(--accent); stroke: none; }
+.anim .band { stroke: var(--accent); stroke-width: 2.4; stroke-linecap: round; }
+.anim .load-bar { stroke: var(--accent); stroke-width: 2.6; stroke-linecap: round; }
+.anim .load-plate { fill: var(--accent); }
+
+/* Estela de la trayectoria (barra, mano): tenue para que no compita con la
+   figura, pero con el color de acento para que se lea como dato. */
+.anim .trail {
+  fill: none; stroke: var(--accent); stroke-width: 2;
+  opacity: .45; stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* Primer plano del arco del pie: curva con el grosor de una huella y recta
+   punteada de referencia (la altura del arco es la distancia entre ambas). */
+.anim .arch { stroke: var(--ink); stroke-width: 6.5; fill: none; stroke-linecap: round; }
+.anim .arch-base { stroke: var(--faint); stroke-width: 1.5; stroke-dasharray: 3 4; }
+
+/* Desplegable de técnica. */
+.more-btn {
+  display: block; width: calc(100% - 28px); min-height: var(--tap);
+  margin: 0 14px 2px;
+  background: none; border: 1px dashed var(--line);
+  border-radius: 9px;
+  color: var(--muted); font: 600 11.5px/1 "IBM Plex Mono", monospace;
+  letter-spacing: .08em; cursor: pointer;
+}
+.more-btn:hover { background: var(--panel-2); color: var(--ink); }
+.more-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.ex-body { display: none; padding: 10px 16px 12px; }
+.ex.open .ex-body { display: block; }
+
+.tips h4 {
+  margin: 6px 0 7px; font: 700 10px/1 "IBM Plex Mono", monospace;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--accent);
+}
+.tips h4.bad { color: var(--race); }
+.tips ul { margin: 0 0 12px; padding-left: 16px; }
+.tips li { font-size: 13.5px; line-height: 1.55; margin-bottom: 6px; color: var(--muted); }
+.tips li::marker { color: var(--accent); }
+.tips h4.bad + ul li::marker { color: var(--race); }
+.alt {
+  font-size: 12.5px; color: var(--muted); background: var(--panel-2);
+  border-left: 2px solid var(--accent); padding: 9px 12px; border-radius: 0 7px 7px 0;
+}
+
+/* Detalle completo de la guía de carga dentro del desplegable. */
+.load-full { margin: 4px 0 12px; }
+.load-full dl {
+  margin: 0; display: grid; grid-template-columns: 92px 1fr;
+  gap: 7px 12px; font-size: 13px; line-height: 1.5;
+}
+.load-full dt {
+  font: 600 9.5px/2 "IBM Plex Mono", monospace; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--accent);
+}
+.load-full dd { margin: 0; color: var(--muted); }
+
+/* Par de fotos de referencia, quietas, dentro del panel de técnica. */
+.ref-h {
+  margin: 6px 0 8px; font: 700 10px/1 "IBM Plex Mono", monospace;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--accent);
+}
+.refpair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.refpair figure { margin: 0; }
+.refpair img {
+  display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: contain;
+  background: #f2f2f0; border-radius: 7px; border: 1px solid var(--line);
+}
+.refpair figcaption {
+  margin-top: 4px; font: 500 10px/1 "IBM Plex Mono", monospace;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--faint); text-align: center;
+}
+.caveat {
+  margin: 8px 0 0; font-size: 12px; line-height: 1.5;
+  color: var(--faint); border-left: 2px solid var(--line);
+  padding-left: 9px;
+}
+
+/* ── Cómo elegir el peso ──────────────────────────────────────────────── */
+
+.pick {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 12px; overflow: hidden; margin-bottom: 16px;
+}
+.pick-head {
+  width: 100%; min-height: var(--tap);
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 13px 16px; background: none; border: 0; cursor: pointer;
+  color: var(--ink); font: 700 14px/1 Archivo, sans-serif;
+}
+.pick-head .chev { color: var(--accent); font: 600 11px "IBM Plex Mono", monospace; }
+.pick-body { display: none; padding: 0 16px 14px; }
+.pick.open .pick-body { display: block; }
+.pick-body ol { margin: 0; padding-left: 18px; }
+.pick-body li { font-size: 13px; line-height: 1.6; color: var(--muted); margin-bottom: 7px; }
+.pick-body li::marker { color: var(--accent); font: 600 11px "IBM Plex Mono", monospace; }
+
+/* ── Selector de sesiones ─────────────────────────────────────────────── */
+
+.seg {
+  display: flex; gap: 6px; margin: 2px 0 14px;
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 12px; padding: 5px;
+}
+.seg button {
+  flex: 1; min-height: var(--tap);
+  background: none; border: 0; border-radius: 8px; cursor: pointer;
+  color: var(--faint);
+  font: 600 13.5px/1.1 Archivo, sans-serif;
+}
+.seg button small { display: block; font: 500 9.5px/1.6 "IBM Plex Mono", monospace; letter-spacing: .06em; text-transform: uppercase; }
+.seg button[aria-selected="true"] { background: var(--accent-dim); color: var(--accent); }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* ── Ese mismo día ────────────────────────────────────────────────────── */
+
+.day {
+  display: grid; grid-template-columns: 54px 1fr; gap: 12px;
+  padding: 11px 0; border-bottom: 1px solid var(--line-soft);
+}
+.day .d { font-size: 11.5px; color: var(--faint); line-height: 1.35; }
+.day .d b { display: block; color: var(--ink); font: 600 15px "IBM Plex Mono", monospace; }
+.day .items { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.item { font-size: 13.5px; }
+.item .k {
+  display: inline-block; font: 700 9px/1 "IBM Plex Mono", monospace; letter-spacing: .1em;
+  text-transform: uppercase; padding: 3px 7px; border-radius: 4px; margin-right: 7px;
+  vertical-align: 1px;
+}
+.k.run  { background: var(--run-dim);  color: var(--run); }
+.k.bike { background: var(--bike-dim); color: var(--bike); }
+.k.gym  { background: var(--accent-dim); color: var(--accent); }
+.k.race { background: var(--race-dim); color: var(--race); }
+.item .detail { display: block; font-size: 12px; color: var(--faint); margin-top: 3px; line-height: 1.45; }
+.day.is-race { background: var(--race-dim); border-radius: 10px; padding-left: 10px; padding-right: 10px; border-bottom: 0; }
+.day.is-race .d b { color: var(--race); }
+
+.week-intent { font-size: 13.5px; color: var(--muted); margin: 10px 0 0; line-height: 1.55; }
+.week-loading {
+  font-size: 13px; color: var(--ink); margin: 10px 0 0; padding: 10px 12px;
+  background: var(--panel); border-radius: 8px; border: 1px solid var(--line-soft); line-height: 1.55;
+}
+
+/* ── Plan semana a semana ─────────────────────────────────────────────── */
+
+.week { margin-bottom: 18px; }
+.week-head {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  padding-bottom: 8px; border-bottom: 1px solid var(--line);
+}
+.week-head .phase { font-size: 16px; font-weight: 700; letter-spacing: -.01em; }
+.week-head .range { font: 500 12px "IBM Plex Mono", monospace; color: var(--faint); }
+.week-head .rw {
+  font: 700 9.5px/1 "IBM Plex Mono", monospace; letter-spacing: .1em; padding: 3px 7px;
+  border-radius: 4px; background: var(--panel-2); color: var(--muted);
+}
+
+/* ── Reglas ───────────────────────────────────────────────────────────── */
+
+ol.rules { list-style: none; counter-reset: r; padding: 0; margin: 0; }
+ol.rules li {
+  counter-increment: r; display: grid; grid-template-columns: 40px 1fr;
+  column-gap: 12px; row-gap: 3px;
+  padding: 14px 0; border-bottom: 1px solid var(--line-soft);
+}
+ol.rules li:last-child { border-bottom: 0; }
+ol.rules li::before {
+  content: counter(r, decimal-leading-zero);
+  grid-column: 1; grid-row: 1 / span 2;
+  font: 600 15px "IBM Plex Mono", monospace; color: var(--accent); padding-top: 2px;
+}
+/* El número, el enunciado y el detalle son tres hijos del mismo grid. Sin fijar
+   la columna, el detalle se auto-coloca en la fila 2 de la columna del número —
+   40 px — y queda una palabra por línea. */
+ol.rules b { grid-column: 2; font-size: 15px; font-weight: 650; line-height: 1.35; }
+ol.rules span { grid-column: 2; font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+
+/* ── Pestañas ─────────────────────────────────────────────────────────── */
+
+nav.tabs {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
+  display: flex;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+nav.tabs button {
+  flex: 1; min-height: 60px; background: none; border: 0; cursor: pointer;
+  color: var(--faint); font: 600 10.5px/1 Archivo, sans-serif;
+  letter-spacing: .08em; text-transform: uppercase;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+  border-top: 2px solid transparent; margin-top: -1px;
+}
+nav.tabs button svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+nav.tabs button svg .dot { fill: currentColor; stroke: none; }
+nav.tabs button[aria-selected="true"] { color: var(--accent); border-top-color: var(--accent); }
+nav.tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+
+/* ── Varios ───────────────────────────────────────────────────────────── */
+
+.empty { padding: 28px 0; color: var(--faint); font-size: 14px; text-align: center; }
+footer.foot {
+  margin-top: 34px; padding: 16px 0 10px; border-top: 1px solid var(--line);
+  font-size: 11.5px; color: var(--faint); line-height: 1.6;
+}
+footer.foot .fmeta { font-family: "IBM Plex Mono", monospace; letter-spacing: .02em; margin: 0 0 6px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .track i, .session-prog .bar i { transition: none; }
+}
+
+/* En pantallas muy claras el tema claro del sistema NO se hereda a propósito:
+   la guía es oscura por diseño; sólo se sube un pelo el tinta para contraste. */
+@media (prefers-color-scheme: light) {
+  :root { --ink: #f4f8f5; }
+}

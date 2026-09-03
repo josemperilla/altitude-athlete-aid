@@ -1,0 +1,1066 @@
+{
+  "race_date": "2026-10-04",
+  "sessions": {
+    "A": {
+      "code": "A",
+      "label": null,
+      "title": "Fuerza pesada",
+      "weekday": "Lunes",
+      "duration_min": 58,
+      "summary": "Poco volumen, carga alta, descansos largos. Terminas cansado del sistema nervioso, no de los músculos: eso es lo que te deja correr bien al día siguiente. Si acabas con temblor o bombeo, te pasaste de repeticiones.",
+      "blocks": [
+        {
+          "name": "Activación",
+          "minutes": 10,
+          "note": null,
+          "items": [
+            {
+              "prescription": "5 min",
+              "load": "Z1",
+              "id": null,
+              "name": "Bici o remo suave",
+              "target": "",
+              "anim": null,
+              "cues": [],
+              "errors": []
+            },
+            {
+              "prescription": "1 × 10 / lado",
+              "load": "—",
+              "id": null,
+              "name": "Movilidad de tobillo a la pared + 90/90 de cadera",
+              "target": "",
+              "anim": null,
+              "cues": [],
+              "errors": []
+            },
+            {
+              "prescription": "2 × 20",
+              "load": "Peso corporal · 45 s",
+              "id": "pogos",
+              "name": "Pogos",
+              "target": "Rigidez del tobillo y tendón de Aquiles",
+              "anim": "pogo",
+              "cues": [
+                "Rodilla casi recta: el salto sale del tobillo, no de la cadera.",
+                "Contacto corto. Piensa en rebotar, no en aterrizar.",
+                "Altura baja: 5–10 cm basta. Buscas rigidez, no salto vertical."
+              ],
+              "errors": [
+                "Doblar rodillas y convertirlo en sentadillas con salto.",
+                "Aterrizar con el talón. El contacto es en la planta delantera."
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Pliometría",
+          "minutes": 6,
+          "note": "Va aquí, en fresco y antes de cargar. Volumen bajo a propósito: no hay historial pliométrico y faltan pocas semanas.",
+          "items": [
+            {
+              "prescription": "3 × 4",
+              "load": "Cajón 30–40 cm · 90 s",
+              "id": "box_jump",
+              "name": "Salto al cajón",
+              "target": "Potencia de extensión de cadera",
+              "anim": "boxjump",
+              "cues": [
+                "Cajón bajo (30–40 cm). No buscas altura, buscas velocidad de salida.",
+                "Aterriza suave y con las rodillas flexionadas, sin ruido.",
+                "Baja caminando del cajón, nunca saltando."
+              ],
+              "errors": [
+                "Cajón demasiado alto: te obliga a recoger las piernas en vez de extender la cadera.",
+                "Encadenar repeticiones sin resetear. Cada salto empieza de cero."
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Fuerza principal",
+          "minutes": 32,
+          "note": null,
+          "items": [
+            {
+              "prescription": "4 × 5",
+              "load": "RPE 7–8 · 2 en reserva · 3 min",
+              "id": "squat",
+              "name": "Sentadilla trasera",
+              "target": "Cuádriceps, glúteo mayor",
+              "anim": "squat",
+              "cues": [
+                "La barra viaja en línea recta sobre el mediopié.",
+                "Rodillas siguen la dirección de los pies; pueden pasar la punta.",
+                "Baja hasta que la cadera quede por debajo de la rodilla, si tu movilidad lo permite."
+              ],
+              "errors": [
+                "Que la cadera suba antes que el pecho: se convierte en un buenos días con peso.",
+                "Talones que se despegan. Si pasa, falta movilidad de tobillo: usa sentadilla goblet."
+              ],
+              "alt": "Sin barra: goblet con mancuerna pesada, o prensa."
+            },
+            {
+              "prescription": "3 × 6",
+              "load": "RPE 7 · 2 min",
+              "id": "rdl",
+              "name": "Peso muerto rumano",
+              "target": "Isquiotibiales, glúteo mayor",
+              "anim": "rdl",
+              "cues": [
+                "Bisagra de cadera: la cadera va hacia atrás, no el torso hacia abajo.",
+                "La barra roza el muslo todo el recorrido.",
+                "Rodilla ligeramente flexionada y fija. No se mueve durante la serie."
+              ],
+              "errors": [
+                "Redondear la espalda baja. Paras la serie cuando pierdes la posición, no cuando falla la fuerza.",
+                "Bajar más de la cuenta buscando rango. El rango lo define tu isquio, no el suelo."
+              ]
+            },
+            {
+              "prescription": "3 × 6 / pierna",
+              "load": "RPE 7 · 90 s",
+              "id": "bulgarian",
+              "name": "Zancada búlgara",
+              "target": "Cuádriceps, glúteo, estabilidad de cadera",
+              "anim": "bulgarian",
+              "cues": [
+                "Torso ligeramente adelante para cargar más glúteo.",
+                "La rodilla de adelante estable, alineada con el pie.",
+                "El pie de atrás solo equilibra; el 90 % del peso va en la pierna de adelante."
+              ],
+              "errors": [
+                "Rodilla que colapsa hacia adentro. Si pasa, baja el peso.",
+                "Banco demasiado alto: te tuerce la pelvis. A la altura de la rodilla basta."
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Tríceps sural",
+          "minutes": 6,
+          "note": null,
+          "items": [
+            {
+              "prescription": "3 × 8",
+              "load": "Pesado · 3 s de bajada · 90 s",
+              "id": "calf_standing",
+              "name": "Elevación de talón de pie",
+              "target": "Gemelos (rodilla extendida)",
+              "anim": "calfstanding",
+              "cues": [
+                "Rodilla extendida: así trabaja el gemelo.",
+                "Bajada de 3 segundos hasta estirar del todo, pausa abajo.",
+                "Rango completo arriba: sube hasta que el talón no dé más."
+              ],
+              "errors": [
+                "Rebotar en el punto bajo usando el rebote elástico del tendón.",
+                "Medio rango. El tendón se adapta al rango que le cargas."
+              ]
+            },
+            {
+              "prescription": "3 × 12 / pierna",
+              "load": "Peso corporal · 3 s de bajada · 60 s",
+              "id": "calf_single_bent",
+              "name": "Elevación de talón a una pierna con rodilla flexionada",
+              "target": "Sóleo (rodilla flexionada)",
+              "anim": "calfsinglebent",
+              "cues": [
+                "Antepié en el borde de un escalón y rodilla doblada unos 25°, mantenida ahí toda la serie: con la rodilla doblada el gemelo se acorta y el trabajo cae en el sóleo.",
+                "Una sola pierna; la otra cruzada por detrás. La mano en la pared es para equilibrio, no para empujarte hacia arriba.",
+                "Este es el músculo que corre la media maratón. Baja en 3 segundos hasta estirar del todo y haz pausa abajo."
+              ],
+              "errors": [
+                "Estirar la rodilla al subir. Si se endereza, el trabajo se va al gemelo y el sóleo se queda sin estímulo.",
+                "Apoyar el antepié en suelo plano. Sin el escalón pierdes la mitad de abajo del rango, que es la que importa."
+              ],
+              "alt": "Si te falta equilibrio al principio: las dos piernas a la vez, con la rodilla igual de doblada."
+            }
+          ]
+        },
+        {
+          "name": "Tronco",
+          "minutes": 4,
+          "note": null,
+          "items": [
+            {
+              "prescription": "3 × 10 / lado",
+              "load": "45 s",
+              "id": "pallof",
+              "name": "Press Pallof",
+              "target": "Anti-rotación del tronco",
+              "anim": "pallof",
+              "cues": [
+                "De pie, perpendicular a la polea o banda.",
+                "Extiende los brazos sin dejar que el torso rote. Ahí está todo el ejercicio.",
+                "Costillas abajo, glúteos activos."
+              ],
+              "errors": [
+                "Poner tanto peso que el torso gira. Si giras, no es anti-rotación."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "B": {
+      "code": "B",
+      "label": null,
+      "title": "Unilateral, estabilidad y tren superior",
+      "weekday": "Miércoles",
+      "duration_min": 55,
+      "summary": "Va después de la sesión de calidad de Runna, con al menos 6 horas de separación. Cargas moderadas y control: aquí no buscas récords, buscas que la pelvis no se caiga en el kilómetro 18.",
+      "blocks": [
+        {
+          "name": "Activación",
+          "minutes": 6,
+          "note": null,
+          "items": [
+            {
+              "prescription": "4 min",
+              "load": "—",
+              "id": null,
+              "name": "Caminata en banda",
+              "target": "",
+              "anim": null,
+              "cues": [],
+              "errors": []
+            },
+            {
+              "prescription": "2 × 15 pasos",
+              "load": "Banda · 30 s",
+              "id": "monster_walk",
+              "name": "Monster walk con banda",
+              "target": "Glúteo medio (activación)",
+              "anim": "monsterwalk",
+              "cues": [
+                "Banda por encima de las rodillas o en los tobillos.",
+                "Semiflexión de rodillas, pasos laterales sin juntar los pies.",
+                "Mantén la tensión de la banda todo el recorrido."
+              ],
+              "errors": [
+                "Balancear el torso de lado a lado. El movimiento es solo de piernas."
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Unilateral",
+          "minutes": 20,
+          "note": null,
+          "items": [
+            {
+              "prescription": "3 × 8 / lado",
+              "load": "RPE 6–7 · 90 s",
+              "id": "sl_rdl",
+              "name": "Peso muerto rumano a una pierna",
+              "target": "Isquios, glúteo medio, propiocepción",
+              "anim": "slrdl",
+              "cues": [
+                "La cadera se mantiene cerrada: el hueso de la cadera de arriba apunta al suelo, no al techo.",
+                "Mancuerna en la mano contraria a la pierna de apoyo.",
+                "La pierna libre se extiende atrás en línea con el torso."
+              ],
+              "errors": [
+                "Abrir la cadera. Es el error universal de este ejercicio y anula el trabajo de glúteo medio.",
+                "Ir tan rápido que el equilibrio decida el rango."
+              ]
+            },
+            {
+              "prescription": "3 × 8 / pierna",
+              "load": "Mancuernas · 90 s",
+              "id": "step_up",
+              "name": "Subida al cajón",
+              "target": "Glúteo, cuádriceps, control unilateral",
+              "anim": "stepup",
+              "cues": [
+                "Altura del cajón: la que deje la rodilla a 90°.",
+                "Sube empujando con la pierna de arriba, sin impulsarte con la de abajo.",
+                "Baja en 3 segundos. La bajada es la mitad valiosa del ejercicio."
+              ],
+              "errors": [
+                "Rebotar con el pie de abajo para arrancar.",
+                "Dejarse caer en la bajada. Ahí se pierde todo el estímulo excéntrico."
+              ]
+            },
+            {
+              "prescription": "3 × 10",
+              "load": "RPE 7 · 90 s",
+              "id": "leg_curl",
+              "name": "Curl femoral",
+              "target": "Isquiotibiales (flexión de rodilla)",
+              "anim": "legcurl",
+              "cues": [
+                "Cadera pegada al banco durante todo el recorrido.",
+                "Bajada controlada de 3 segundos."
+              ],
+              "errors": [
+                "Levantar la cadera para completar la repetición."
+              ],
+              "alt": "Sin máquina: curl con fitball o deslizadores."
+            }
+          ]
+        },
+        {
+          "name": "Cadera y pantorrilla",
+          "minutes": 10,
+          "note": null,
+          "items": [
+            {
+              "prescription": "3 × 20–30 s / lado",
+              "load": "45 s",
+              "id": "side_plank_abd",
+              "name": "Plancha lateral con abducción",
+              "target": "Glúteo medio, oblicuos",
+              "anim": "sideplank",
+              "cues": [
+                "Cuerpo en línea recta: tobillo, cadera y hombro alineados.",
+                "La pierna de arriba sube por detrás de la línea del cuerpo, no por delante.",
+                "Respira. Si aguantas la respiración, la serie es demasiado dura."
+              ],
+              "errors": [
+                "Dejar caer la cadera. Mejor 20 segundos buenos que 45 hundidos.",
+                "Rotar el torso hacia el suelo."
+              ]
+            },
+            {
+              "prescription": "3 × 12 / lado",
+              "load": "60 s",
+              "id": "calf_single",
+              "name": "Elevación de talón a una pierna",
+              "target": "Tríceps sural unilateral",
+              "anim": "calfsingle",
+              "cues": [
+                "Rango completo, subiendo hasta el tope.",
+                "Apóyate en la pared solo para equilibrio, no para empujarte.",
+                "Cuando pases de 15 repeticiones limpias, agrega mancuerna."
+              ],
+              "errors": [
+                "Compensar con la cadera dando un tirón hacia arriba."
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Tren superior",
+          "minutes": 9,
+          "note": "En superserie. No interfiere con las piernas y sostiene la postura en la segunda mitad de la carrera.",
+          "items": [
+            {
+              "prescription": "3 × 8",
+              "load": "RPE 7 · superserie",
+              "id": "db_press",
+              "name": "Press de hombro con mancuernas",
+              "target": "Deltoides, tríceps",
+              "anim": "dbpress",
+              "cues": [
+                "Costillas abajo, sin arquear la espalda baja.",
+                "Sube hasta extender del todo, sin bloquear con tirón."
+              ],
+              "errors": [
+                "Convertirlo en press inclinado arqueando la lumbar."
+              ]
+            },
+            {
+              "prescription": "3 × 10",
+              "load": "RPE 7 · 90 s",
+              "id": "row",
+              "name": "Remo con barra o mancuerna",
+              "target": "Dorsal, romboides, postura",
+              "anim": "row",
+              "cues": [
+                "Torso casi paralelo al suelo, espalda neutra.",
+                "Lleva el codo hacia atrás, no hacia arriba."
+              ],
+              "errors": [
+                "Usar impulso de cadera para subir el peso."
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Pie y tronco",
+          "minutes": 10,
+          "note": null,
+          "items": [
+            {
+              "prescription": "2 × 15",
+              "load": "45 s",
+              "id": "tibialis",
+              "name": "Elevación de punta (tibial anterior)",
+              "target": "Tibial anterior",
+              "anim": "tibialis",
+              "cues": [
+                "De espaldas a la pared, talones a 15 cm de ella.",
+                "Sube las puntas lo más alto que puedas y baja lento.",
+                "Es el seguro contra la periostitis tibial."
+              ],
+              "errors": [
+                "Rango corto. Debe arder en la espinilla."
+              ]
+            },
+            {
+              "prescription": "2 × 15 / pie",
+              "load": "30 s",
+              "id": "foot_doming",
+              "name": "Arco corto del pie",
+              "target": "Musculatura intrínseca del pie",
+              "anim": "footdome",
+              "cues": [
+                "Descalzo, pie plano en el suelo.",
+                "Acorta el arco acercando el metatarso al talón, sin doblar los dedos.",
+                "Los dedos quedan relajados y en contacto con el suelo."
+              ],
+              "errors": [
+                "Doblar los dedos como garra. Eso es otro ejercicio y no fortalece el arco igual."
+              ]
+            },
+            {
+              "prescription": "3 × 10 / lado",
+              "load": "45 s",
+              "id": "dead_bug",
+              "name": "Dead bug",
+              "target": "Anti-extensión del tronco",
+              "anim": "deadbug",
+              "cues": [
+                "Zona lumbar pegada al suelo todo el tiempo.",
+                "Extiende brazo y pierna contrarios, lento.",
+                "Si la lumbar se despega, acortaste el rango: no bajes tanto la pierna."
+              ],
+              "errors": [
+                "Ir rápido. Es un ejercicio de control, no de repeticiones."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "M": {
+      "code": "M",
+      "label": null,
+      "title": "Mantenimiento",
+      "weekday": "Lunes",
+      "duration_min": 25,
+      "summary": "Corta y fácil. No es una sesión de “priming”: la ventana documentada de priming es de 6 a 33 horas antes y la evidencia es en potencia y velocidad, no en fondo. A seis días de la carrera esto solo mantiene el patrón motor. Sales con más energía de la que entraste.",
+      "blocks": [
+        {
+          "name": "Sesión completa",
+          "minutes": 25,
+          "note": null,
+          "items": [
+            {
+              "prescription": "2 × 15",
+              "load": "Peso corporal",
+              "id": "pogos",
+              "name": "Pogos",
+              "target": "Rigidez del tobillo y tendón de Aquiles",
+              "anim": "pogo",
+              "cues": [
+                "Rodilla casi recta: el salto sale del tobillo, no de la cadera.",
+                "Contacto corto. Piensa en rebotar, no en aterrizar.",
+                "Altura baja: 5–10 cm basta. Buscas rigidez, no salto vertical."
+              ],
+              "errors": [
+                "Doblar rodillas y convertirlo en sentadillas con salto.",
+                "Aterrizar con el talón. El contacto es en la planta delantera."
+              ]
+            },
+            {
+              "prescription": "2 × 3",
+              "load": "60–65 % · lejos del fallo",
+              "id": "squat",
+              "name": "Sentadilla trasera",
+              "target": "Cuádriceps, glúteo mayor",
+              "anim": "squat",
+              "cues": [
+                "La barra viaja en línea recta sobre el mediopié.",
+                "Rodillas siguen la dirección de los pies; pueden pasar la punta.",
+                "Baja hasta que la cadera quede por debajo de la rodilla, si tu movilidad lo permite."
+              ],
+              "errors": [
+                "Que la cadera suba antes que el pecho: se convierte en un buenos días con peso.",
+                "Talones que se despegan. Si pasa, falta movilidad de tobillo: usa sentadilla goblet."
+              ],
+              "alt": "Sin barra: goblet con mancuerna pesada, o prensa."
+            },
+            {
+              "prescription": "2 × 8",
+              "load": "Moderado",
+              "id": "calf_standing",
+              "name": "Elevación de talón de pie",
+              "target": "Gemelos (rodilla extendida)",
+              "anim": "calfstanding",
+              "cues": [
+                "Rodilla extendida: así trabaja el gemelo.",
+                "Bajada de 3 segundos hasta estirar del todo, pausa abajo.",
+                "Rango completo arriba: sube hasta que el talón no dé más."
+              ],
+              "errors": [
+                "Rebotar en el punto bajo usando el rebote elástico del tendón.",
+                "Medio rango. El tendón se adapta al rango que le cargas."
+              ]
+            },
+            {
+              "prescription": "2 × 10 / lado",
+              "load": "Ligero",
+              "id": "pallof",
+              "name": "Press Pallof",
+              "target": "Anti-rotación del tronco",
+              "anim": "pallof",
+              "cues": [
+                "De pie, perpendicular a la polea o banda.",
+                "Extiende los brazos sin dejar que el torso rote. Ahí está todo el ejercicio.",
+                "Costillas abajo, glúteos activos."
+              ],
+              "errors": [
+                "Poner tanto peso que el torso gira. Si giras, no es anti-rotación."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "C1": {
+      "code": "C1",
+      "label": "Casa · fuerza",
+      "title": "Fuerza en casa, sin nada",
+      "weekday": "El día que amanezcas con energía",
+      "duration_min": 22,
+      "summary": "Extra, no reemplazo. Si el HRV está bien y el cuerpo pide, esto suma trabajo unilateral sin tocar el sistema nervioso como la Sesión A. Sin carga el estímulo lo pone el tempo, así que la regla es lenta y limpia: el día que la hagas rápido, no hiciste fuerza, hiciste cardio. Cuenta como sesión de piernas: las 36 horas antes del fondo del domingo siguen estando prohibidas.",
+      "blocks": [
+        {
+          "name": "Activación",
+          "minutes": 3,
+          "note": "Descalzo si puedes.",
+          "items": [
+            {
+              "prescription": "1 × 10 / pie",
+              "load": "Peso corporal",
+              "id": "foot_doming",
+              "name": "Arco corto del pie",
+              "target": "Musculatura intrínseca del pie",
+              "anim": "footdome",
+              "cues": [
+                "Descalzo, pie plano en el suelo.",
+                "Acorta el arco acercando el metatarso al talón, sin doblar los dedos.",
+                "Los dedos quedan relajados y en contacto con el suelo."
+              ],
+              "errors": [
+                "Doblar los dedos como garra. Eso es otro ejercicio y no fortalece el arco igual."
+              ]
+            },
+            {
+              "prescription": "2 × 15",
+              "load": "Peso corporal · 45 s",
+              "id": "pogos",
+              "name": "Pogos",
+              "target": "Rigidez del tobillo y tendón de Aquiles",
+              "anim": "pogo",
+              "cues": [
+                "Rodilla casi recta: el salto sale del tobillo, no de la cadera.",
+                "Contacto corto. Piensa en rebotar, no en aterrizar.",
+                "Altura baja: 5–10 cm basta. Buscas rigidez, no salto vertical."
+              ],
+              "errors": [
+                "Doblar rodillas y convertirlo en sentadillas con salto.",
+                "Aterrizar con el talón. El contacto es en la planta delantera."
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Fuerza unilateral",
+          "minutes": 12,
+          "note": "El asiento de la silla contra la pared, para que no se corra.",
+          "items": [
+            {
+              "prescription": "3 × 10 / pierna",
+              "load": "3 s de bajada · 60 s",
+              "id": "bulgarian_home",
+              "name": "Zancada búlgara con silla",
+              "target": "Cuádriceps, glúteo, estabilidad de cadera",
+              "anim": "bulgarianbw",
+              "cues": [
+                "El empeine del pie de atrás va sobre el asiento de una silla firme, contra la pared para que no se corra.",
+                "Torso ligeramente adelante para cargar más glúteo; la rodilla de adelante alineada con el pie.",
+                "Sin peso el estímulo lo pone el tempo: baja en 3 segundos y sube sin rebotar."
+              ],
+              "errors": [
+                "Silla con ruedas o demasiado alta. A la altura de la rodilla, y que no se mueva.",
+                "Convertirlo en cardio por ir sin peso. Es fuerza: lento, controlado y cerca del fallo técnico."
+              ],
+              "alt": "Sin silla estable: zancada estática, el pie de atrás en el suelo."
+            },
+            {
+              "prescription": "3 × 8 / pierna",
+              "load": "3 s de bajada · pausa de 1 s · 60 s",
+              "id": "sl_rdl_home",
+              "name": "Peso muerto rumano a una pierna sin peso",
+              "target": "Isquios, glúteo medio, propiocepción",
+              "anim": "slrdlbw",
+              "cues": [
+                "La cadera se mantiene cerrada: el hueso de la cadera de arriba apunta al suelo, no al techo.",
+                "La pierna libre se extiende atrás en línea con el torso; brazos colgando o cruzados al pecho.",
+                "Sin carga el objetivo es el control: 3 segundos abajo y una pausa de 1 segundo antes de subir."
+              ],
+              "errors": [
+                "Abrir la cadera para llegar más abajo. Prefiere menos rango con la cadera cuadrada.",
+                "Mirar al frente y arquear el cuello. La mirada va al suelo, un metro por delante."
+              ],
+              "alt": "Si te sobra equilibrio, sostén una garrafa de agua en la mano contraria."
+            }
+          ]
+        },
+        {
+          "name": "Tríceps sural",
+          "minutes": 4,
+          "note": null,
+          "items": [
+            {
+              "prescription": "3 × 15 / pierna",
+              "load": "Peso corporal · 45 s",
+              "id": "calf_single",
+              "name": "Elevación de talón a una pierna",
+              "target": "Tríceps sural unilateral",
+              "anim": "calfsingle",
+              "cues": [
+                "Rango completo, subiendo hasta el tope.",
+                "Apóyate en la pared solo para equilibrio, no para empujarte.",
+                "Cuando pases de 15 repeticiones limpias, agrega mancuerna."
+              ],
+              "errors": [
+                "Compensar con la cadera dando un tirón hacia arriba."
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Tronco",
+          "minutes": 3,
+          "note": null,
+          "items": [
+            {
+              "prescription": "2 × 8 / lado",
+              "load": "Lento",
+              "id": "dead_bug",
+              "name": "Dead bug",
+              "target": "Anti-extensión del tronco",
+              "anim": "deadbug",
+              "cues": [
+                "Zona lumbar pegada al suelo todo el tiempo.",
+                "Extiende brazo y pierna contrarios, lento.",
+                "Si la lumbar se despega, acortaste el rango: no bajes tanto la pierna."
+              ],
+              "errors": [
+                "Ir rápido. Es un ejercicio de control, no de repeticiones."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "C2": {
+      "code": "C2",
+      "label": "Casa · elasticidad",
+      "title": "Elasticidad y pie, en casa",
+      "weekday": "El día que amanezcas con energía",
+      "duration_min": 16,
+      "summary": "La más corta y la más barata de recuperar: trabaja tobillo, pie y cadera sin cargar la musculatura grande. Es la que puedes hacer aunque mañana toque calidad, porque casi no deja fatiga. Si acabas con los gemelos hinchados, te pasaste de saltos.",
+      "blocks": [
+        {
+          "name": "Pie",
+          "minutes": 4,
+          "note": "Descalzo, sobre suelo duro.",
+          "items": [
+            {
+              "prescription": "2 × 10 / pie",
+              "load": "Peso corporal",
+              "id": "foot_doming",
+              "name": "Arco corto del pie",
+              "target": "Musculatura intrínseca del pie",
+              "anim": "footdome",
+              "cues": [
+                "Descalzo, pie plano en el suelo.",
+                "Acorta el arco acercando el metatarso al talón, sin doblar los dedos.",
+                "Los dedos quedan relajados y en contacto con el suelo."
+              ],
+              "errors": [
+                "Doblar los dedos como garra. Eso es otro ejercicio y no fortalece el arco igual."
+              ]
+            },
+            {
+              "prescription": "2 × 15",
+              "load": "De espaldas a la pared",
+              "id": "tibialis",
+              "name": "Elevación de punta (tibial anterior)",
+              "target": "Tibial anterior",
+              "anim": "tibialis",
+              "cues": [
+                "De espaldas a la pared, talones a 15 cm de ella.",
+                "Sube las puntas lo más alto que puedas y baja lento.",
+                "Es el seguro contra la periostitis tibial."
+              ],
+              "errors": [
+                "Rango corto. Debe arder en la espinilla."
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Rigidez del tobillo",
+          "minutes": 6,
+          "note": "Contacto corto: si suena fuerte al caer, estás aterrizando en vez de rebotar.",
+          "items": [
+            {
+              "prescription": "3 × 20",
+              "load": "Peso corporal · 60 s",
+              "id": "pogos",
+              "name": "Pogos",
+              "target": "Rigidez del tobillo y tendón de Aquiles",
+              "anim": "pogo",
+              "cues": [
+                "Rodilla casi recta: el salto sale del tobillo, no de la cadera.",
+                "Contacto corto. Piensa en rebotar, no en aterrizar.",
+                "Altura baja: 5–10 cm basta. Buscas rigidez, no salto vertical."
+              ],
+              "errors": [
+                "Doblar rodillas y convertirlo en sentadillas con salto.",
+                "Aterrizar con el talón. El contacto es en la planta delantera."
+              ]
+            },
+            {
+              "prescription": "2 × 12 / pierna",
+              "load": "Peso corporal · 45 s",
+              "id": "calf_single",
+              "name": "Elevación de talón a una pierna",
+              "target": "Tríceps sural unilateral",
+              "anim": "calfsingle",
+              "cues": [
+                "Rango completo, subiendo hasta el tope.",
+                "Apóyate en la pared solo para equilibrio, no para empujarte.",
+                "Cuando pases de 15 repeticiones limpias, agrega mancuerna."
+              ],
+              "errors": [
+                "Compensar con la cadera dando un tirón hacia arriba."
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Cadera y tronco",
+          "minutes": 6,
+          "note": null,
+          "items": [
+            {
+              "prescription": "2 × 8 / lado",
+              "load": "Sin aguantar la respiración",
+              "id": "side_plank_abd",
+              "name": "Plancha lateral con abducción",
+              "target": "Glúteo medio, oblicuos",
+              "anim": "sideplank",
+              "cues": [
+                "Cuerpo en línea recta: tobillo, cadera y hombro alineados.",
+                "La pierna de arriba sube por detrás de la línea del cuerpo, no por delante.",
+                "Respira. Si aguantas la respiración, la serie es demasiado dura."
+              ],
+              "errors": [
+                "Dejar caer la cadera. Mejor 20 segundos buenos que 45 hundidos.",
+                "Rotar el torso hacia el suelo."
+              ]
+            },
+            {
+              "prescription": "2 × 10 / lado",
+              "load": "Lento",
+              "id": "dead_bug",
+              "name": "Dead bug",
+              "target": "Anti-extensión del tronco",
+              "anim": "deadbug",
+              "cues": [
+                "Zona lumbar pegada al suelo todo el tiempo.",
+                "Extiende brazo y pierna contrarios, lento.",
+                "Si la lumbar se despega, acortaste el rango: no bajes tanto la pierna."
+              ],
+              "errors": [
+                "Ir rápido. Es un ejercicio de control, no de repeticiones."
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "weeks": [
+    {
+      "runna_week": "W12",
+      "start": "2026-09-07",
+      "end": "2026-09-13",
+      "phase": "Introducción",
+      "intent": "Deliberadamente floja. El error clásico es entrar con todo el lunes 7 y llegar al tempo del miércoles con las piernas destruidas: eso arruina la sesión que sí determina tu tiempo.",
+      "loading": "RPE 6–7, con 3–4 repeticiones en reserva. Elige pesos con los que podrías hacer 4 más. Pliometría: ~30 contactos.",
+      "sessions": [
+        {
+          "date": "2026-09-07",
+          "session": "A",
+          "scale": 1.0,
+          "note": null
+        },
+        {
+          "date": "2026-09-09",
+          "session": "B",
+          "scale": 1.0,
+          "note": null
+        }
+      ]
+    },
+    {
+      "runna_week": "W13",
+      "start": "2026-09-14",
+      "end": "2026-09-20",
+      "phase": "Carga",
+      "intent": "La semana con más estímulo real de todo el bloque.",
+      "loading": "Sube 5–10 % en sentadilla y peso muerto rumano. RPE 7–8, 2 repeticiones en reserva. Pliometría: ~45 contactos.",
+      "sessions": [
+        {
+          "date": "2026-09-14",
+          "session": "A",
+          "scale": 1.0,
+          "note": null
+        },
+        {
+          "date": "2026-09-16",
+          "session": "B",
+          "scale": 1.0,
+          "note": null
+        }
+      ]
+    },
+    {
+      "runna_week": "W14",
+      "start": "2026-09-21",
+      "end": "2026-09-27",
+      "phase": "Pico",
+      "intent": "Última semana con carga pesada. El lunes 21 es tu última sesión fuerte del ciclo: quedan 13 días hasta la carrera.",
+      "loading": "Lunes: sentadilla a 4 × 4, RPE 8. Miércoles: mismos ejercicios, 2 series en vez de 3. Pliometría: ~30 contactos.",
+      "sessions": [
+        {
+          "date": "2026-09-21",
+          "session": "A",
+          "scale": 1.0,
+          "note": "Sentadilla 4 × 4 a RPE 8. Última pesada."
+        },
+        {
+          "date": "2026-09-23",
+          "session": "B",
+          "scale": 0.66,
+          "note": "2 series por ejercicio en vez de 3."
+        }
+      ]
+    },
+    {
+      "runna_week": "W15",
+      "start": "2026-09-28",
+      "end": "2026-10-04",
+      "phase": "Afinamiento",
+      "intent": "Cero carga pesada. La fuerza ganada se conserva sin entrenar durante semanas; la frescura no.",
+      "loading": "Solo lunes, 25 minutos. Miércoles 30: nada, o 15 minutos de movilidad.",
+      "sessions": [
+        {
+          "date": "2026-09-28",
+          "session": "M",
+          "scale": 1.0,
+          "note": null
+        }
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "rule": "El miércoles se corre primero.",
+      "detail": "La sesión de Runna es la prioridad. Gimnasio después, con 6 horas de separación si puedes. La literatura de entrenamiento concurrente sugiere ≥6 h para minimizar la interferencia aguda. Si solo tienes un hueco, corres."
+    },
+    {
+      "rule": "Ninguna sesión de piernas dentro de las 36 horas previas al fondo del domingo.",
+      "detail": "Ni sábado, ni domingo temprano."
+    },
+    {
+      "rule": "Si el HRV amanece por debajo de 35 ms o el sueño por debajo de 50, cambias la Sesión A por la B.",
+      "detail": "O cortas las series a la mitad. El 2 de septiembre amaneciste en 34 de HRV y 52 de sueño: ese día el gimnasio resta."
+    },
+    {
+      "rule": "Agujetas de 48 horas o más significan que te pasaste de volumen, no de peso.",
+      "detail": "Quita una serie, no kilos."
+    },
+    {
+      "rule": "Nada nuevo después del 21 de septiembre.",
+      "detail": "Ningún ejercicio, suplemento, zapatilla ni desayuno que no hayas probado ya."
+    },
+    {
+      "rule": "Dolor agudo, punzante o en un punto exacto detiene la serie.",
+      "detail": "Molestia difusa y simétrica es carga. Dolor localizado en tendón de Aquiles, rótula o tibia es señal."
+    },
+    {
+      "rule": "A 2.600 metros recuperas más lento.",
+      "detail": "Los descansos largos entre series no son pereza, son parte de la prescripción."
+    }
+  ],
+  "generated_at": "2026-09-02T19:13:02",
+  "calendar": [
+    {
+      "date": "2026-09-02",
+      "weekday": "Miércoles",
+      "running": [
+        {
+          "name": "W11 Wed Intervals - Pyramid Intervals (10km)",
+          "detail": "1.6km warm up at a conversational pace (no faster than 5:30/km), 90s walking rest · 200m at 3:50/km, 60s walking rest · 400m at 3:55/km, 90s walking rest · 800m at 4:15/km, 90s walking rest · 1.2km at 4:20/km, 120s walking rest · 1.6km at 4:25/km, 120s walking rest · 1.2km at 4:20/km, 120s walking rest · 800m at 4:15/km, 90s walking rest · 400m at 3:55/km, 90s walking rest · 200m at 3:50/km, 60s walking rest · 1.6km cool down at a conversational pace (or slower!)"
+        }
+      ],
+      "cycling": [
+        {
+          "name": "Ciclorruta en plano",
+          "detail": "Ruta: ciclorrutas planas de Bogotá, salida libre desde casa. Terreno plano, sin desnivel significativo. Objetivo: Miércoles 2 de septiembre: no hay sesión de Runna confirmada este día, lo que lo convierte en el candidato ideal según el orden de prioridad (miércoles sin sesión intensa). El atleta habrá tenido dos días de absorción post-long run del domingo 30, lo que permite proyectar una recuperación parcial del HRV y el sueño respecto a los valores críticos de la semana 1 (HRV 32-35 ms, sueño 37-55). Dado que el estado fatigado puede persistir parcialmente al inicio de la semana 2, se elige ciclorruta en plano (Z1 estricto, sin desnivel) con duración conservadora de 45 minutos. Esto cumple el rol de 'relleno aeróbico de bajo costo fisiológico' descrito por Sandbakk et al. 2025, sin competir con ninguna sesión de calidad de Runna adyacente. No se usa subida a Patios porque el estado de fatiga acumulada no garantiza que el atleta esté balanceado o descargado para el estímulo Z2 natural del desnivel."
+        }
+      ],
+      "gym": null
+    },
+    {
+      "date": "2026-09-03",
+      "weekday": "Jueves",
+      "running": [],
+      "cycling": [
+        {
+          "name": "Ciclorruta en plano",
+          "detail": "Ruta: ciclorrutas planas de Bogotá, salida libre desde casa. Terreno plano, sin desnivel significativo. Objetivo: Jueves 3 de septiembre es el único día de la semana 2 sin sesión de Runna ni ciclismo ya programado en el plan Runna (lunes 31 y miércoles 2 ya tienen ciclismo; domingo 30 tiene long run moderado). Se elige ciclorruta en plano porque el atleta llega fatigado a la semana 2 y, aunque se proyecta recuperación parcial, no es seguro asumir estado “descargado” sin confirmación de métricas; la altitud de Bogotá eleva el estrés cardiovascular un 10–15% adicional, lo que refuerza mantener Z1 puro. Duración conservadora de 40 min para añadir volumen aeróbico sin interferir con la recuperación. Las señales actuales (HRV promedio 42.6 ms con tendencia bajista, FC reposo con pico de 67 bpm, sueño promedio 62/100 con noches de 37 y 55) indican que incluso en semana 2 el margen para trabajo Z2 es escaso."
+        }
+      ],
+      "gym": null
+    },
+    {
+      "date": "2026-09-04",
+      "weekday": "Viernes",
+      "running": [
+        {
+          "name": "W11 Fri Tempo - Under and Overs 2km (8km)",
+          "detail": "1km warm up at a conversational pace (no faster than 5:30/km) · 2km at 4:30/km · 2km at 5:10/km · 2km at 4:30/km, 90s walking rest · 1km cool down at a conversational pace (or slower!)"
+        }
+      ],
+      "cycling": [],
+      "gym": null
+    },
+    {
+      "date": "2026-09-05",
+      "weekday": "Sábado",
+      "running": [
+        {
+          "name": "W10 Sat Easy Run - 9km Easy Run (9km)",
+          "detail": "9km easy run at a conversational pace (no faster than 5:30/km). This is a limit, not a target - run at whatever pace feels truly easy!"
+        }
+      ],
+      "cycling": [],
+      "gym": null
+    },
+    {
+      "date": "2026-09-06",
+      "weekday": "Domingo",
+      "running": [
+        {
+          "name": "W11 Sun Long Run - 18km Long Run (18km)",
+          "detail": "18km at a conversational pace"
+        }
+      ],
+      "cycling": [],
+      "gym": null
+    },
+    {
+      "date": "2026-09-07",
+      "weekday": "Lunes",
+      "running": [],
+      "cycling": [],
+      "gym": "A"
+    },
+    {
+      "date": "2026-09-08",
+      "weekday": "Martes",
+      "running": [
+        {
+          "name": "W12 Tue Easy Run - 10km Easy Run (10km)",
+          "detail": "10km easy run at a conversational pace (no faster than 5:30/km). This is a limit, not a target - run at whatever pace feels truly easy!"
+        }
+      ],
+      "cycling": [],
+      "gym": null
+    },
+    {
+      "date": "2026-09-09",
+      "weekday": "Miércoles",
+      "running": [
+        {
+          "name": "W12 Wed Tempo - On Off Ks (10km)",
+          "detail": "2km warm up at a conversational pace (no faster than 5:30/km) · Repeat the following 3x: · ---------- · 1km at 5:05/km · 1km at 4:25/km · ---------- · 90s walking rest · 2km cool down at a conversational pace (or slower!)"
+        }
+      ],
+      "cycling": [],
+      "gym": "B"
+    },
+    {
+      "date": "2026-09-11",
+      "weekday": "Viernes",
+      "running": [
+        {
+          "name": "W12 Fri Easy Run #2 - 11km Easy Run (11km)",
+          "detail": "11km easy run at a conversational pace (no faster than 5:30/km). This is a limit, not a target - run at whatever pace feels truly easy!"
+        }
+      ],
+      "cycling": [],
+      "gym": null
+    },
+    {
+      "date": "2026-09-13",
+      "weekday": "Domingo",
+      "running": [
+        {
+          "name": "W12 Sun Long Run - 19km Block Long Run (19km)",
+          "detail": "5km at a conversational pace · 11km at 5:10/km · 3km at a conversational pace"
+        }
+      ],
+      "cycling": [],
+      "gym": null
+    },
+    {
+      "date": "2026-09-14",
+      "weekday": "Lunes",
+      "running": [],
+      "cycling": [],
+      "gym": "A"
+    },
+    {
+      "date": "2026-09-16",
+      "weekday": "Miércoles",
+      "running": [],
+      "cycling": [],
+      "gym": "B"
+    },
+    {
+      "date": "2026-09-21",
+      "weekday": "Lunes",
+      "running": [],
+      "cycling": [],
+      "gym": "A"
+    },
+    {
+      "date": "2026-09-23",
+      "weekday": "Miércoles",
+      "running": [],
+      "cycling": [],
+      "gym": "B"
+    },
+    {
+      "date": "2026-09-28",
+      "weekday": "Lunes",
+      "running": [],
+      "cycling": [],
+      "gym": "M"
+    }
+  ],
+  "athlete_state": "fatigued",
+  "week_summary": "Semana 1 (23-29 ago): el atleta presenta señales claras de fatiga acumulada — HRV en tendencia descendente (último valor 35 ms, muy por debajo del promedio), FC reposo elevada con pico de 67 bpm, sueño deteriorado (37/100 en el peor día, promedio 62/100) y dos sesiones de alta intensidad en los últimos 5 días. El plan Runna ya incluye una sesión ALTA el lunes 24 y un Long Run el martes 25, lo que deja sin ventanas viables para ciclismo adicional en semana 1 sin comprometer la recuperación. El ciclismo del 26-ago ya está integrado en el plan Runna. Semana 2 (30 ago - 5 sep): se proyecta una recuperación parcial del HRV y normalización de la FC reposo; el plan Runna incluye tres sesiones de ciclismo Z1 ya pautadas (31-ago, 2-sep, 3-sep), lo que cubre el volumen aeróbico complementario sin necesidad de añadir sesiones adicionales."
+}
