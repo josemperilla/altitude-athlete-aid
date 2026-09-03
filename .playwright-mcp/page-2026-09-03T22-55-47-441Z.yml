@@ -1,0 +1,36 @@
+- generic [active] [ref=f12e1]:
+  - generic [ref=f12e2]:
+    - main [ref=f12e3]:
+      - generic [ref=f12e4]:
+        - generic [ref=f12e5]: ENTRENADOR
+        - link "Ajustes" [ref=f12e10] [cursor=pointer]:
+          - /url: /ajustes
+      - generic [ref=f12e14]:
+        - generic [ref=f12e16]:
+          - heading "jueves, 3 de septiembre" [level=1] [ref=f12e17]
+          - paragraph [ref=f12e18]: BOGOTÁ · 2.600 M
+        - generic [ref=f12e19]:
+          - generic [ref=f12e23]:
+            - generic [ref=f12e24]: Media Maratón Bogotá
+            - generic [ref=f12e25]:
+              - generic [ref=f12e26]: "31"
+              - generic [ref=f12e27]: días para la carrera
+          - generic [ref=f12e30]: bloque 45 %
+        - link "Ver señales del cuerpo" [ref=f12e32] [cursor=pointer]:
+          - /url: /cuerpo
+          - generic [ref=f12e36]:
+            - generic [ref=f12e37]: Disposición
+            - generic [ref=f12e38]: Sin historial suficiente todavía
+        - generic [ref=f12e41]: Cargando tu día…
+    - navigation [ref=f12e42]:
+      - link "Hoy" [ref=f12e43] [cursor=pointer]:
+        - /url: /
+      - link "Plan" [ref=f12e52] [cursor=pointer]:
+        - /url: /plan
+      - link "Cuerpo" [ref=f12e56] [cursor=pointer]:
+        - /url: /cuerpo
+      - link "Gym" [ref=f12e60] [cursor=pointer]:
+        - /url: /gimnasio
+      - link "Aprende" [ref=f12e68] [cursor=pointer]:
+        - /url: /aprende
+  - region "Notifications alt+T"

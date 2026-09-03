@@ -1,21 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, Loader2, X } from "lucide-react";
-import { toast } from "sonner";
-import {
-  deriveIntensity,
-  deriveSport,
-  LABEL,
-  type IntensityLevel,
-  type SessionIntensity,
-} from "@/lib/spotify-intensity";
-import { sessionDate, sessionKey } from "@/lib/session-dates";
+import { X } from "lucide-react";
+import { deriveIntensity, deriveSport, type IntensityLevel } from "@/lib/spotify-intensity";
+import { sessionDate } from "@/lib/session-dates";
 import { extractSteps, mmss, stepLabel, stepMeasure } from "@/lib/workout-steps";
-import { getCreatedPlaylist, isSpotifyConnected, startSpotifyLogin } from "@/lib/spotify";
-import { usePlaylistMutation } from "@/hooks/use-playlist-mutation";
 import { garminQO } from "@/lib/api";
 import type { GarminData } from "@/lib/schemas";
 import { BIKE, CARD_1, ERR, GOLD, MUTED, PANEL, RUN, WARN } from "@/lib/theme";
+import { PlaylistControl } from "./PlaylistControl";
 
 const SPORT_COLOR = { running: RUN, cycling: BIKE } as const;
 const INTENSITY_COLOR: Record<IntensityLevel, string> = {
@@ -23,7 +15,6 @@ const INTENSITY_COLOR: Record<IntensityLevel, string> = {
   moderada: WARN,
   alta: ERR,
 };
-const INTENSITY_LEVELS: IntensityLevel[] = ["baja", "moderada", "alta"];
 
 /** Ritmo: Garmin lo entrega en m/s, y más rápido es un valor más alto. */
 function paceRange(lo: number, hi: number): string {
@@ -208,119 +199,10 @@ export function SessionDetailModal({
             </Section>
           )}
 
-          <PlaylistControl session={session} garmin={garmin} base={intensity} />
+          <PlaylistControl session={session} garmin={garmin} />
         </div>
       </div>
     </div>
-  );
-}
-
-/**
- * Genera la playlist de la sesión permitiendo forzar un nivel de intensidad
- * distinto del inferido (idea #6). Regenerar sobreescribe el registro local.
- */
-function PlaylistControl({
-  session,
-  garmin,
-  base,
-}: {
-  session: any;
-  garmin: any;
-  base: SessionIntensity;
-}) {
-  const key = sessionKey(session);
-  const [level, setLevel] = useState<IntensityLevel | null>(null);
-  const selected = level ?? base.level;
-
-  const mut = usePlaylistMutation(session, key, garmin);
-
-  const existing = getCreatedPlaylist(key);
-  const created = mut.data ?? existing;
-
-  const generate = () => {
-    if (!isSpotifyConnected()) {
-      startSpotifyLogin().catch((e: any) =>
-        toast.error(e?.message ?? "No se pudo conectar con Spotify"),
-      );
-      return;
-    }
-    mut.mutate(level ?? undefined);
-  };
-
-  return (
-    <Section title="Playlist de la sesión">
-      <div className="flex flex-col gap-3">
-        <div className="flex gap-1.5">
-          {INTENSITY_LEVELS.map((l) => {
-            const active = selected === l;
-            const color = INTENSITY_COLOR[l];
-            return (
-              <button
-                key={l}
-                type="button"
-                onClick={() => setLevel((prev) => (prev === l ? null : l))}
-                className="flex-1 px-2 py-1.5 rounded text-[11px] transition-colors"
-                style={{
-                  background: active ? `${color}22` : CARD_1,
-                  color: active ? color : MUTED,
-                  border: `1px solid ${active ? color : "rgba(233,206,169,0.15)"}`,
-                  fontWeight: 600,
-                }}
-              >
-                {LABEL[l]}
-              </button>
-            );
-          })}
-        </div>
-        <p className="text-[11px]" style={{ color: "#777" }}>
-          {level
-            ? level === base.level
-              ? "Nivel inferido por la sesión."
-              : `Nivel manual: ${LABEL[level].toLowerCase()}.`
-            : `Intensidad inferida: ${base.label.toLowerCase()}.`}
-        </p>
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={generate}
-            disabled={mut.isPending}
-            className="btn-gold text-[11px] px-3 py-2"
-          >
-            {mut.isPending ? (
-              <span className="flex items-center gap-1.5">
-                <Loader2 size={12} className="animate-spin" /> Creando…
-              </span>
-            ) : created ? (
-              "Regenerar playlist"
-            ) : (
-              "Generar playlist"
-            )}
-          </button>
-          {created && (
-            <a
-              href={created.externalUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-1 text-[11px]"
-              style={{ color: "#1ED760", fontWeight: 600 }}
-            >
-              <Check size={12} /> Abrir en Spotify
-            </a>
-          )}
-        </div>
-        {created?.timeline && created.timeline.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {created.timeline.map((phase, i) => (
-              <Chip key={i} color={INTENSITY_COLOR[phase.band]}>
-                {mmss(phase.startSec)} · {phase.label} · {phase.tracks}
-                {Math.abs(phase.errorSec) > 45 &&
-                  ` (${phase.errorSec > 0 ? "+" : ""}${phase.errorSec}s)`}
-              </Chip>
-            ))}
-          </div>
-        )}
-      </div>
-    </Section>
   );
 }
 

@@ -19,14 +19,23 @@ export default defineConfig({
     server: {
       allowedHosts: ["puppet-wincing-frenzied.ngrok-free.dev"],
       proxy: {
-        "/garmin": { target: "http://localhost:8503", changeOrigin: true },
-        "/plan": { target: "http://localhost:8503", changeOrigin: true },
-        "/insights": { target: "http://localhost:8503", changeOrigin: true },
-        "/update": { target: "http://localhost:8503", changeOrigin: true },
-        "/diagnose": { target: "http://localhost:8503", changeOrigin: true },
-        "/diagnosis": { target: "http://localhost:8503", changeOrigin: true },
-        "/gym": { target: "http://localhost:8503", changeOrigin: true },
+        // El backend y la SPA comparten el path /plan (ruta de página y
+        // endpoint). Desambiguación: una navegación del navegador
+        // (Accept: text/html) recibe la app; un fetch de la app (Accept:
+        // application/json, que envía api.ts) llega al backend. Sin esto,
+        // entrar directo a /plan mostraba el JSON crudo del backend.
+        "/garmin": { target: "http://localhost:8503", changeOrigin: true, bypass: htmlBypass },
+        "/plan": { target: "http://localhost:8503", changeOrigin: true, bypass: htmlBypass },
+        "/insights": { target: "http://localhost:8503", changeOrigin: true, bypass: htmlBypass },
+        "/update": { target: "http://localhost:8503", changeOrigin: true, bypass: htmlBypass },
+        "/diagnose": { target: "http://localhost:8503", changeOrigin: true, bypass: htmlBypass },
+        "/diagnosis": { target: "http://localhost:8503", changeOrigin: true, bypass: htmlBypass },
+        "/gym": { target: "http://localhost:8503", changeOrigin: true, bypass: htmlBypass },
       },
     },
   },
 });
+
+function htmlBypass(req: { headers: { accept?: string } }): string | null {
+  return req.headers.accept?.includes("text/html") ? "/index.html" : null;
+}

@@ -1,0 +1,27 @@
+- generic [active] [ref=f6e1]:
+  - generic [ref=f6e2]:
+    - complementary [ref=f6e3]:
+      - generic [ref=f6e4]:
+        - heading "ENTRENADOR" [level=1] [ref=f6e8]
+        - generic [ref=f6e9]: BOGOTÁ · 2.600 M
+      - link "Disposición Sin datos suficientes" [ref=f6e13] [cursor=pointer]:
+        - /url: /cuerpo
+        - generic [ref=f6e14]: Disposición
+        - generic [ref=f6e16]: Sin datos suficientes
+      - navigation [ref=f6e17]:
+        - link "Hoy" [ref=f6e18] [cursor=pointer]:
+          - /url: /
+        - link "Plan" [ref=f6e25] [cursor=pointer]:
+          - /url: /plan
+        - link "Cuerpo" [ref=f6e28] [cursor=pointer]:
+          - /url: /cuerpo
+        - link "Gimnasio" [ref=f6e31] [cursor=pointer]:
+          - /url: /gimnasio
+        - link "Aprende" [ref=f6e38] [cursor=pointer]:
+          - /url: /aprende
+      - generic [ref=f6e41]:
+        - link "Ajustes" [ref=f6e42] [cursor=pointer]:
+          - /url: /ajustes
+        - button "Actualizar plan" [ref=f6e46]
+    - main [ref=f6e47]
+  - region "Notifications alt+T"

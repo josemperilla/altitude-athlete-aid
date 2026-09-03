@@ -1,0 +1,96 @@
+- generic [active] [ref=f8e1]:
+  - generic [ref=f8e2]:
+    - complementary [ref=f8e3]:
+      - generic [ref=f8e4]:
+        - heading "ENTRENADOR" [level=1] [ref=f8e8]
+        - generic [ref=f8e9]: BOGOTÁ · 2.600 M
+      - link "Disposición Sin datos suficientes" [ref=f8e13] [cursor=pointer]:
+        - /url: /cuerpo
+        - generic [ref=f8e14]: Disposición
+        - generic [ref=f8e16]: Sin datos suficientes
+      - navigation [ref=f8e17]:
+        - link "Hoy" [ref=f8e18] [cursor=pointer]:
+          - /url: /
+        - link "Plan" [ref=f8e25] [cursor=pointer]:
+          - /url: /plan
+        - link "Cuerpo" [ref=f8e28] [cursor=pointer]:
+          - /url: /cuerpo
+        - link "Gimnasio" [ref=f8e32] [cursor=pointer]:
+          - /url: /gimnasio
+        - link "Aprende" [ref=f8e39] [cursor=pointer]:
+          - /url: /aprende
+      - generic [ref=f8e42]:
+        - link "Ajustes" [ref=f8e43] [cursor=pointer]:
+          - /url: /ajustes
+        - button "Actualizar plan" [ref=f8e47]
+    - main [ref=f8e48]:
+      - generic [ref=f8e49]:
+        - generic [ref=f8e51]:
+          - heading "Cuerpo" [level=1] [ref=f8e52]
+          - paragraph [ref=f8e53]: Señales · Volumen · Molestias
+        - generic [ref=f8e54]:
+          - generic [ref=f8e55]:
+            - generic [ref=f8e56]:
+              - generic [ref=f8e57]: HRV (ms)
+              - generic [ref=f8e58]: Sin datos
+            - generic [ref=f8e60]:
+              - generic [ref=f8e61]: FC reposo (bpm)
+              - generic [ref=f8e62]: Sin datos
+          - heading "Resumen semanal" [level=2] [ref=f8e64]
+          - generic [ref=f8e65]: Sin resúmenes disponibles.
+        - generic [ref=f8e66]:
+          - heading "¿Te duele algo?" [level=2] [ref=f8e67]
+          - generic [ref=f8e68]:
+            - generic [ref=f8e69]:
+              - generic [ref=f8e70]: Localización
+              - combobox "Localización" [ref=f8e71]:
+                - option "Rodilla" [selected]
+                - option "Tobillo"
+                - option "Cadera"
+                - option "Gemelo"
+                - option "Isquiotibial"
+                - option "Cuádriceps"
+                - option "Tendón de Aquiles"
+                - option "Planta del pie"
+                - option "Espalda baja"
+                - option "Otro"
+            - generic [ref=f8e72]:
+              - generic [ref=f8e73]: Tipo de dolor
+              - combobox "Tipo de dolor" [ref=f8e74]:
+                - option "Punzante" [selected]
+                - option "Sordo"
+                - option "Ardor"
+                - option "Tirón"
+                - option "Rigidez"
+                - option "Inflamación"
+            - generic [ref=f8e75]:
+              - generic [ref=f8e76]: Cuándo ocurre
+              - combobox "Cuándo ocurre" [ref=f8e77]:
+                - option "Al correr" [selected]
+                - option "Al inicio"
+                - option "Después de correr"
+                - option "Al subir escaleras"
+                - option "En reposo"
+                - option "Al despertar"
+            - generic [ref=f8e78]:
+              - generic [ref=f8e79]: Duración
+              - combobox "Duración" [ref=f8e80]:
+                - option "< 1 día" [selected]
+                - option "1-3 días"
+                - option "1 semana"
+                - option "> 2 semanas"
+            - generic [ref=f8e81]:
+              - generic [ref=f8e82]: Inflamación
+              - combobox "Inflamación" [ref=f8e83]:
+                - option "No" [selected]
+                - option "Leve"
+                - option "Moderada"
+                - option "Severa"
+            - generic [ref=f8e84]:
+              - generic [ref=f8e85]: Severidad · 4/10
+              - slider "Severidad · 4/10" [ref=f8e86]: "4"
+            - generic [ref=f8e88]:
+              - generic [ref=f8e89]: Notas adicionales
+              - textbox "Notas adicionales" [ref=f8e90]
+            - button "Analizar" [ref=f8e92]
+  - region "Notifications alt+T"

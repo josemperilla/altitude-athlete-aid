@@ -1,6 +1,10 @@
 import { useSyncExternalStore } from "react";
-import { getPlaylistRegistry, subscribeSpotify } from "@/lib/spotify";
-import type { CreatedPlaylist } from "@/lib/spotify";
+import {
+  getPlaylistRegistry,
+  isSpotifyConnected,
+  subscribeSpotify,
+  type CreatedPlaylist,
+} from "@/lib/spotify";
 
 /**
  * Registro de playlists creadas, reactivo. localStorage no notifica cambios;
@@ -9,4 +13,9 @@ import type { CreatedPlaylist } from "@/lib/spotify";
  */
 export function useCreatedPlaylists(): Record<string, CreatedPlaylist> {
   return useSyncExternalStore(subscribeSpotify, getPlaylistRegistry, getPlaylistRegistry);
+}
+
+/** Estado de conexión de Spotify, reactivo a connects/desconexiones/401. */
+export function useSpotifyConnected(): boolean {
+  return useSyncExternalStore(subscribeSpotify, isSpotifyConnected, () => false);
 }

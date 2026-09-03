@@ -1,0 +1,205 @@
+- generic [ref=f9e1]:
+  - generic [ref=f9e2]:
+    - complementary [ref=f9e3]:
+      - generic [ref=f9e4]:
+        - heading "ENTRENADOR" [level=1] [ref=f9e8]
+        - generic [ref=f9e9]: BOGOTÁ · 2.600 M
+      - link "Disposición FATIGA 1 /100 HRV 34 FC 60" [ref=f9e55] [cursor=pointer]:
+        - /url: /cuerpo
+        - generic [ref=f9e14]:
+          - generic [ref=f9e15]: Disposición
+          - generic [ref=f9e56]: FATIGA
+        - generic [ref=f9e57]:
+          - generic [ref=f9e58]: "1"
+          - generic [ref=f9e59]: /100
+        - generic [ref=f9e62]:
+          - generic [ref=f9e63]: HRV 34
+          - generic [ref=f9e64]: FC 60
+      - generic [ref=f9e65]: FATIGA
+      - navigation [ref=f9e17]:
+        - link "Hoy" [ref=f9e18] [cursor=pointer]:
+          - /url: /
+        - link "Plan" [ref=f9e25] [cursor=pointer]:
+          - /url: /plan
+        - link "Cuerpo" [ref=f9e29] [cursor=pointer]:
+          - /url: /cuerpo
+        - link "Gimnasio" [ref=f9e32] [cursor=pointer]:
+          - /url: /gimnasio
+        - link "Aprende" [ref=f9e39] [cursor=pointer]:
+          - /url: /aprende
+      - generic [ref=f9e42]:
+        - link "Ajustes" [ref=f9e43] [cursor=pointer]:
+          - /url: /ajustes
+        - button "Actualizar plan" [ref=f9e47]
+    - main [ref=f9e48]:
+      - generic [ref=f9e49]:
+        - generic [ref=f9e50]:
+          - generic [ref=f9e51]:
+            - heading "Plan" [level=1] [ref=f9e52]
+            - paragraph [ref=f9e53]: Calendario de sesiones · Runna + Ciclismo
+          - button "Generar playlists de esta semana" [ref=f9e66]
+        - generic [ref=f9e54]:
+          - generic [ref=f9e69]:
+            - generic [ref=f9e70]:
+              - generic [ref=f9e71]: CARGA MODERADA
+              - generic [ref=f9e72]: 23 de ago — 29 de ago
+            - paragraph [ref=f9e73]: Completar la semana 9-10 del plan Runna absorbiendo las sesiones de calidad (Tempo 5km el lunes y Long Run 17km el martes) sin añadir estrés adicional de ciclismo más allá del ya programado. El objetivo es no profundizar la fatiga actual y permitir que el cuerpo asimile el estímulo de las sesiones duras. El ciclismo Z1 del miércoles 26 (ya en el plan Runna) actúa como recuperación activa antes del Time Trial del jueves.
+            - generic [ref=f9e74]:
+              - generic [ref=f9e75]:
+                - generic [ref=f9e76]:
+                  - generic [ref=f9e77]: DOM
+                  - generic [ref=f9e78]: "23"
+                - generic [ref=f9e79]: —
+              - generic [ref=f9e80]:
+                - generic [ref=f9e81]:
+                  - generic [ref=f9e82]: LUN
+                  - generic [ref=f9e83]: "24"
+                - button "W9 Mon Tempo - Tempo 5km (8km) running Playlist" [ref=f9e84] [cursor=pointer]:
+                  - generic [ref=f9e85]: W9 Mon Tempo - Tempo 5km (8km)
+                  - generic [ref=f9e86]: running
+                  - button "Playlist" [ref=f9e88]
+              - generic [ref=f9e91]:
+                - generic [ref=f9e92]:
+                  - generic [ref=f9e93]: MAR
+                  - generic [ref=f9e94]: "25"
+                - button "W9 Tue Long Run - 17km Long Run (17km) running Playlist" [ref=f9e95] [cursor=pointer]:
+                  - generic [ref=f9e96]: W9 Tue Long Run - 17km Long Run (17km)
+                  - generic [ref=f9e97]: running
+                  - button "Playlist" [ref=f9e99]
+              - generic [ref=f9e102]:
+                - generic [ref=f9e103]:
+                  - generic [ref=f9e104]: MIÉ
+                  - generic [ref=f9e105]: "26"
+                - button "W10 Wed Easy Run - 9km Easy Run (9km) running Playlist" [ref=f9e106] [cursor=pointer]:
+                  - generic [ref=f9e107]: W10 Wed Easy Run - 9km Easy Run (9km)
+                  - generic [ref=f9e108]: running
+                  - button "Playlist" [ref=f9e110]
+                - button "Ciclorruta en plano — Volumen Aeróbico Z1 Pre-Time Trial cycling Playlist" [ref=f9e113] [cursor=pointer]:
+                  - generic [ref=f9e114]: Ciclorruta en plano — Volumen Aeróbico Z1 Pre-Time Trial
+                  - generic [ref=f9e115]: cycling
+                  - button "Playlist" [ref=f9e117]
+              - generic [ref=f9e120]:
+                - generic [ref=f9e121]:
+                  - generic [ref=f9e122]: JUE
+                  - generic [ref=f9e123]: "27"
+                - button "W10 Thu Time Trial - 5km Time Trial (7km) running Playlist" [active] [ref=f9e124] [cursor=pointer]:
+                  - generic [ref=f9e125]: W10 Thu Time Trial - 5km Time Trial (7km)
+                  - generic [ref=f9e126]: running
+                  - button "Playlist" [ref=f9e128]
+                - dialog "W10 Thu Time Trial - 5km Time Trial (7km)" [ref=f9e213]:
+                  - generic [ref=f9e214]:
+                    - generic [ref=f9e215]:
+                      - generic [ref=f9e216]: CARRERA
+                      - heading "W10 Thu Time Trial - 5km Time Trial (7km)" [level=2] [ref=f9e217]
+                    - button "Cerrar" [ref=f9e218]
+                  - generic [ref=f9e222]:
+                    - generic [ref=f9e223]:
+                      - generic [ref=f9e224]: jueves, 27 de agosto
+                      - generic [ref=f9e225]: 40 min aprox.
+                      - generic [ref=f9e226]: Intensidad no especificada
+                    - generic [ref=f9e227]:
+                      - heading "DESCRIPCIÓN" [level=3] [ref=f9e228]
+                      - paragraph [ref=f9e229]: Half Marathon Plan (Week 10/15) 1.5km warm up at a conversational pace (no faster than 5:30/km), 180s walking rest 5km time trial at 4:25/km, 180s walking rest 500m cool down at a conversational pace (or slower!)
+                    - generic [ref=f9e230]:
+                      - heading "PASO A PASO" [level=3] [ref=f9e231]
+                      - generic [ref=f9e232]:
+                        - generic [ref=f9e233]:
+                          - generic [ref=f9e234]:
+                            - generic [ref=f9e235]: Calentamiento
+                            - generic [ref=f9e236]: 1.5 km
+                          - paragraph [ref=f9e237]: 1.5km warm up
+                        - generic [ref=f9e238]:
+                          - generic [ref=f9e239]:
+                            - generic [ref=f9e240]: Descanso
+                            - generic [ref=f9e241]: 3:00
+                          - paragraph [ref=f9e242]: 180s rest
+                        - generic [ref=f9e243]:
+                          - generic [ref=f9e244]:
+                            - generic [ref=f9e245]: Intervalo
+                            - generic [ref=f9e246]: 5 km
+                          - generic [ref=f9e247]: 4:15–4:30 /km
+                          - paragraph [ref=f9e249]: 5km time trial at 4:25/km
+                        - generic [ref=f9e250]:
+                          - generic [ref=f9e251]:
+                            - generic [ref=f9e252]: Descanso
+                            - generic [ref=f9e253]: 3:00
+                          - paragraph [ref=f9e254]: 180s rest
+                        - generic [ref=f9e255]:
+                          - generic [ref=f9e256]:
+                            - generic [ref=f9e257]: Enfriamiento
+                            - generic [ref=f9e258]: 500 m
+                          - paragraph [ref=f9e259]: 500m cool down
+                    - generic [ref=f9e260]:
+                      - generic [ref=f9e261]:
+                        - button "Recuperación" [ref=f9e262]
+                        - button "Ritmo sostenido" [ref=f9e263]
+                        - button "Alta intensidad" [ref=f9e264]
+                      - paragraph [ref=f9e265]: "Intensidad inferida: intensidad no especificada."
+                      - button "Generar playlist" [ref=f9e267]
+              - generic [ref=f9e131]:
+                - generic [ref=f9e132]:
+                  - generic [ref=f9e133]: VIE
+                  - generic [ref=f9e134]: "28"
+                - 'button "W10 Fri Easy Run #2 - 6.5km Easy Run (6.5km) running Playlist" [ref=f9e135] [cursor=pointer]':
+                  - generic [ref=f9e136]: "W10 Fri Easy Run #2 - 6.5km Easy Run (6.5km)"
+                  - generic [ref=f9e137]: running
+                  - button "Playlist" [ref=f9e139]
+              - generic [ref=f9e142]:
+                - generic [ref=f9e143]:
+                  - generic [ref=f9e144]: SÁB
+                  - generic [ref=f9e145]: "29"
+                - generic [ref=f9e146]: —
+          - generic [ref=f9e147]:
+            - generic [ref=f9e148]:
+              - generic [ref=f9e149]: RECUPERACION
+              - generic [ref=f9e150]: 30 de ago — 5 de sept
+            - paragraph [ref=f9e151]: Consolidar las adaptaciones de las semanas previas con una carga reducida dominada por volumen Z1. El Long Run del domingo (10 km MODERADA) abre la semana con estímulo aeróbico controlado, y las tres sesiones de ciclismo Z1 ya programadas en Runna (lunes 31, miércoles 2, jueves 3) cubren el volumen complementario necesario. El foco es recuperación activa y restauración de los marcadores de HRV y FC reposo.
+            - generic [ref=f9e152]:
+              - generic [ref=f9e153]:
+                - generic [ref=f9e154]:
+                  - generic [ref=f9e155]: DOM
+                  - generic [ref=f9e156]: "30"
+                - button "W10 Sun Long Run - 10km Long Run (10km) running Playlist" [ref=f9e157] [cursor=pointer]:
+                  - generic [ref=f9e158]: W10 Sun Long Run - 10km Long Run (10km)
+                  - generic [ref=f9e159]: running
+                  - button "Playlist" [ref=f9e161]
+              - generic [ref=f9e164]:
+                - generic [ref=f9e165]:
+                  - generic [ref=f9e166]: LUN
+                  - generic [ref=f9e167]: "31"
+                - button "Ciclorruta en plano cycling Playlist" [ref=f9e168] [cursor=pointer]:
+                  - generic [ref=f9e169]: Ciclorruta en plano
+                  - generic [ref=f9e170]: cycling
+                  - button "Playlist" [ref=f9e172]
+              - generic [ref=f9e175]:
+                - generic [ref=f9e176]:
+                  - generic [ref=f9e177]: MAR
+                  - generic [ref=f9e178]: "1"
+                - generic [ref=f9e179]: —
+              - generic [ref=f9e180]:
+                - generic [ref=f9e181]:
+                  - generic [ref=f9e182]: MIÉ
+                  - generic [ref=f9e183]: "2"
+                - button "Ciclorruta en plano cycling Playlist" [ref=f9e184] [cursor=pointer]:
+                  - generic [ref=f9e185]: Ciclorruta en plano
+                  - generic [ref=f9e186]: cycling
+                  - button "Playlist" [ref=f9e188]
+              - generic [ref=f9e191]:
+                - generic [ref=f9e192]:
+                  - generic [ref=f9e193]: JUE
+                  - generic [ref=f9e194]: "3"
+                - button "Ciclorruta en plano cycling Playlist" [ref=f9e195] [cursor=pointer]:
+                  - generic [ref=f9e196]: Ciclorruta en plano
+                  - generic [ref=f9e197]: cycling
+                  - button "Playlist" [ref=f9e199]
+              - generic [ref=f9e202]:
+                - generic [ref=f9e203]:
+                  - generic [ref=f9e204]: VIE
+                  - generic [ref=f9e205]: "4"
+                - generic [ref=f9e206]: —
+              - generic [ref=f9e207]:
+                - generic [ref=f9e208]:
+                  - generic [ref=f9e209]: SÁB
+                  - generic [ref=f9e210]: "5"
+                - generic [ref=f9e211]: —
+  - region "Notifications alt+T"

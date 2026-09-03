@@ -1,0 +1,32 @@
+- generic [active] [ref=f4e1]:
+  - generic [ref=f4e2]:
+    - complementary [ref=f4e3]:
+      - generic [ref=f4e4]:
+        - heading "ENTRENADOR" [level=1] [ref=f4e8]
+        - generic [ref=f4e9]: BOGOTÁ · 2.600 M
+      - link "Disposición Sin datos suficientes" [ref=f4e13] [cursor=pointer]:
+        - /url: /cuerpo
+        - generic [ref=f4e14]: Disposición
+        - generic [ref=f4e16]: Sin datos suficientes
+      - navigation [ref=f4e17]:
+        - link "Hoy" [ref=f4e18] [cursor=pointer]:
+          - /url: /
+        - link "Plan" [ref=f4e25] [cursor=pointer]:
+          - /url: /plan
+        - link "Cuerpo" [ref=f4e29] [cursor=pointer]:
+          - /url: /cuerpo
+        - link "Gimnasio" [ref=f4e32] [cursor=pointer]:
+          - /url: /gimnasio
+        - link "Aprende" [ref=f4e39] [cursor=pointer]:
+          - /url: /aprende
+      - generic [ref=f4e42]:
+        - link "Ajustes" [ref=f4e43] [cursor=pointer]:
+          - /url: /ajustes
+        - button "Actualizar plan" [ref=f4e47]
+    - main [ref=f4e48]:
+      - generic [ref=f4e49]:
+        - generic [ref=f4e51]:
+          - heading "Plan" [level=1] [ref=f4e52]
+          - paragraph [ref=f4e53]: Calendario de sesiones · Runna + Ciclismo
+        - generic [ref=f4e54]: Cargando plan…
+  - region "Notifications alt+T"

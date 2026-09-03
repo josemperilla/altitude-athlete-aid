@@ -10,15 +10,23 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SpotifyCallbackRouteImport } from './routes/spotify-callback'
+import { Route as PlanRouteImport } from './routes/plan'
 import { Route as HistorialRouteImport } from './routes/historial'
 import { Route as GimnasioRouteImport } from './routes/gimnasio'
 import { Route as DiagnosticoRouteImport } from './routes/diagnostico'
+import { Route as CuerpoRouteImport } from './routes/cuerpo'
 import { Route as AprendeRouteImport } from './routes/aprende'
+import { Route as AjustesRouteImport } from './routes/ajustes'
 import { Route as IndexRouteImport } from './routes/index'
 
 const SpotifyCallbackRoute = SpotifyCallbackRouteImport.update({
   id: '/spotify-callback',
   path: '/spotify-callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlanRoute = PlanRouteImport.update({
+  id: '/plan',
+  path: '/plan',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HistorialRoute = HistorialRouteImport.update({
@@ -36,9 +44,19 @@ const DiagnosticoRoute = DiagnosticoRouteImport.update({
   path: '/diagnostico',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CuerpoRoute = CuerpoRouteImport.update({
+  id: '/cuerpo',
+  path: '/cuerpo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AprendeRoute = AprendeRouteImport.update({
   id: '/aprende',
   path: '/aprende',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AjustesRoute = AjustesRouteImport.update({
+  id: '/ajustes',
+  path: '/ajustes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -49,62 +67,83 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ajustes': typeof AjustesRoute
   '/aprende': typeof AprendeRoute
+  '/cuerpo': typeof CuerpoRoute
   '/diagnostico': typeof DiagnosticoRoute
   '/gimnasio': typeof GimnasioRoute
   '/historial': typeof HistorialRoute
+  '/plan': typeof PlanRoute
   '/spotify-callback': typeof SpotifyCallbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ajustes': typeof AjustesRoute
   '/aprende': typeof AprendeRoute
+  '/cuerpo': typeof CuerpoRoute
   '/diagnostico': typeof DiagnosticoRoute
   '/gimnasio': typeof GimnasioRoute
   '/historial': typeof HistorialRoute
+  '/plan': typeof PlanRoute
   '/spotify-callback': typeof SpotifyCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ajustes': typeof AjustesRoute
   '/aprende': typeof AprendeRoute
+  '/cuerpo': typeof CuerpoRoute
   '/diagnostico': typeof DiagnosticoRoute
   '/gimnasio': typeof GimnasioRoute
   '/historial': typeof HistorialRoute
+  '/plan': typeof PlanRoute
   '/spotify-callback': typeof SpotifyCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/ajustes'
     | '/aprende'
+    | '/cuerpo'
     | '/diagnostico'
     | '/gimnasio'
     | '/historial'
+    | '/plan'
     | '/spotify-callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/ajustes'
     | '/aprende'
+    | '/cuerpo'
     | '/diagnostico'
     | '/gimnasio'
     | '/historial'
+    | '/plan'
     | '/spotify-callback'
   id:
     | '__root__'
     | '/'
+    | '/ajustes'
     | '/aprende'
+    | '/cuerpo'
     | '/diagnostico'
     | '/gimnasio'
     | '/historial'
+    | '/plan'
     | '/spotify-callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AjustesRoute: typeof AjustesRoute
   AprendeRoute: typeof AprendeRoute
+  CuerpoRoute: typeof CuerpoRoute
   DiagnosticoRoute: typeof DiagnosticoRoute
   GimnasioRoute: typeof GimnasioRoute
   HistorialRoute: typeof HistorialRoute
+  PlanRoute: typeof PlanRoute
   SpotifyCallbackRoute: typeof SpotifyCallbackRoute
 }
 
@@ -115,6 +154,13 @@ declare module '@tanstack/react-router' {
       path: '/spotify-callback'
       fullPath: '/spotify-callback'
       preLoaderRoute: typeof SpotifyCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/plan': {
+      id: '/plan'
+      path: '/plan'
+      fullPath: '/plan'
+      preLoaderRoute: typeof PlanRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/historial': {
@@ -138,11 +184,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DiagnosticoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cuerpo': {
+      id: '/cuerpo'
+      path: '/cuerpo'
+      fullPath: '/cuerpo'
+      preLoaderRoute: typeof CuerpoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/aprende': {
       id: '/aprende'
       path: '/aprende'
       fullPath: '/aprende'
       preLoaderRoute: typeof AprendeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ajustes': {
+      id: '/ajustes'
+      path: '/ajustes'
+      fullPath: '/ajustes'
+      preLoaderRoute: typeof AjustesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -157,10 +217,13 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AjustesRoute: AjustesRoute,
   AprendeRoute: AprendeRoute,
+  CuerpoRoute: CuerpoRoute,
   DiagnosticoRoute: DiagnosticoRoute,
   GimnasioRoute: GimnasioRoute,
   HistorialRoute: HistorialRoute,
+  PlanRoute: PlanRoute,
   SpotifyCallbackRoute: SpotifyCallbackRoute,
 }
 export const routeTree = rootRouteImport

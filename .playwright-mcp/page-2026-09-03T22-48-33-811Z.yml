@@ -1,0 +1,44 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - heading "ENTRENADOR" [level=1] [ref=e8]
+        - generic [ref=e9]: BOGOTÁ · 2.600 M
+      - link "Disposición Sin datos suficientes" [ref=e13] [cursor=pointer]:
+        - /url: /cuerpo
+        - generic [ref=e14]: Disposición
+        - generic [ref=e16]: Sin datos suficientes
+      - navigation [ref=e17]:
+        - link "Hoy" [ref=e18] [cursor=pointer]:
+          - /url: /
+        - link "Plan" [ref=e26] [cursor=pointer]:
+          - /url: /plan
+        - link "Cuerpo" [ref=e29] [cursor=pointer]:
+          - /url: /cuerpo
+        - link "Gimnasio" [ref=e32] [cursor=pointer]:
+          - /url: /gimnasio
+        - link "Aprende" [ref=e39] [cursor=pointer]:
+          - /url: /aprende
+      - generic [ref=e42]:
+        - link "Ajustes" [ref=e43] [cursor=pointer]:
+          - /url: /ajustes
+        - button "Actualizar plan" [ref=e47]
+    - main [ref=e48]:
+      - generic [ref=e49]:
+        - generic [ref=e51]:
+          - heading "jueves, 3 de septiembre" [level=1] [ref=e52]
+          - paragraph [ref=e53]: BOGOTÁ · 2.600 M
+        - generic [ref=e54]:
+          - generic [ref=e58]:
+            - generic [ref=e59]: Media Maratón Bogotá
+            - generic [ref=e60]:
+              - generic [ref=e61]: "32"
+              - generic [ref=e62]: días para la carrera
+          - generic [ref=e65]: bloque 43 %
+        - link "Ver señales del cuerpo" [ref=e67] [cursor=pointer]:
+          - /url: /cuerpo
+          - generic [ref=e71]:
+            - generic [ref=e72]: Disposición
+            - generic [ref=e73]: Sin historial suficiente todavía
+        - generic [ref=e76]: Cargando tu día…
+  - region "Notifications alt+T"

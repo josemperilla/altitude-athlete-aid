@@ -1,0 +1,32 @@
+- generic [active] [ref=f11e1]:
+  - generic [ref=f11e2]:
+    - complementary [ref=f11e3]:
+      - generic [ref=f11e4]:
+        - heading "ENTRENADOR" [level=1] [ref=f11e8]
+        - generic [ref=f11e9]: BOGOTÁ · 2.600 M
+      - link "Disposición Sin datos suficientes" [ref=f11e13] [cursor=pointer]:
+        - /url: /cuerpo
+        - generic [ref=f11e14]: Disposición
+        - generic [ref=f11e16]: Sin datos suficientes
+      - navigation [ref=f11e17]:
+        - link "Hoy" [ref=f11e18] [cursor=pointer]:
+          - /url: /
+        - link "Plan" [ref=f11e25] [cursor=pointer]:
+          - /url: /plan
+        - link "Cuerpo" [ref=f11e28] [cursor=pointer]:
+          - /url: /cuerpo
+        - link "Gimnasio" [ref=f11e31] [cursor=pointer]:
+          - /url: /gimnasio
+        - link "Aprende" [ref=f11e38] [cursor=pointer]:
+          - /url: /aprende
+      - generic [ref=f11e42]:
+        - link "Ajustes" [ref=f11e43] [cursor=pointer]:
+          - /url: /ajustes
+        - button "Actualizar plan" [ref=f11e47]
+    - main [ref=f11e48]:
+      - generic [ref=f11e49]:
+        - generic [ref=f11e51]:
+          - heading "Aprende" [level=1] [ref=f11e52]
+          - paragraph [ref=f11e53]: Ciencia del entrenamiento · 5 papers revisados por pares
+        - generic [ref=f11e54]: Cargando…
+  - region "Notifications alt+T"

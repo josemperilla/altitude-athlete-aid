@@ -12,7 +12,7 @@ let serverEntryPromise: Promise<ServerEntry> | undefined;
 async function getServerEntry(): Promise<ServerEntry> {
   if (!serverEntryPromise) {
     serverEntryPromise = import("@tanstack/react-start/server-entry").then(
-      (m) => ((m as { default?: ServerEntry }).default ?? (m as unknown as ServerEntry)),
+      (m) => (m as { default?: ServerEntry }).default ?? (m as unknown as ServerEntry),
     );
   }
   return serverEntryPromise;
@@ -79,6 +79,15 @@ const API_PATHS = new Set([
   "/gym",
 ]);
 
+/**
+ * /plan es a la vez endpoint del backend y ruta de página de la SPA. Una
+ * navegación del navegador pide text/html y debe recibir la app; los fetch de
+ * la app (api.ts manda Accept: application/json) deben llegar al backend.
+ */
+function isBrowserNavigation(request: Request): boolean {
+  return (request.headers.get("accept") ?? "").includes("text/html");
+}
+
 type ApiEnv = { API_BASE?: string; API_TOKEN?: string };
 
 /**
@@ -110,9 +119,8 @@ async function proxyToApi(request: Request, env: ApiEnv): Promise<Response> {
   // El cuerpo se lee entero en vez de reenviar el stream: los payloads son de
   // unos pocos KB y el streaming con `body` exige `duplex`, que no todos los
   // runtimes aceptan igual.
-  const body = request.method === "GET" || request.method === "HEAD"
-    ? undefined
-    : await request.text();
+  const body =
+    request.method === "GET" || request.method === "HEAD" ? undefined : await request.text();
 
   try {
     const upstream = await fetch(target.toString(), { method: request.method, headers, body });
@@ -133,7 +141,7 @@ export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const path = new URL(request.url).pathname;
-      if (API_PATHS.has(path)) {
+      if (API_PATHS.has(path) && !isBrowserNavigation(request)) {
         return await proxyToApi(request, (env ?? {}) as ApiEnv);
       }
       const handler = await getServerEntry();

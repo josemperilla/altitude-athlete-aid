@@ -94,6 +94,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       {
+        rel: "icon",
+        href:
+          "data:image/svg+xml," +
+          encodeURIComponent(
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23E9CEA9"><path d="M13 2 3 14h7l-1 8 11-13h-7l0-7z"/></svg>',
+          ),
+      },
+      {
         rel: "stylesheet",
         href: appCss,
       },

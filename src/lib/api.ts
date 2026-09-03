@@ -19,6 +19,7 @@ import {
 
 export type {
   GarminData,
+  GarminActivity,
   PlanData,
   GymData,
   GymSession,
