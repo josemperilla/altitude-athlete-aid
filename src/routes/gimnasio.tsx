@@ -2,11 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { gymQO } from "@/lib/api";
-import { PageHeader } from "@/components/entrenador/PageHeader";
+import { PageShell } from "@/components/entrenador/PageShell";
+import { QueryState } from "@/components/entrenador/QueryState";
 import { GymSessionPicker } from "@/components/entrenador/gym/GymSessionPicker";
 import { GymSessionCard } from "@/components/entrenador/gym/GymSessionCard";
 import { PICK_RULES } from "@/lib/gym/loads.js";
-import { ERR, MUTED } from "@/lib/theme";
 
 export const Route = createFileRoute("/gimnasio")({
   head: () => ({
@@ -43,25 +43,14 @@ function GimnasioPage() {
   const session = active ? sessions[active] : null;
 
   return (
-    <div className="p-6 md:p-10 max-w-[1400px] mx-auto">
-      <PageHeader title="Gimnasio" subtitle="Bloque de fuerza · Sesiones, cargas y reglas" />
-
-      {isLoading && (
-        <div className="club-card p-8 mt-6 text-center" style={{ color: MUTED }}>
-          Cargando el bloque de fuerza…
-        </div>
-      )}
-
-      {error && (
-        <div className="club-card p-6 mt-6" style={{ borderLeft: `3px solid ${ERR}` }}>
-          <div style={{ color: ERR, fontWeight: 700 }}>No se pudo cargar el gimnasio</div>
-          <div className="text-sm mt-1" style={{ color: MUTED }}>
-            {(error as Error).message}
-          </div>
-        </div>
-      )}
-
-      {!isLoading && !error && (
+    <PageShell title="Gimnasio" subtitle="Bloque de fuerza · Sesiones, cargas y reglas">
+      <QueryState
+        isLoading={isLoading}
+        error={error}
+        isEmpty={!isLoading && !error && !session}
+        loadingMessage="Cargando el bloque de fuerza…"
+        emptyMessage="Sin sesiones de fuerza disponibles."
+      >
         <div className="gym mt-6 flex flex-col gap-2">
           {bloque.length > 0 && (
             <>
@@ -122,7 +111,7 @@ function GimnasioPage() {
             </>
           )}
         </div>
-      )}
-    </div>
+      </QueryState>
+    </PageShell>
   );
 }

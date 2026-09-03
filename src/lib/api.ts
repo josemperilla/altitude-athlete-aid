@@ -1,4 +1,35 @@
-const BASE = ""; // rutas relativas — Vite proxy reenvía al backend en localhost:8503
+// Cliente del backend. Cada query valida su respuesta contra el contrato de
+// schemas.ts en el borde: las páginas reciben datos tipados, y las cadenas de
+// fallback de alias que antes vivían en los componentes quedaron dentro de
+// los esquemas.
+
+import {
+  parseWith,
+  GarminDataSchema,
+  PlanDataSchema,
+  GymDataSchema,
+  InsightsSchema,
+  DiagnoseResultSchema,
+  type GarminData,
+  type PlanData,
+  type GymData,
+  type Insights,
+  type DiagnoseResult,
+} from "@/lib/schemas";
+
+export type {
+  GarminData,
+  PlanData,
+  GymData,
+  GymSession,
+  GymBlock,
+  GymExercise,
+  Insights,
+  InsightCategory,
+  DiagnoseResult,
+} from "@/lib/schemas";
+
+const BASE = ""; // rutas relativas — el proxy de Vite (dev) o server.ts (prod) reenvían al backend
 
 export async function apiFetch<T = unknown>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
@@ -19,84 +50,31 @@ export async function apiFetch<T = unknown>(path: string, init?: RequestInit): P
   }
 }
 
-export type GarminData = {
-  activities?: any[];
-  health?: any;
-  hrv?: any[] | any;
-  resting_hr?: any[] | any;
-  zones?: any;
-  [k: string]: any;
-};
-
-export type PlanData = {
-  runna_sessions?: any[];
-  cycling_sessions?: any[];
-  weeks_plan?: any[];
-  week_summary?: any[];
-  athlete_state?: string | { state?: string; [k: string]: any };
-  [k: string]: any;
-};
-
 export const garminQO = () => ({
   queryKey: ["garmin"] as const,
-  queryFn: () => apiFetch<GarminData>("/garmin"),
+  queryFn: async (): Promise<GarminData> =>
+    parseWith(GarminDataSchema, await apiFetch("/garmin"), "GET /garmin"),
   staleTime: 60_000,
 });
 
 export const planQO = () => ({
   queryKey: ["plan"] as const,
-  queryFn: () => apiFetch<PlanData>("/plan"),
+  queryFn: async (): Promise<PlanData> =>
+    parseWith(PlanDataSchema, await apiFetch("/plan"), "GET /plan"),
   staleTime: 60_000,
 });
 
-/** El bloque de fuerza que sirve /gym: sesiones, semanas, reglas y calendario. */
-export type GymExercise = {
-  prescription: string;
-  load: string;
-  id: string | null;
-  name: string;
-  target: string;
-  anim: string | null;
-  cues: string[];
-  errors: string[];
-  alt?: string;
-};
-
-export type GymBlock = {
-  name: string;
-  minutes: number;
-  note: string | null;
-  items: GymExercise[];
-};
-
-export type GymSession = {
-  code: string;
-  label: string | null;
-  title: string;
-  weekday: string;
-  duration_min: number;
-  summary: string;
-  blocks: GymBlock[];
-};
-
-export type GymData = {
-  race_date?: string;
-  sessions?: Record<string, GymSession>;
-  weeks?: any[];
-  rules?: { rule: string; detail: string }[];
-  calendar?: any[];
-  generated_at?: string;
-};
-
 export const gymQO = () => ({
   queryKey: ["gym"] as const,
-  queryFn: () => apiFetch<GymData>("/gym"),
+  queryFn: async (): Promise<GymData> =>
+    parseWith(GymDataSchema, await apiFetch("/gym"), "GET /gym"),
   staleTime: 5 * 60_000,
 });
 
 export const insightsQO = () => ({
   queryKey: ["insights"] as const,
-  queryFn: () => apiFetch<any>("/insights"),
+  queryFn: async (): Promise<Insights> =>
+    parseWith(InsightsSchema, await apiFetch("/insights"), "GET /insights"),
   staleTime: 5 * 60_000,
 });
 
@@ -111,11 +89,13 @@ export type DiagnoseInput = {
 };
 
 export function postUpdate() {
-  return apiFetch<any>("/update", { method: "POST", body: "" });
+  return apiFetch<unknown>("/update", { method: "POST", body: "" });
 }
 
 export function postDiagnose(data: DiagnoseInput) {
-  return apiFetch<any>("/diagnose", { method: "POST", body: JSON.stringify(data) });
+  return apiFetch<unknown>("/diagnose", { method: "POST", body: JSON.stringify(data) }).then(
+    (raw) => parseWith(DiagnoseResultSchema, raw, "POST /diagnose"),
+  );
 }
 
 /** Estado del atleta como string en mayúsculas ("FATIGA", "DESCARGADO"...), sea string u objeto. */

@@ -1,23 +1,15 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { garminQO, getAthleteState, planQO } from "@/lib/api";
-import { getReadinessScore, latestReading, READINESS_COLORS } from "@/lib/readiness";
+import { useAthlete } from "@/hooks/use-athlete";
+import { READINESS_COLORS } from "@/lib/readiness";
 import { NAV_TABS } from "@/lib/navigation";
 import { stateStyle, GOLD, MUTED, PANEL } from "@/lib/theme";
 import { useUpdatePlan } from "@/hooks/use-update-plan";
 
 export function MobileTopBar() {
-  const { data: plan } = useQuery(planQO());
-  const { data: garmin } = useQuery(garminQO());
+  const { readiness, hrv, rhr, athleteState } = useAthlete();
 
   const update = useUpdatePlan();
-
-  const state = getAthleteState(plan);
-  const st = stateStyle(state);
-
-  const hrv = latestReading(garmin, "hrv");
-  const rhr = latestReading(garmin, "resting_hr");
-  const readiness = getReadinessScore(garmin);
+  const st = stateStyle(athleteState);
 
   return (
     <header
@@ -29,7 +21,7 @@ export function MobileTopBar() {
           <span style={{ color: GOLD, fontWeight: 800, letterSpacing: "0.08em", fontSize: 14 }}>
             ⚡ ENTRENADOR
           </span>
-          {state && (
+          {athleteState && (
             <span
               className="px-2 py-0.5 rounded text-[10px]"
               style={{
@@ -39,7 +31,7 @@ export function MobileTopBar() {
                 letterSpacing: "0.08em",
               }}
             >
-              {state}
+              {athleteState}
             </span>
           )}
         </div>
@@ -103,7 +95,7 @@ export function MobileBottomNav() {
           <Link
             key={t.to}
             to={t.to}
-            className="flex flex-col items-center justify-center gap-0.5 py-2.5"
+            className="relative flex flex-col items-center justify-center gap-0.5 py-2.5"
             style={{
               color: active ? GOLD : MUTED,
               fontWeight: active ? 700 : 500,

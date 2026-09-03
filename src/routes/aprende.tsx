@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { insightsQO } from "@/lib/api";
-import { PageHeader } from "@/components/entrenador/PageHeader";
+import type { Insight, InsightCategory } from "@/lib/schemas";
+import { PageShell } from "@/components/entrenador/PageShell";
 import { CARD_2, GOLD, MUTED, PANEL } from "@/lib/theme";
 
 export const Route = createFileRoute("/aprende")({
@@ -20,15 +21,10 @@ function AprendePage() {
   const { data, isLoading } = useQuery(insightsQO());
   const [openCat, setOpenCat] = useState<string | null>(null);
 
-  const categories: any[] = Array.isArray(data) ? data : [];
+  const categories: InsightCategory[] = Array.isArray(data) ? data : [];
 
   return (
-    <div className="p-6 md:p-10 max-w-[1400px] mx-auto">
-      <PageHeader
-        title="Aprende"
-        subtitle="Ciencia del entrenamiento · 5 papers revisados por pares"
-      />
-
+    <PageShell title="Aprende" subtitle="Ciencia del entrenamiento · 5 papers revisados por pares">
       {isLoading && (
         <div className="club-card p-6 mt-6 text-sm" style={{ color: MUTED }}>
           Cargando…
@@ -36,15 +32,15 @@ function AprendePage() {
       )}
 
       <div className="flex flex-col gap-4 mt-6">
-        {categories.map((cat: any) => {
-          const isOpen = openCat === cat.id;
-          const insights: any[] = Array.isArray(cat.insights) ? cat.insights : [];
+        {categories.map((cat, i) => {
+          const isOpen = openCat != null && openCat === (cat.id ?? cat.title ?? null);
+          const insights = cat.insights ?? [];
 
           return (
-            <div key={cat.id} className="club-card overflow-hidden">
+            <div key={cat.id ?? cat.title ?? i} className="club-card overflow-hidden">
               {/* Category header — clickable */}
               <button
-                onClick={() => setOpenCat(isOpen ? null : cat.id)}
+                onClick={() => setOpenCat(isOpen ? null : (cat.id ?? cat.title ?? null))}
                 className="w-full flex items-center justify-between px-6 py-4 text-left transition-colors hover:bg-white/5"
               >
                 <div className="flex items-center gap-3">
@@ -52,7 +48,7 @@ function AprendePage() {
                   <div>
                     <div
                       className="text-sm font-bold tracking-widest uppercase"
-                      style={{ color: cat.color }}
+                      style={{ color: cat.color ?? GOLD }}
                     >
                       {cat.title}
                     </div>
@@ -64,7 +60,7 @@ function AprendePage() {
                 <ChevronDown
                   size={18}
                   style={{
-                    color: cat.color,
+                    color: cat.color ?? GOLD,
                     transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
                     transition: "transform 0.2s",
                     flexShrink: 0,
@@ -79,7 +75,7 @@ function AprendePage() {
                   style={{ borderTop: "1px solid rgba(233,206,169,.1)" }}
                 >
                   {insights.map((ins: any, i: number) => (
-                    <InsightCard key={i} ins={ins} accentColor={cat.color} />
+                    <InsightCard key={i} ins={ins} accentColor={cat.color ?? GOLD} />
                   ))}
                 </div>
               )}
@@ -87,11 +83,11 @@ function AprendePage() {
           );
         })}
       </div>
-    </div>
+    </PageShell>
   );
 }
 
-function InsightCard({ ins, accentColor }: { ins: any; accentColor: string }) {
+function InsightCard({ ins, accentColor }: { ins: Insight; accentColor: string }) {
   return (
     <article
       className="flex flex-col gap-3 p-4 rounded-lg mt-4"

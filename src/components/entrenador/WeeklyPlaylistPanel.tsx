@@ -16,6 +16,7 @@ import {
   type PruneResult,
 } from "@/lib/spotify";
 import { garminQO } from "@/lib/api";
+import type { GarminData } from "@/lib/schemas";
 import {
   sessionKey,
   currentPlanWeekRange,
@@ -76,7 +77,7 @@ export function WeeklyPlaylistPanel({
   const [pruned, setPruned] = useState<PruneResult | null>(null);
   // Garantimos que el ajuste por fatiga (#8) tenga los datos de Garmin.
   const queryClient = useQueryClient();
-  const garmin = queryClient.getQueryData(garminQO().queryKey);
+  const garmin = queryClient.getQueryData<GarminData>(garminQO().queryKey) ?? undefined;
 
   // Si el plan cambia mientras el panel sigue abierto (p. ej. el usuario pulsa
   // "Actualizar plan" sin cerrarlo), las filas quedaban congeladas con la

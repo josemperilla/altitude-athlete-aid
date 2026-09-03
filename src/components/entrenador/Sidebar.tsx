@@ -1,28 +1,16 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { garminQO, getAthleteState, planQO } from "@/lib/api";
-import {
-  getReadinessScore,
-  latestReading,
-  READINESS_COLORS,
-  type ReadinessResult,
-} from "@/lib/readiness";
+import { useAthlete } from "@/hooks/use-athlete";
+import { READINESS_COLORS, type ReadinessResult } from "@/lib/readiness";
 import { NAV_TABS } from "@/lib/navigation";
 import { stateStyle, GOLD, MUTED, PANEL } from "@/lib/theme";
 import { useUpdatePlan } from "@/hooks/use-update-plan";
 
 export function Sidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
-  const { data: garmin } = useQuery(garminQO());
-  const { data: plan } = useQuery(planQO());
+  const { readiness, hrv, rhr, athleteState } = useAthlete();
 
   const update = useUpdatePlan();
-
-  const hrv = latestReading(garmin, "hrv");
-  const rhr = latestReading(garmin, "resting_hr");
-  const readiness = getReadinessScore(garmin);
-  const state = getAthleteState(plan);
-  const st = stateStyle(state);
+  const st = stateStyle(athleteState);
 
   return (
     <aside
@@ -54,12 +42,12 @@ export function Sidebar() {
         </div>
       </div>
 
-      {state && (
+      {athleteState && (
         <div
           className="px-3 py-2 rounded text-xs text-center"
           style={{ background: st.bg, color: st.color, letterSpacing: "0.1em", fontWeight: 700 }}
         >
-          {state}
+          {athleteState}
         </div>
       )}
 

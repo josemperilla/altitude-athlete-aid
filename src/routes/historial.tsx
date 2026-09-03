@@ -10,7 +10,8 @@ import {
   CartesianGrid,
 } from "recharts";
 import { garminQO } from "@/lib/api";
-import { PageHeader } from "@/components/entrenador/PageHeader";
+import type { GarminActivity } from "@/lib/schemas";
+import { PageShell } from "@/components/entrenador/PageShell";
 import { GOLD, MUTED, PANEL } from "@/lib/theme";
 
 export const Route = createFileRoute("/historial")({
@@ -23,11 +24,14 @@ export const Route = createFileRoute("/historial")({
   component: HistorialPage,
 });
 
-function toSeries(arr: any[] | undefined, valueKey: string): { date: string; value: number }[] {
+function toSeries(
+  arr: { date?: string | null; [k: string]: unknown }[] | null | undefined,
+  valueKey: string,
+): { date: string; value: number }[] {
   if (!Array.isArray(arr)) return [];
   return arr
-    .filter((p: any) => p && p[valueKey] != null)
-    .map((p: any) => ({ date: String(p.date).slice(5, 10), value: Number(p[valueKey]) }))
+    .filter((p) => p && p[valueKey] != null)
+    .map((p) => ({ date: String(p.date).slice(5, 10), value: Number(p[valueKey]) }))
     .filter((p) => !isNaN(p.value));
 }
 
@@ -44,7 +48,7 @@ function getISOWeekKey(dateStr: string): string {
   return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
 }
 
-function aggregateWeeks(activities: any[]): WeekSummary[] {
+function aggregateWeeks(activities: GarminActivity[] | null | undefined): WeekSummary[] {
   if (!Array.isArray(activities)) return [];
   const buckets = new Map<string, WeekSummary>();
   for (const a of activities) {
@@ -70,12 +74,10 @@ function HistorialPage() {
 
   const hrvSeries = toSeries(garmin?.health?.hrv, "hrv").slice(-30);
   const rhrSeries = toSeries(garmin?.health?.resting_hr, "resting_hr").slice(-30);
-  const summaries = aggregateWeeks((garmin as any)?.activities_last_3_weeks ?? []);
+  const summaries = aggregateWeeks(garmin?.activities_last_3_weeks);
 
   return (
-    <div className="p-6 md:p-10 max-w-[1400px] mx-auto">
-      <PageHeader title="Historial" subtitle="Adaptación cardiovascular · Volumen semanal" />
-
+    <PageShell title="Historial" subtitle="Adaptación cardiovascular · Volumen semanal">
       <div className="grid md:grid-cols-2 gap-5 mt-6">
         <ChartCard title="HRV (ms)" data={hrvSeries} />
         <ChartCard title="FC reposo (bpm)" data={rhrSeries} />
@@ -98,7 +100,7 @@ function HistorialPage() {
           ))}
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }
 

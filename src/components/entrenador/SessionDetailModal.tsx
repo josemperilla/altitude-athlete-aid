@@ -14,6 +14,7 @@ import { extractSteps, mmss, stepLabel, stepMeasure } from "@/lib/workout-steps"
 import { getCreatedPlaylist, isSpotifyConnected, startSpotifyLogin } from "@/lib/spotify";
 import { usePlaylistMutation } from "@/hooks/use-playlist-mutation";
 import { garminQO } from "@/lib/api";
+import type { GarminData } from "@/lib/schemas";
 import { BIKE, CARD_1, ERR, GOLD, MUTED, PANEL, RUN, WARN } from "@/lib/theme";
 
 const SPORT_COLOR = { running: RUN, cycling: BIKE } as const;
@@ -95,7 +96,7 @@ export function SessionDetailModal({
   }, [onClose]);
 
   const queryClient = useQueryClient();
-  const garmin = queryClient.getQueryData(garminQO().queryKey);
+  const garmin = queryClient.getQueryData<GarminData>(garminQO().queryKey) ?? undefined;
 
   const sport = kind ? (kind === "bike" ? "cycling" : "running") : deriveSport(session);
   const accent = SPORT_COLOR[sport];

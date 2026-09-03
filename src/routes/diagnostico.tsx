@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
-import { postDiagnose, type DiagnoseInput } from "@/lib/api";
-import { PageHeader } from "@/components/entrenador/PageHeader";
+import { postDiagnose, type DiagnoseInput, type DiagnoseResult } from "@/lib/api";
+import { PageShell } from "@/components/entrenador/PageShell";
 import { CARD_2, ERR, GOLD, GOLD_LIGHT, MUTED } from "@/lib/theme";
 import { toast } from "sonner";
 
@@ -40,6 +40,13 @@ const WHEN = [
 const DURATIONS = ["< 1 día", "1-3 días", "1 semana", "> 2 semanas"];
 const SWELLING = ["No", "Leve", "Moderada", "Severa"];
 
+/** La normalización de aliases la hace el esquema (DiagnoseResultSchema). */
+const LEVEL_STYLE: Record<string, { color: string }> = {
+  SEVERE: { color: ERR },
+  MODERATE: { color: GOLD_LIGHT },
+  MINOR: { color: GOLD },
+};
+
 function DiagnosticoPage() {
   const [form, setForm] = useState<DiagnoseInput>({
     location: LOCATIONS[0],
@@ -53,13 +60,11 @@ function DiagnosticoPage() {
 
   const mut = useMutation({
     mutationFn: postDiagnose,
-    onError: (e: any) => toast.error(`Error: ${e?.message ?? "no se pudo analizar"}`),
+    onError: (e) => toast.error(`Error: ${e instanceof Error ? e.message : "no se pudo analizar"}`),
   });
 
   return (
-    <div className="p-6 md:p-10 max-w-[1100px] mx-auto">
-      <PageHeader title="Diagnóstico" subtitle="Evaluación de molestias y ajuste de plan" />
-
+    <PageShell title="Diagnóstico" subtitle="Evaluación de molestias y ajuste de plan">
       <form
         className="grid md:grid-cols-2 gap-4 mt-6"
         onSubmit={(e) => {
@@ -134,7 +139,7 @@ function DiagnosticoPage() {
         </div>
       </form>
 
-      {mut.data && <DiagnoseResult result={mut.data} />}
+      {mut.data && <DiagnoseResultView result={mut.data} />}
 
       <style>{`
         .gold-slider { -webkit-appearance:none; appearance:none; height:6px; border-radius:999px; background:#1A1A1A; outline:none; }
@@ -143,7 +148,7 @@ function DiagnosticoPage() {
         .gold-slider::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:18px; height:18px; border-radius:50%; background:#CEA970; border:2px solid #020101; cursor:pointer; margin-top:-6px; }
         .gold-slider::-moz-range-thumb { width:18px; height:18px; border-radius:50%; background:#CEA970; border:2px solid #020101; cursor:pointer; }
       `}</style>
-    </div>
+    </PageShell>
   );
 }
 
@@ -191,41 +196,22 @@ function Select({
   );
 }
 
-function classify(result: any): { label: string; color: string; emoji: string } {
-  const raw = (
-    result?.classification ??
-    result?.severity_class ??
-    result?.level ??
-    result?.category ??
-    ""
-  )
-    .toString()
-    .toUpperCase();
-  if (raw.includes("SEVERE")) return { label: "SEVERE", color: ERR, emoji: "🔴" };
-  if (raw.includes("MODER")) return { label: "MODERATE", color: GOLD_LIGHT, emoji: "🟠" };
-  if (raw.includes("MINOR") || raw.includes("MILD") || raw.includes("LEVE"))
-    return { label: "MINOR", color: GOLD, emoji: "🟡" };
-  return { label: raw || "RESULTADO", color: GOLD, emoji: "🟡" };
-}
-
-function DiagnoseResult({ result }: { result: any }) {
-  const c = classify(result);
-  const cyclingAdjustments: any[] =
-    result?.cycling_adjustments ?? result?.bike_adjustments ?? result?.adjustments?.cycling ?? [];
-  const runnaWarnings: any[] =
-    result?.runna_warnings ?? result?.warnings ?? result?.adjustments?.running ?? [];
-  const summary = result?.summary ?? result?.message ?? result?.recommendation;
+function DiagnoseResultView({ result }: { result: DiagnoseResult }) {
+  const style = LEVEL_STYLE[result.level] ?? { color: GOLD };
+  const summary = result.summary;
+  const cyclingAdjustments = result.cyclingAdjustments ?? [];
+  const runnaWarnings = result.runnaWarnings ?? [];
 
   return (
     <section className="mt-8 flex flex-col gap-5">
       <div
         className="club-card p-5"
-        style={{ borderColor: c.color, borderLeft: `4px solid ${c.color}` }}
+        style={{ borderColor: style.color, borderLeft: `4px solid ${style.color}` }}
       >
         <div className="flex items-center gap-3">
-          <span className="text-2xl">{c.emoji}</span>
-          <span style={{ color: c.color, fontWeight: 800, letterSpacing: "0.12em" }}>
-            {c.label}
+          <span className="inline-block w-3 h-3 rounded-full" style={{ background: style.color }} />
+          <span style={{ color: style.color, fontWeight: 800, letterSpacing: "0.12em" }}>
+            {result.level}
           </span>
         </div>
         {summary && (
@@ -235,7 +221,7 @@ function DiagnoseResult({ result }: { result: any }) {
         )}
       </div>
 
-      {Array.isArray(cyclingAdjustments) && cyclingAdjustments.length > 0 && (
+      {cyclingAdjustments.length > 0 && (
         <div>
           <h3
             className="text-sm mb-2"
@@ -255,14 +241,14 @@ function DiagnoseResult({ result }: { result: any }) {
                 className="club-card p-3 text-sm"
                 style={{ borderLeft: `3px solid ${GOLD}` }}
               >
-                {typeof a === "string" ? a : (a?.description ?? a?.text ?? JSON.stringify(a))}
+                {a}
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {Array.isArray(runnaWarnings) && runnaWarnings.length > 0 && (
+      {runnaWarnings.length > 0 && (
         <div>
           <h3
             className="text-sm mb-2"
@@ -282,7 +268,7 @@ function DiagnoseResult({ result }: { result: any }) {
                 className="club-card p-3 text-sm"
                 style={{ borderLeft: `3px solid ${ERR}` }}
               >
-                {typeof a === "string" ? a : (a?.description ?? a?.text ?? JSON.stringify(a))}
+                {a}
               </div>
             ))}
           </div>
