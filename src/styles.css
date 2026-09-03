@@ -204,3 +204,201 @@
   background: var(--gold-border);
   border: none;
 }
+
+/* ── Gimnasio ─────────────────────────────────────────────────────────────
+ *
+ * Portado de la app de gimnasio que vivía aparte. Dos cosas cambian respecto
+ * al original: el acento ámbar pasa a --gold, y las medidas se ajustan a esta
+ * app. Lo que NO cambia son los arreglos que costaron una auditoría:
+ *
+ *   - Objetivos táctiles de 44 px en todo lo que se pulsa entre series.
+ *   - --text-muted (#9A9A9A) para el texto pequeño, que sobre --card-1 da
+ *     6,4:1 y cumple WCAG AA de sobra. El gris más apagado del original
+ *     (#64757d) se quedaba en 3,4:1.
+ *   - La lista de reglas fija sus hijos a la columna 2. Sin eso, el detalle
+ *     se auto-coloca en la fila 2 de la columna del número —40 px— y sale
+ *     una palabra por línea.
+ */
+
+.gym-sec {
+  display: flex; align-items: center; gap: 10px;
+  margin: 24px 2px 10px;
+  font: 600 11px/1 ui-monospace, Menlo, monospace;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--text-muted);
+}
+.gym-sec::after { content: ""; flex: 1; height: 1px; background: var(--gold-border); }
+
+/* Selector de sesiones */
+.gym-seg {
+  display: flex; gap: 6px; margin: 2px 0 14px;
+  background: var(--card-1); border: 1px solid var(--gold-border);
+  border-radius: 12px; padding: 5px;
+}
+.gym-seg button {
+  flex: 1; min-height: 44px;
+  background: none; border: 0; border-radius: 8px; cursor: pointer;
+  color: var(--text-muted);
+  font: 600 13.5px/1.1 inherit;
+}
+.gym-seg button small {
+  display: block; font: 500 9.5px/1.6 ui-monospace, Menlo, monospace;
+  letter-spacing: .06em; text-transform: uppercase;
+}
+.gym-seg button[aria-selected="true"] {
+  background: rgba(233,206,169,0.1); color: var(--gold);
+}
+
+/* Tarjeta de sesión */
+.gym-session { padding: 0; overflow: hidden; }
+.gym-session-head { padding: 16px 16px 14px; border-bottom: 1px solid var(--gold-border); }
+.gym-session-head .sid {
+  display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px;
+  flex-wrap: wrap; row-gap: 6px;
+}
+.gym-session-head .code {
+  font: 700 11px/1 ui-monospace, Menlo, monospace; letter-spacing: .12em;
+  background: rgba(233,206,169,0.1); color: var(--gold);
+  padding: 4px 9px; border-radius: 6px;
+  white-space: nowrap;   /* "Casa · fuerza" partía la píldora en dos */
+}
+.gym-session-head .meta { font-size: 11.5px; color: var(--text-muted); }
+.gym-session-head h3 {
+  margin: 0 0 6px; font-size: 19px; font-weight: 700; letter-spacing: -.015em;
+  text-wrap: balance;
+}
+.gym-session-head .summary { margin: 6px 0 0; font-size: 13.5px; color: var(--text-muted); line-height: 1.55; }
+
+.gym-block-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 16px; background: var(--card-2);
+  font: 700 10.5px/1 ui-monospace, Menlo, monospace;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--gold);
+}
+.gym-block-head .mins { color: var(--text-muted); font-weight: 500; letter-spacing: .06em; }
+.gym-block-note {
+  padding: 8px 16px; font-size: 12.5px; color: var(--text-muted);
+  border-bottom: 1px solid var(--gold-border);
+}
+
+/* Ejercicio */
+.gym-ex { border-bottom: 1px solid var(--gold-border); padding: 12px 0 14px; }
+.gym-ex:last-child { border-bottom: 0; }
+.gym-ex-row { display: flex; justify-content: space-between; gap: 12px; padding: 0 16px; }
+.gym-ex-id .nm { font-size: 15.5px; font-weight: 650; letter-spacing: -.01em; line-height: 1.25; }
+.gym-ex-id .tgt { margin: 2px 0 0; font-size: 12.5px; color: var(--text-muted); }
+.gym-ex-r { text-align: right; white-space: nowrap; }
+.gym-ex-r .pres { display: block; font-size: 17px; font-weight: 600; color: var(--gold); }
+.gym-ex-r .loadc { display: block; font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+
+.gym-anim {
+  margin: 10px 16px 0; border-radius: 10px; background: var(--bg);
+  border: 1px solid var(--gold-border); aspect-ratio: 2 / 1; overflow: hidden;
+}
+.gym-anim svg { width: 100%; height: 100%; display: block; }
+
+/* Semántica de las ilustraciones: escenografía neutra, aparato en contorno,
+   carga sólida. Es lo que deja ver de un vistazo qué hay que ir a buscar. */
+.gym-anim .limb { fill: var(--text); stroke: none; }
+.gym-anim .limb.far { fill: var(--text-muted); }
+.gym-anim .head { fill: var(--text); stroke: none; }
+.gym-anim .ground { stroke: var(--gold-border-strong); stroke-width: 2; }
+.gym-anim .prop { fill: var(--card-2); stroke: var(--text-muted); stroke-width: 1.5; }
+.gym-anim .prop-line { stroke: var(--text-muted); stroke-width: 2.5; stroke-dasharray: 4 3; }
+.gym-anim .prop.gear { fill: rgba(233,206,169,0.08); stroke: var(--gold); stroke-width: 1.8; }
+.gym-anim .prop-line.gear { stroke: var(--gold); stroke-width: 3; stroke-dasharray: none; }
+.gym-anim .prop.load { fill: var(--gold); stroke: none; }
+.gym-anim .band { stroke: var(--gold); stroke-width: 2.4; stroke-linecap: round; }
+.gym-anim .load-bar { stroke: var(--gold); stroke-width: 2.6; stroke-linecap: round; }
+.gym-anim .load-plate { fill: var(--gold); }
+.gym-anim .trail { fill: none; stroke: var(--gold); stroke-width: 2; opacity: .45; stroke-linecap: round; stroke-linejoin: round; }
+.gym-anim .arch { stroke: var(--text); stroke-width: 6.5; fill: none; stroke-linecap: round; }
+.gym-anim .arch-base { stroke: var(--text-muted); stroke-width: 1.5; stroke-dasharray: 3 4; }
+
+/* Guía de carga compacta */
+.gym-load {
+  margin: 10px 16px 0; padding: 10px 12px;
+  background: var(--card-2); border-left: 2px solid var(--gold);
+  border-radius: 0 8px 8px 0;
+  display: grid; grid-template-columns: auto 1fr; gap: 4px 12px;
+  font-size: 13px; line-height: 1.5;
+}
+.gym-load dt {
+  font: 600 10px/1.5 ui-monospace, Menlo, monospace;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--gold);
+}
+.gym-load dd { margin: 0; color: var(--text-muted); }
+.gym-load dd b { color: var(--text); font-weight: 600; }
+
+/* Desplegable */
+.gym-more {
+  display: block; width: calc(100% - 32px); min-height: 44px;
+  margin: 10px 16px 0;
+  background: none; border: 1px dashed var(--gold-border-strong);
+  border-radius: 9px; cursor: pointer;
+  color: var(--text-muted); font: 600 11.5px/1 ui-monospace, Menlo, monospace;
+  letter-spacing: .08em;
+}
+.gym-more:hover { background: var(--card-2); color: var(--text); }
+
+.gym-ex-body { padding: 10px 16px 4px; }
+.gym-ex-body h4 {
+  margin: 10px 0 7px; font: 700 10px/1 ui-monospace, Menlo, monospace;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--gold);
+}
+.gym-ex-body h4.bad { color: var(--err); }
+.gym-ex-body ul { margin: 0; padding-left: 18px; }
+.gym-ex-body li { font-size: 13.5px; line-height: 1.6; color: var(--text-muted); margin-bottom: 6px; }
+.gym-ex-body li::marker { color: var(--gold); }
+.gym-ex-body ul.bad li::marker { color: var(--err); }
+.gym-alt {
+  margin: 10px 0; padding: 9px 12px; font-size: 13px; color: var(--text-muted);
+  background: var(--card-2); border-left: 2px solid var(--gold-deep); border-radius: 0 8px 8px 0;
+}
+
+.gym-load-full { margin-top: 12px; }
+.gym-load-full dl { margin: 0; display: grid; gap: 6px 14px; }
+.gym-load-full dl > div { display: grid; grid-template-columns: 92px 1fr; gap: 14px; }
+.gym-load-full dt {
+  font: 600 10px/1.5 ui-monospace, Menlo, monospace;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--gold);
+}
+.gym-load-full dd { margin: 0; font-size: 13.5px; color: var(--text-muted); line-height: 1.55; }
+
+.gym-refpair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.gym-refpair figure { margin: 0; }
+.gym-refpair img { width: 100%; border-radius: 8px; display: block; border: 1px solid var(--gold-border); }
+.gym-refpair figcaption {
+  margin-top: 5px; text-align: center;
+  font: 500 10px/1 ui-monospace, Menlo, monospace;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--text-muted);
+}
+.gym-caveat { margin: 8px 0 0; font-size: 12.5px; color: var(--text-muted); line-height: 1.5; }
+
+/* Cómo elegir el peso */
+.gym-pick { margin-top: 16px; overflow: hidden; }
+.gym-pick-head {
+  width: 100%; min-height: 44px;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 13px 16px; background: none; border: 0; cursor: pointer;
+  color: var(--text); font-size: 14px; font-weight: 700;
+}
+.gym-pick-head .chev { color: var(--gold); font-size: 11px; }
+.gym-pick-body { margin: 0; padding: 0 16px 14px 34px; }
+.gym-pick-body li { font-size: 13px; line-height: 1.6; color: var(--text-muted); margin-bottom: 7px; }
+.gym-pick-body li::marker { color: var(--gold); font-weight: 600; }
+
+/* Reglas */
+.gym-rules { list-style: none; counter-reset: r; padding: 4px 16px; margin: 0; }
+.gym-rules li {
+  counter-increment: r; display: grid; grid-template-columns: 40px 1fr;
+  column-gap: 12px; row-gap: 3px;
+  padding: 14px 0; border-bottom: 1px solid var(--gold-border);
+}
+.gym-rules li:last-child { border-bottom: 0; }
+.gym-rules li::before {
+  content: counter(r, decimal-leading-zero);
+  grid-column: 1; grid-row: 1 / span 2;
+  font: 600 15px ui-monospace, Menlo, monospace; color: var(--gold); padding-top: 2px;
+}
+.gym-rules b { grid-column: 2; font-size: 15px; font-weight: 650; line-height: 1.35; }
+.gym-rules span { grid-column: 2; font-size: 13.5px; color: var(--text-muted); line-height: 1.6; }

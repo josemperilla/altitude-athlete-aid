@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SpotifyCallbackRouteImport } from './routes/spotify-callback'
 import { Route as HistorialRouteImport } from './routes/historial'
+import { Route as GimnasioRouteImport } from './routes/gimnasio'
 import { Route as DiagnosticoRouteImport } from './routes/diagnostico'
 import { Route as AprendeRouteImport } from './routes/aprende'
 import { Route as IndexRouteImport } from './routes/index'
@@ -23,6 +24,11 @@ const SpotifyCallbackRoute = SpotifyCallbackRouteImport.update({
 const HistorialRoute = HistorialRouteImport.update({
   id: '/historial',
   path: '/historial',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GimnasioRoute = GimnasioRouteImport.update({
+  id: '/gimnasio',
+  path: '/gimnasio',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DiagnosticoRoute = DiagnosticoRouteImport.update({
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/aprende': typeof AprendeRoute
   '/diagnostico': typeof DiagnosticoRoute
+  '/gimnasio': typeof GimnasioRoute
   '/historial': typeof HistorialRoute
   '/spotify-callback': typeof SpotifyCallbackRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/aprende': typeof AprendeRoute
   '/diagnostico': typeof DiagnosticoRoute
+  '/gimnasio': typeof GimnasioRoute
   '/historial': typeof HistorialRoute
   '/spotify-callback': typeof SpotifyCallbackRoute
 }
@@ -60,6 +68,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/aprende': typeof AprendeRoute
   '/diagnostico': typeof DiagnosticoRoute
+  '/gimnasio': typeof GimnasioRoute
   '/historial': typeof HistorialRoute
   '/spotify-callback': typeof SpotifyCallbackRoute
 }
@@ -69,15 +78,23 @@ export interface FileRouteTypes {
     | '/'
     | '/aprende'
     | '/diagnostico'
+    | '/gimnasio'
     | '/historial'
     | '/spotify-callback'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/aprende' | '/diagnostico' | '/historial' | '/spotify-callback'
+  to:
+    | '/'
+    | '/aprende'
+    | '/diagnostico'
+    | '/gimnasio'
+    | '/historial'
+    | '/spotify-callback'
   id:
     | '__root__'
     | '/'
     | '/aprende'
     | '/diagnostico'
+    | '/gimnasio'
     | '/historial'
     | '/spotify-callback'
   fileRoutesById: FileRoutesById
@@ -86,6 +103,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AprendeRoute: typeof AprendeRoute
   DiagnosticoRoute: typeof DiagnosticoRoute
+  GimnasioRoute: typeof GimnasioRoute
   HistorialRoute: typeof HistorialRoute
   SpotifyCallbackRoute: typeof SpotifyCallbackRoute
 }
@@ -104,6 +122,13 @@ declare module '@tanstack/react-router' {
       path: '/historial'
       fullPath: '/historial'
       preLoaderRoute: typeof HistorialRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gimnasio': {
+      id: '/gimnasio'
+      path: '/gimnasio'
+      fullPath: '/gimnasio'
+      preLoaderRoute: typeof GimnasioRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/diagnostico': {
@@ -134,6 +159,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AprendeRoute: AprendeRoute,
   DiagnosticoRoute: DiagnosticoRoute,
+  GimnasioRoute: GimnasioRoute,
   HistorialRoute: HistorialRoute,
   SpotifyCallbackRoute: SpotifyCallbackRoute,
 }

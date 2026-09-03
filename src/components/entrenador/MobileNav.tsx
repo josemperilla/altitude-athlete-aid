@@ -87,8 +87,11 @@ export function MobileBottomNav() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   return (
     <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 z-30 grid grid-cols-4"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-30 grid"
       style={{
+        // Las columnas salen de NAV_TABS y no de una clase fija: estaba en
+        // grid-cols-4 y al añadir Gimnasio la barra se partió en dos filas.
+        gridTemplateColumns: `repeat(${NAV_TABS.length}, minmax(0, 1fr))`,
         background: PANEL,
         borderTop: "1px solid rgba(233,206,169,0.15)",
         paddingBottom: "env(safe-area-inset-bottom)",

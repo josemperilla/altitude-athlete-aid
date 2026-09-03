@@ -49,6 +49,51 @@ export const planQO = () => ({
   staleTime: 60_000,
 });
 
+/** El bloque de fuerza que sirve /gym: sesiones, semanas, reglas y calendario. */
+export type GymExercise = {
+  prescription: string;
+  load: string;
+  id: string | null;
+  name: string;
+  target: string;
+  anim: string | null;
+  cues: string[];
+  errors: string[];
+  alt?: string;
+};
+
+export type GymBlock = {
+  name: string;
+  minutes: number;
+  note: string | null;
+  items: GymExercise[];
+};
+
+export type GymSession = {
+  code: string;
+  label: string | null;
+  title: string;
+  weekday: string;
+  duration_min: number;
+  summary: string;
+  blocks: GymBlock[];
+};
+
+export type GymData = {
+  race_date?: string;
+  sessions?: Record<string, GymSession>;
+  weeks?: any[];
+  rules?: { rule: string; detail: string }[];
+  calendar?: any[];
+  generated_at?: string;
+};
+
+export const gymQO = () => ({
+  queryKey: ["gym"] as const,
+  queryFn: () => apiFetch<GymData>("/gym"),
+  staleTime: 5 * 60_000,
+});
+
 export const insightsQO = () => ({
   queryKey: ["insights"] as const,
   queryFn: () => apiFetch<any>("/insights"),

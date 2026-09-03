@@ -19,12 +19,13 @@ export default defineConfig({
     server: {
       allowedHosts: ["puppet-wincing-frenzied.ngrok-free.dev"],
       proxy: {
-        "/garmin":   { target: "http://localhost:8503", changeOrigin: true },
-        "/plan":     { target: "http://localhost:8503", changeOrigin: true },
+        "/garmin": { target: "http://localhost:8503", changeOrigin: true },
+        "/plan": { target: "http://localhost:8503", changeOrigin: true },
         "/insights": { target: "http://localhost:8503", changeOrigin: true },
-        "/update":   { target: "http://localhost:8503", changeOrigin: true },
+        "/update": { target: "http://localhost:8503", changeOrigin: true },
         "/diagnose": { target: "http://localhost:8503", changeOrigin: true },
-        "/diagnosis":{ target: "http://localhost:8503", changeOrigin: true },
+        "/diagnosis": { target: "http://localhost:8503", changeOrigin: true },
+        "/gym": { target: "http://localhost:8503", changeOrigin: true },
       },
     },
   },

@@ -76,6 +76,7 @@ const API_PATHS = new Set([
   "/update",
   "/diagnose",
   "/diagnosis",
+  "/gym",
 ]);
 
 type ApiEnv = { API_BASE?: string; API_TOKEN?: string };

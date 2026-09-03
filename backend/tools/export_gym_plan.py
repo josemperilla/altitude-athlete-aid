@@ -27,7 +27,6 @@ from paths import data_file
 ROOT = Path(__file__).parent.parent
 GARMIN_DATA = data_file("garmin_data.json")
 PLAN_DATA = data_file("augmented_plan.json")
-OUTPUT = ROOT / "web" / "public" / "plan.json"
 
 DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
 
@@ -113,7 +112,13 @@ def build_calendar(garmin: dict, plan: dict) -> list[dict]:
     return [by_date[d] for d in sorted(by_date)]
 
 
-def main() -> None:
+def build() -> dict:
+    """El plan de gimnasio completo, listo para servir.
+
+    Antes esto escribía web/public/plan.json y la app de gimnasio lo leía como
+    archivo estático. Ahora lo sirve el endpoint /gym de api.py, así que el plan
+    se refresca al correr run_weekly.sh sin necesidad de redesplegar el frontend.
+    """
     garmin = _read(GARMIN_DATA)
     plan = _read(PLAN_DATA)
 
@@ -122,17 +127,19 @@ def main() -> None:
     out["calendar"] = build_calendar(garmin, plan)
     out["athlete_state"] = plan.get("athlete_state")
     out["week_summary"] = plan.get("week_summary")
+    return out
 
-    if not garmin:
-        print("  aviso: sin garmin_data.json — el calendario va sin sesiones de carrera")
-    if not plan:
-        print("  aviso: sin augmented_plan.json — el calendario va sin ciclismo")
 
-    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT.write_text(json.dumps(out, indent=2, ensure_ascii=False), encoding="utf-8")
+def main() -> None:
+    """Vuelca el plan por stdout. Solo para inspeccionarlo a mano; nada lo consume."""
+    out = build()
 
-    gym_days = len(strength_plan.gym_dates())
-    print(f"Saved → {OUTPUT} ({gym_days} días de gimnasio, {len(out['calendar'])} días en calendario)")
+    if not _read(GARMIN_DATA):
+        print("  aviso: sin garmin_data.json — el calendario va sin sesiones de carrera", file=sys.stderr)
+    if not _read(PLAN_DATA):
+        print("  aviso: sin augmented_plan.json — el calendario va sin ciclismo", file=sys.stderr)
+
+    print(json.dumps(out, indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":

@@ -1,6 +1,9 @@
 #!/bin/zsh
-TRAINER_DIR="/Users/joseperilla/Documents/Personal_trainer"
-REACT_DIR="/Users/joseperilla/Documents/altitude-athlete-aid"
+# Los dos servicios viven ya en el mismo repo: el backend en backend/ y el
+# frontend en la raíz.
+REPO_DIR="/Users/joseperilla/Documents/altitude-athlete-aid"
+TRAINER_DIR="$REPO_DIR/backend"
+REACT_DIR="$REPO_DIR"
 API_PORT=8503
 REACT_PORT=5173
 

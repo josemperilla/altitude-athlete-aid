@@ -2,7 +2,7 @@
 # Ejecución automática semanal — domingos 3pm
 # Genera el plan de ciclismo para las próximas 2 semanas y lo sube a Garmin
 
-APP_DIR="/Users/joseperilla/Documents/Personal_trainer"
+APP_DIR="/Users/joseperilla/Documents/altitude-athlete-aid/backend"
 PYTHON="$APP_DIR/.venv/bin/python"
 LOG="$APP_DIR/.tmp/weekly_run.log"
 
@@ -30,7 +30,8 @@ run_step() {
 run_step "Fetch Garmin"      "fetch_garmin.py"
 run_step "Generar plan"      "generate_plan.py"
 run_step "Subir workouts"    "upload_workouts.py"
-run_step "Exportar gimnasio" "export_gym_plan.py"
+# El gimnasio ya no se exporta: /gym lo construye al vuelo desde
+# tools/strength_plan.py, así que se refresca solo con este mismo run.
 
 # ── Publicación ───────────────────────────────────────────────────────────────
 # Todo lo que sigue puede fallar sin romper la semana: el plan local ya quedó
@@ -54,11 +55,9 @@ for f in garmin_data.json augmented_plan.json; do
 done
 [ "$sync_ok" = "1" ] || echo "⚠ El backend seguirá con los datos de la semana pasada." >> "$LOG"
 
-echo "\n--- Publicar app del gimnasio ---" >> "$LOG"
-if (cd "$APP_DIR/web" && railway up --detach --service entrenador-gimnasio >> "$LOG" 2>&1); then
-    echo "✓ App del gimnasio publicada" >> "$LOG"
-else
-    echo "⚠ No se pudo publicar en Railway. El plan local sí quedó actualizado." >> "$LOG"
-fi
+# Ya no se publica nada más. La app del gimnasio era un servicio aparte que había
+# que redesplegar para que viera el plan nuevo; ahora es una pestaña del frontend
+# que lo pide a /gym, y ese endpoint lo construye al vuelo desde strength_plan.py.
+# Con subir los datos al volumen basta.
 
 echo "\n✓ Ejecución completada — $(date '+%Y-%m-%d %H:%M:%S')" >> "$LOG"

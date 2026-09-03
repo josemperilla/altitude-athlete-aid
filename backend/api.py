@@ -137,6 +137,20 @@ def get_diagnosis() -> dict:
     return data
 
 
+@app.get("/gym")
+def get_gym() -> dict:
+    """El bloque de fuerza: sesiones, semanas, reglas y el calendario de la semana.
+
+    El bloque en sí es estático (vive en tools/strength_plan.py), así que este
+    endpoint responde aunque Garmin esté caído o no se haya corrido /update: en
+    ese caso el calendario va sin las sesiones de carrera, pero la guía de
+    gimnasio —que es lo que se consulta entre series— sirve igual.
+    """
+    sys.path.insert(0, str(ROOT / "tools"))
+    import export_gym_plan
+    return export_gym_plan.build()
+
+
 @app.get("/insights")
 def get_insights() -> list:
     sys.path.insert(0, str(ROOT / "context"))
