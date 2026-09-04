@@ -6,7 +6,7 @@ repo: the frontend from the root, the API from `backend/`.
 
 ## Stack
 
-- **Frontend**: React 19, TanStack Start, TypeScript, shadcn/ui
+- **Frontend**: React 19, TanStack Start, TypeScript, Tailwind v4 (tokens propios)
 - **Backend**: FastAPI (Python) en `backend/`
 - **Deploy**: Railway, dos servicios. `railway up` desde la raíz publica el
   frontend (`server/index.js` sirve `dist/` sobre Node); desde `backend/`
@@ -14,16 +14,24 @@ repo: the frontend from the root, the API from `backend/`.
 
 ## Structure
 
-| Path | Description |
-|------|-------------|
-| `src/server.ts` | Server entry point with SSR error handling |
-| `src/start.ts` | App bootstrap |
-| `src/router.tsx` | Route definitions |
-| `src/routes/` | Page components |
-| `src/components/` | UI components (shadcn) |
-| `src/hooks/` | Custom React hooks |
-| `src/lib/` | Utility functions, error capture, error page |
-| `src/styles.css` | Global styles |
+La app es un copiloto diario: `/` es la cabina del día y el resto cuelga de ahí.
+
+| Path                         | Description                                                                                                                                                            |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/server.ts`              | SSR entry + proxy al backend (desambiguado por `Accept`: navegación → SPA, JSON → API)                                                                                 |
+| `src/router.tsx`             | Router (routeTree generado)                                                                                                                                            |
+| `src/routes/`                | `/` Hoy · `/plan` calendario · `/cuerpo` señales+dolor · `/gimnasio` fuerza · `/aprende` papers · `/ajustes` Spotify/plan · redirects de `/historial` y `/diagnostico` |
+| `src/components/entrenador/` | UI de la app (WeekBlock, SessionDetailModal, PlaylistControl, chrome Sidebar/MobileNav, gym/\*)                                                                        |
+| `src/components/ui/`         | Primitivas (sonner, formularios Field/Select/Range)                                                                                                                    |
+| `src/hooks/`                 | `useAthlete` (foto Garmin+plan), mutaciones, store reactivo de Spotify                                                                                                 |
+| `src/lib/schemas.ts`         | Contratos zod del backend (alias normalizados, fallback gracioso) — la única puerta de tipado                                                                          |
+| `src/lib/spotify/`           | auth (PKCE), client, storage reactivo, curation (playlists por fases), prune                                                                                           |
+| `src/lib/`                   | Dominio: readiness, session-dates (dedupe), workout-steps, spotify-intensity, playlist-timeline (testeado), gym/\*                                                     |
+| `src/styles.css`             | Design system v2: tokens semánticos en `:root` + registro en `@theme inline`; sin theme.ts ni paleta shadcn                                                            |
+
+Convenciones: cero `any` en `src/`; colores SIEMPRE por token (`var(--gold)`,
+`text-muted`, `bg-surface`) — nunca hex inline. El backend cambia nombres de
+campos: toda tolerancia a aliases vive en `schemas.ts`, no en los componentes.
 
 ## Commands
 
