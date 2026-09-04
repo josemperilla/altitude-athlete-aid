@@ -7,6 +7,7 @@ export {
   startSpotifyLogin,
   completeSpotifyLogin,
   isSpotifyConnected,
+  dropTokensWithMissingScopes,
   disconnectSpotify,
   getValidAccessToken,
 } from "./auth";

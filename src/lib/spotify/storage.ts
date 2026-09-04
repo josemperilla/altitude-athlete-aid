@@ -119,9 +119,18 @@ export function recordUsedUris(uris: string[]): void {
     localStorage.setItem(RECENT_URIS_KEY, JSON.stringify(map));
   } catch {
     // Si localStorage está lleno, podamos más agresivo y reintentamos una vez.
-    const kept = Object.entries(map)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 2000);
-    localStorage.setItem(RECENT_URIS_KEY, JSON.stringify(Object.fromEntries(kept)));
+    // El reintento también va protegido: la ventana de anti-repetición es un
+    // lujo, y perderla nunca puede tumbar la creación de la playlist, que ya
+    // existe en Spotify para cuando esto corre. Sin el guard, la excepción
+    // subía y la playlist se quedaba sin registrar: al reintentar salían
+    // duplicadas.
+    try {
+      const kept = Object.entries(map)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 2000);
+      localStorage.setItem(RECENT_URIS_KEY, JSON.stringify(Object.fromEntries(kept)));
+    } catch {
+      console.warn("[spotify] sin espacio en localStorage: se pierde la ventana anti-repetición");
+    }
   }
 }

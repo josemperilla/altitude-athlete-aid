@@ -44,7 +44,7 @@ function hashStr(s: string): number {
 }
 
 function HoyPage() {
-  const { plan, garmin, readiness, athleteState, isLoading } = useAthlete();
+  const { plan, garmin, readiness, athleteState, isLoading, error } = useAthlete();
   const { data: gym } = useQuery(gymQO());
   const { data: insights } = useQuery(insightsQO());
   const update = useUpdatePlan();
@@ -215,9 +215,12 @@ function HoyPage() {
         )}
       </div>
 
+      {/* El error se propaga a propósito: sin él, un backend caído no se
+          distingue de un día sin nada agendado y Hoy recomendaba descansar
+          cuando en realidad no había podido cargar los datos. */}
       <QueryState
         isLoading={isLoading}
-        error={undefined}
+        error={error}
         loadingMessage="Cargando tu día…"
         isEmpty={false}
       >

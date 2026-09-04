@@ -241,9 +241,6 @@ export async function createIntensityPlaylist(
     body: JSON.stringify({ uris }),
   });
 
-  // Registramos los URIs para que no se repitan en las próximas semanas.
-  recordUsedUris(uris);
-
   const created: CreatedPlaylist = {
     playlistId: playlist.id,
     externalUrl:
@@ -259,7 +256,11 @@ export async function createIntensityPlaylist(
         errorSec: s.errorSec,
       })),
   };
+  // Registrar la playlist va PRIMERO: para este punto ya existe en Spotify, y
+  // si no queda anotada, el siguiente intento crea una duplicada. La ventana
+  // anti-repetición, que es opcional, se apunta después.
   if (sessionKey) recordCreatedPlaylist(sessionKey, created);
+  recordUsedUris(uris);
   return created;
 }
 

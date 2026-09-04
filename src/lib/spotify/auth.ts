@@ -145,16 +145,33 @@ async function refreshAccessToken(refresh_token: string): Promise<StoredTokens |
  * `scope` registrado viene de antes de que se guardaran, así que se descarta: es más
  * barato pedir el consentimiento otra vez que fallar con un 403 al final de todo.
  */
+function grantedScopes(tokens: StoredTokens): string[] {
+  return (tokens.scope ?? "").split(/\s+/).filter(Boolean);
+}
+
+/**
+ * Lectura pura, sin efectos. Tiene que serlo: `useSpotifyConnected` la usa como
+ * `getSnapshot` de useSyncExternalStore, y React la llama durante el render.
+ * Antes borraba los tokens y notificaba a sus propios suscriptores ahí mismo,
+ * que es justo lo que React prohíbe en fase de render.
+ */
 export function isSpotifyConnected(): boolean {
   const tokens = readTokens();
   if (!tokens) return false;
+  const granted = grantedScopes(tokens);
+  return REQUIRED_SCOPES.every((s) => granted.includes(s));
+}
 
-  const granted = (tokens.scope ?? "").split(/\s+/).filter(Boolean);
-  if (!REQUIRED_SCOPES.every((s) => granted.includes(s))) {
-    disconnectSpotify();
-    return false;
-  }
-  return true;
+/**
+ * Descarta tokens a los que les falta algún permiso obligatorio. Es la mitad
+ * con efectos de lo que antes hacía `isSpotifyConnected`; se llama desde un
+ * efecto, nunca durante el render.
+ */
+export function dropTokensWithMissingScopes(): void {
+  const tokens = readTokens();
+  if (!tokens) return;
+  const granted = grantedScopes(tokens);
+  if (!REQUIRED_SCOPES.every((s) => granted.includes(s))) disconnectSpotify();
 }
 
 export function disconnectSpotify(): void {

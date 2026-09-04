@@ -1,7 +1,8 @@
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import {
   getPlaylistRegistry,
   isSpotifyConnected,
+  dropTokensWithMissingScopes,
   subscribeSpotify,
   type CreatedPlaylist,
 } from "@/lib/spotify";
@@ -25,5 +26,13 @@ export function useCreatedPlaylists(): Record<string, CreatedPlaylist> {
 
 /** Estado de conexión de Spotify, reactivo a connects/desconexiones/401. */
 export function useSpotifyConnected(): boolean {
-  return useSyncExternalStore(subscribeSpotify, isSpotifyConnected, () => false);
+  const connected = useSyncExternalStore(subscribeSpotify, isSpotifyConnected, () => false);
+  // La limpieza de tokens sin los permisos necesarios vive aquí y no dentro de
+  // `isSpotifyConnected`: esa función es el snapshot que React lee durante el
+  // render, y escribir en localStorage o notificar suscriptores ahí es un
+  // efecto en fase de render.
+  useEffect(() => {
+    dropTokensWithMissingScopes();
+  }, [connected]);
+  return connected;
 }

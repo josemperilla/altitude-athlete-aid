@@ -25,7 +25,7 @@ export function Sidebar() {
         </div>
       </div>
 
-      <Link to="/cuerpo" className="club-card !hover:border-border block px-3 py-3">
+      <Link to="/cuerpo" className="club-card block px-3 py-3">
         <div className="flex items-baseline justify-between">
           <span className="eyebrow">Disposición</span>
           {readiness && (

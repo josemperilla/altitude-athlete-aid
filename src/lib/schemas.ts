@@ -40,6 +40,59 @@ export function parseWith<S extends z.ZodTypeAny>(
   return data as z.output<S>;
 }
 
+/**
+ * Arreglo tolerante elemento a elemento.
+ *
+ * `z.array(X).catch([])` descarta la lista ENTERA cuando un solo elemento no
+ * valida, y sin avisar: una sesión con un `null` entre ocho dejaba el plan de
+ * la semana vacío y la app decía "Sin semanas planificadas", que es mentira.
+ * Aquí se queda lo que sí valida y lo descartado se dice en consola.
+ */
+function lenientArray<S extends z.ZodTypeAny>(schema: S, label: string) {
+  return z.unknown().transform((raw): z.output<S>[] => {
+    if (raw == null) return [];
+    if (!Array.isArray(raw)) {
+      console.warn(`[schemas] ${label}: se esperaba un arreglo, llegó ${typeof raw}`);
+      return [];
+    }
+    const out: z.output<S>[] = [];
+    const dropped: unknown[] = [];
+    for (const item of raw) {
+      const r = schema.safeParse(item);
+      if (r.success) out.push(r.data);
+      else dropped.push(r.error.issues[0]);
+    }
+    if (dropped.length) {
+      console.warn(
+        `[schemas] ${label}: ${dropped.length} de ${raw.length} elementos descartados`,
+        dropped.slice(0, 3),
+      );
+    }
+    return out;
+  });
+}
+
+/** Lo mismo que `lenientArray`, para un objeto indexado por clave. */
+function lenientRecord<S extends z.ZodTypeAny>(schema: S, label: string) {
+  return z.unknown().transform((raw): Record<string, z.output<S>> => {
+    if (raw == null || typeof raw !== "object" || Array.isArray(raw)) {
+      if (raw != null) console.warn(`[schemas] ${label}: se esperaba un objeto`);
+      return {};
+    }
+    const out: Record<string, z.output<S>> = {};
+    const dropped: string[] = [];
+    for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+      const r = schema.safeParse(v);
+      if (r.success) out[k] = r.data;
+      else dropped.push(k);
+    }
+    if (dropped.length) {
+      console.warn(`[schemas] ${label}: claves descartadas → ${dropped.join(", ")}`);
+    }
+    return out;
+  });
+}
+
 // ── Workout de Garmin ───────────────────────────────────────────────────────
 // Tipado manual (y no zod recursivo) a propósito: los workouts llegan con
 // pasos anidados arbitrarios y `workout-steps.ts` ya los lee de forma
@@ -126,9 +179,9 @@ const AthleteStateSchema = z
 
 export const PlanDataSchema = z
   .object({
-    runna_sessions: z.array(PlanSessionSchema).nullish().catch([]),
-    cycling_sessions: z.array(PlanSessionSchema).nullish().catch([]),
-    weeks_plan: z.array(PlanWeekSchema).nullish().catch([]),
+    runna_sessions: lenientArray(PlanSessionSchema, "plan.runna_sessions"),
+    cycling_sessions: lenientArray(PlanSessionSchema, "plan.cycling_sessions"),
+    weeks_plan: lenientArray(PlanWeekSchema, "plan.weeks_plan"),
     athlete_state: AthleteStateSchema,
   })
   .catchall(z.unknown());
@@ -216,7 +269,7 @@ export type GymSession = z.infer<typeof GymSessionSchema>;
 export const GymDataSchema = z
   .object({
     race_date: optStr,
-    sessions: z.record(z.string(), GymSessionSchema).nullish().catch(undefined),
+    sessions: lenientRecord(GymSessionSchema, "gym.sessions"),
     weeks: z.array(z.unknown()).nullish().catch(undefined),
     rules: z
       .array(z.object({ rule: z.string(), detail: z.string() }))
@@ -248,12 +301,12 @@ export const InsightCategorySchema = z
     subtitle: optStr,
     icon: optStr,
     color: optStr,
-    insights: z.array(InsightSchema).nullish().catch([]),
+    insights: lenientArray(InsightSchema, "insights.items"),
   })
   .catchall(z.unknown());
 export type InsightCategory = z.infer<typeof InsightCategorySchema>;
 
-export const InsightsSchema = z.array(InsightCategorySchema).nullish().catch([]);
+export const InsightsSchema = lenientArray(InsightCategorySchema, "insights");
 export type Insights = z.infer<typeof InsightsSchema>;
 
 // ── POST /diagnose ──────────────────────────────────────────────────────────

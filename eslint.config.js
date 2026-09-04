@@ -6,7 +6,10 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", ".output", ".vinxi"] },
+  // backend/ es Python. Su virtualenv trae JS vendorizado (urllib3 para
+  // emscripten) que hacía fallar `npm run lint` con errores de prettier sobre
+  // código de terceros.
+  { ignores: ["dist", ".output", ".vinxi", "backend"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
