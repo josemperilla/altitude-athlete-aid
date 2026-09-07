@@ -153,6 +153,33 @@ def root():
     return {"status": "ok", "service": "Entrenador API", "date": date.today().isoformat()}
 
 
+def _write_heartbeat(steps: list[str]) -> None:
+    """Deja constancia de que el trabajo semanal terminó bien.
+
+    Lo escriben DOS caminos y por eso vive aquí y no solo en run_weekly.sh:
+    el cron del Mac corre el script, pero el disparador de GitHub Actions hace
+    POST /update, que ejecuta las herramientas por su cuenta y nunca pasa por
+    el script. Sin esto, el latido se quedaría en null para siempre por esa vía
+    y el aviso de "plan viejo" no saltaría nunca — justo lo contrario de para
+    lo que existe.
+
+    Nunca propaga: que falle el latido no puede tumbar un /update que sí
+    funcionó.
+    """
+    try:
+        path = data_file("last_run.json")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps(
+                {"last_run": datetime.now().isoformat(timespec="seconds"), "steps_ok": steps},
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+    except Exception as e:  # noqa: BLE001
+        print(f"aviso: no se pudo escribir el latido ({e})", file=sys.stderr)
+
+
 @app.get("/health")
 def health() -> dict:
     """Latido del trabajo semanal: cuándo terminó bien run_weekly.sh por última vez.
@@ -266,6 +293,10 @@ def update_plan() -> dict:
         results.append({"step": label, "ok": ok, "message": msg[:500]})
         if not ok:
             raise HTTPException(500, detail={"error": f"Falló: {label}", "steps": results})
+
+    # Solo aquí: el bucle de arriba lanza en cuanto un paso falla, así que
+    # llegar a esta línea significa que los tres salieron bien.
+    _write_heartbeat([s for s, _ in steps])
 
     plan = _read(PLAN_DATA) or {}
     return {"success": True, "steps": results, "plan": plan}

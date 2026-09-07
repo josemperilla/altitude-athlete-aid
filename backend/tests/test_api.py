@@ -104,3 +104,30 @@ def test_health_con_latido_lo_devuelve(make_client, tmp_path):
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json()["last_run"] == "2026-09-06T04:00:12"
+
+
+def test_update_exitoso_escribe_el_latido(make_client, tmp_path, monkeypatch):
+    """El disparador de GitHub Actions llama POST /update, NO run_weekly.sh.
+
+    Si el latido viviera solo en el script, /health se quedaría en null para
+    siempre por esa vía y el aviso de "plan viejo" no saltaría nunca — que es
+    exactamente lo contrario de para lo que existe.
+    """
+    client = make_client(tmp_path)
+    import api
+
+    monkeypatch.setattr(api, "_run_tool", lambda script: (True, "ok"))
+    assert client.get("/health").json() == {"last_run": None}
+
+    assert client.post("/update").status_code == 200
+    assert client.get("/health").json()["last_run"] is not None
+
+
+def test_update_fallido_no_escribe_latido(make_client, tmp_path, monkeypatch):
+    """Un latido que miente es peor que ninguno: si un paso se cae, no se marca."""
+    client = make_client(tmp_path)
+    import api
+
+    monkeypatch.setattr(api, "_run_tool", lambda script: (False, "reventó"))
+    assert client.post("/update").status_code == 500
+    assert client.get("/health").json() == {"last_run": None}
