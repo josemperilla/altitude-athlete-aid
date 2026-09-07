@@ -1,0 +1,68 @@
+name: Plan semanal
+
+# El trabajo semanal vivía en el cron de un MacBook. Si el portátil estaba
+# dormido el domingo, no corría, y nada lo delataba: la app seguía mostrando un
+# plan, solo que viejo. Entre mayo y septiembre corrió una sola vez.
+#
+# Aquí NO se recalcula nada: solo se dispara POST /update contra el backend que
+# ya está desplegado en Railway, que es quien tiene las credenciales de Garmin y
+# la de Anthropic. GitHub Actions solo pone el despertador. El repo es público,
+# así que los minutos son gratis, y no hace falta un servicio nuevo en Railway.
+
+on:
+  schedule:
+    # Domingos 20:00 UTC = 15:00 en Bogotá, la misma hora del cron que reemplaza.
+    # GitHub interpreta el cron SIEMPRE en UTC, no en la zona del repo.
+    - cron: "0 20 * * 0"
+  # Para poder dispararlo a mano desde la pestaña Actions sin esperar al domingo.
+  workflow_dispatch:
+
+# Si una corrida se atrasa y coincide con la siguiente, no se solapan: dos
+# /update a la vez subirían workouts duplicados a Garmin.
+concurrency:
+  group: weekly-plan
+  cancel-in-progress: false
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Disparar POST /update
+        env:
+          API_BASE: ${{ secrets.API_BASE }}
+          API_TOKEN: ${{ secrets.API_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${API_BASE:-}" ] || [ -z "${API_TOKEN:-}" ]; then
+            echo "Faltan los secretos API_BASE o API_TOKEN del repositorio." >&2
+            exit 1
+          fi
+
+          # --max-time generoso: generate_plan llama a Claude y tarda minutos.
+          # -sS calla la barra de progreso pero deja pasar los errores.
+          code=$(curl -sS -o /tmp/out.json -w '%{http_code}' \
+                   --max-time 900 --retry 2 --retry-delay 30 --retry-connrefused \
+                   -X POST "${API_BASE%/}/update" \
+                   -H "x-api-token: ${API_TOKEN}" \
+                   -H "Content-Type: application/json")
+
+          echo "HTTP $code"
+          # El cuerpo puede traer mensajes de las herramientas, nunca credenciales.
+          python3 -c "
+          import json,sys
+          try:
+              d=json.load(open('/tmp/out.json'))
+          except Exception:
+              print(open('/tmp/out.json').read()[:800]); sys.exit()
+          for s in (d.get('steps') or (d.get('detail') or {}).get('steps') or []):
+              print(('  OK  ' if s.get('ok') else '  FALLO ') + str(s.get('step')))
+              if not s.get('ok'): print('        ' + str(s.get('message'))[:400])
+          "
+
+          # /update devuelve 500 en cuanto un paso falla, así que el código basta.
+          if [ "$code" != "200" ]; then
+            echo "El plan semanal NO se actualizó." >&2
+            exit 1
+          fi
+          echo "Plan semanal actualizado."
