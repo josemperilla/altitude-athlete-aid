@@ -381,15 +381,19 @@ function HoyPage() {
 
         {/* Acciones */}
         <section className="mt-8 pb-4 flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={() => update.mutate()}
-            disabled={update.isPending}
-            className="btn-gold flex items-center gap-2 text-xs"
-          >
-            <RefreshCw size={13} className={update.isPending ? "animate-spin" : undefined} />
-            {update.isPending ? "Actualizando…" : "Actualizar plan"}
-          </button>
+          {/* Igual que el de la barra lateral: /update corre el fetch de Garmin
+              y el generador de plan de Jose. Bajo otro perfil no hace nada útil. */}
+          {athlete === "jose" && (
+            <button
+              type="button"
+              onClick={() => update.mutate()}
+              disabled={update.isPending}
+              className="btn-gold flex items-center gap-2 text-xs"
+            >
+              <RefreshCw size={13} className={update.isPending ? "animate-spin" : undefined} />
+              {update.isPending ? "Actualizando…" : "Actualizar plan"}
+            </button>
+          )}
           <Link to="/ajustes" className="btn-ghost flex items-center gap-2 text-xs">
             <Music size={13} /> Ajustes y Spotify
           </Link>

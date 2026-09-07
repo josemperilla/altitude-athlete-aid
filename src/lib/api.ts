@@ -37,8 +37,20 @@ export type {
 } from "@/lib/schemas";
 
 const DEFAULT_ATHLETE: AthleteId = "jose";
-/** "jose" no manda ?athlete= — retrocompatible con lo que ya sirve el backend. */
-const athleteQS = (athlete: AthleteId) => (athlete === DEFAULT_ATHLETE ? "" : `?athlete=${athlete}`);
+
+/**
+ * Toda ruta con datos de una persona lleva `?athlete=`, SIEMPRE y explícito —
+ * también para "jose", aunque el backend lo tenga de default.
+ *
+ * La versión anterior lo omitía para jose por retrocompatibilidad, y eso dejaba
+ * dos convenciones vivas a la vez: la lectura confiaba en un default implícito
+ * y la escritura era explícita. En una app que usan dos personas, una petición
+ * que no dice de quién es no se puede depurar mirando la red — y basta que el
+ * default del backend cambie para que los datos de una terminen en el archivo
+ * de la otra. Una sola regla: si la respuesta depende de quién pregunta, va el
+ * parámetro.
+ */
+const athleteQS = (athlete: AthleteId) => `?athlete=${athlete}`;
 
 const BASE = ""; // rutas relativas — el proxy de Vite (dev) o server.ts (prod) reenvían al backend
 
@@ -94,12 +106,16 @@ export const gymDoneQO = () => ({
 });
 
 export function postGymDone(
-  input: { date: string; code: string; done?: boolean; note?: string; weights?: Record<string, string> },
+  input: {
+    date: string;
+    code: string;
+    done?: boolean;
+    note?: string;
+    weights?: Record<string, string>;
+  },
   athlete: AthleteId = DEFAULT_ATHLETE,
 ) {
-  // Explícito siempre (a diferencia de athleteQS): una escritura no debe
-  // depender de un default implícito para saber a quién pertenece.
-  return apiFetch<GymDoneMap>(`/gym/done?athlete=${athlete}`, {
+  return apiFetch<GymDoneMap>(`/gym/done${athleteQS(athlete)}`, {
     method: "POST",
     body: JSON.stringify({ done: true, note: "", weights: {}, ...input }),
   });
@@ -122,14 +138,33 @@ export type DiagnoseInput = {
   additional_notes: string;
 };
 
+/**
+ * Dispara el fetch de Garmin + la generación del plan. NO lleva `athlete`: es
+ * una tubería mono-atleta (corre con las credenciales de Garmin de Jose), y
+ * fingir que acepta un perfil sería mentir sobre lo que hace. La UI la esconde
+ * cuando el perfil activo no es el suyo.
+ */
 export function postUpdate() {
   return apiFetch<unknown>("/update", { method: "POST", body: "" });
 }
 
-export function postDiagnose(data: DiagnoseInput) {
-  return apiFetch<unknown>("/diagnose", { method: "POST", body: JSON.stringify(data) }).then(
-    (raw) => parseWith(DiagnoseResultSchema, raw, "POST /diagnose"),
-  );
+/**
+ * Historial de molestias. El contrato del backend no está fijado (devuelve lo
+ * que Claude haya escrito), así que se consume sin tipar y `cuerpo.tsx` filtra
+ * lo que reconoce. Lo que sí está fijo es de quién es: un archivo por atleta.
+ */
+export const diagnosisQO = (athlete: AthleteId = DEFAULT_ATHLETE) => ({
+  queryKey: ["diagnosis", athlete] as const,
+  queryFn: () => apiFetch<unknown>(`/diagnosis${athleteQS(athlete)}`),
+  staleTime: 60_000,
+  retry: false,
+});
+
+export function postDiagnose(data: DiagnoseInput, athlete: AthleteId = DEFAULT_ATHLETE) {
+  return apiFetch<unknown>(`/diagnose${athleteQS(athlete)}`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  }).then((raw) => parseWith(DiagnoseResultSchema, raw, "POST /diagnose"));
 }
 
 /** Estado del atleta como string en mayúsculas ("FATIGA", "DESCARGADO"...), sea string u objeto. */

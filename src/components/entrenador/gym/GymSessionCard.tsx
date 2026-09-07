@@ -16,14 +16,23 @@ function todayISO(): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
-/** Los ejercicios donde "cuánto cargaste" es una pregunta real: los que tienen
- *  guía de peso. El calentamiento y el tronco van por RPE, no por kilos. */
+/**
+ * Los ejercicios donde "cuánto cargaste" es una pregunta real.
+ *
+ * El filtro NO puede ser "tiene guía en WEIGHT_GUIDE": ahí está casi todo el
+ * catálogo, pogos incluidos. La señal es la carga prescrita — si dice «Peso
+ * corporal» no hay nada que anotar, tu peso es el que es. Lo demás (kilos,
+ * pin de máquina, altura de cajón, grosor de banda) sí lo eliges y sí progresa
+ * semana a semana, que es justo lo que vale la pena registrar.
+ */
 function weightedItems(session: GymSession): { id: string; name: string }[] {
   const guides = WEIGHT_GUIDE as Record<string, unknown>;
   const out: { id: string; name: string }[] = [];
   for (const block of session.blocks) {
     for (const it of block.items) {
-      if (it.id && it.anim && guides[it.anim] !== undefined) out.push({ id: it.id, name: it.name });
+      if (!it.id || !it.anim || guides[it.anim] === undefined) continue;
+      if (it.load.toLowerCase().includes("peso corporal")) continue;
+      out.push({ id: it.id, name: it.name });
     }
   }
   return out;

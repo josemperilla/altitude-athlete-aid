@@ -77,6 +77,10 @@ const API_PATHS = new Set([
   "/diagnose",
   "/diagnosis",
   "/gym",
+  // Coincidencia EXACTA: "/gym" no cubre "/gym/done". Sin esta entrada la
+  // petición cae al handler de SSR y la app recibe HTML donde espera JSON —
+  // en dev no se nota, porque el proxy de Vite sí es por prefijo.
+  "/gym/done",
 ]);
 
 /**

@@ -179,11 +179,15 @@ def get_garmin(athlete: str = Query(DEFAULT_ATHLETE)) -> dict:
 
 @app.get("/diagnosis")
 def get_diagnosis(athlete: str = Query(DEFAULT_ATHLETE)) -> dict:
+    """Último diagnóstico guardado del atleta, o {} si nunca ha consultado.
+
+    Vacío con 200, nunca 404 — misma regla que /garmin y /plan para un atleta
+    sin datos. Antes devolvía 404 y eso dejaba un error rojo permanente en la
+    consola de quien todavía no ha reportado ninguna molestia, que es el estado
+    normal de alguien que acaba de entrar, no un fallo.
+    """
     athlete = resolve_athlete(athlete)
-    data = _read(diagnosis_path(athlete))
-    if not data:
-        raise HTTPException(404, "Sin diagnóstico previo.")
-    return data
+    return _read(diagnosis_path(athlete)) or {}
 
 
 @app.get("/gym")
