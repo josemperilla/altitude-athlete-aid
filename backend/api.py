@@ -11,6 +11,7 @@ Endpoints (los de datos aceptan ?athlete=jose|andrea; por defecto, jose):
   GET  /insights      → insights educativos por categoría
   POST /update        → corre fetch + generate + upload (actualiza el plan)
   POST /diagnose      → analiza una molestia física
+  GET  /health        → latido del trabajo semanal (last_run o null), sin token
 
 Usage: .venv/bin/python -m uvicorn api:app --reload --port 8503
 """
@@ -150,6 +151,19 @@ class GymDoneRequest(BaseModel):
 @app.get("/")
 def root():
     return {"status": "ok", "service": "Entrenador API", "date": date.today().isoformat()}
+
+
+@app.get("/health")
+def health() -> dict:
+    """Latido del trabajo semanal: cuándo terminó bien run_weekly.sh por última vez.
+
+    200 siempre — es un endpoint de salud, no puede fallar. Sin archivo de
+    latido todavía, `last_run` va null y el frontend no avisa nada (así lee
+    planStale en src/routes/index.tsx). No exige token: está en open_paths del
+    middleware, junto a "/", para poder consultarlo sin credenciales.
+    """
+    data = _read(data_file("last_run.json")) or {}
+    return {"last_run": data.get("last_run")}
 
 
 @app.get("/plan")
