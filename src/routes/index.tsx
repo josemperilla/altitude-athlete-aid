@@ -5,6 +5,7 @@ import { ArrowRight, BookOpen, Dumbbell, Flag, HeartPulse, Music, RefreshCw } fr
 import { gymQO, insightsQO, planQO } from "@/lib/api";
 import type { Insight, PlanSession, PlanWeek } from "@/lib/schemas";
 import { useAthlete } from "@/hooks/use-athlete";
+import { useAthleteId } from "@/hooks/use-athlete-id";
 import { useUpdatePlan } from "@/hooks/use-update-plan";
 import {
   currentPlanWeekRange,
@@ -16,7 +17,7 @@ import {
   startOfDay,
 } from "@/lib/session-dates";
 import { deriveSport } from "@/lib/spotify-intensity";
-import { BLOCK_WEEKS, RACE_DATE, RACE_NAME, ALTITUDE_LABEL } from "@/lib/config";
+import { ALTITUDE_LABEL } from "@/lib/config";
 import { READINESS_COLORS } from "@/lib/readiness";
 import { stateColor, stateLabel } from "@/lib/athlete-state";
 import { PageShell } from "@/components/entrenador/PageShell";
@@ -36,6 +37,9 @@ export const Route = createFileRoute("/")({
 
 const DAY_INITIALS = ["D", "L", "M", "X", "J", "V", "S"];
 
+/** Inicio real del calendario estructurado — fijo y compartido por los dos atletas. */
+const BLOCK_START = new Date("2026-09-07T00:00:00");
+
 /** Hash estable de string → entero, para picks deterministas por fecha. */
 function hashStr(s: string): number {
   let h = 0;
@@ -44,8 +48,9 @@ function hashStr(s: string): number {
 }
 
 function HoyPage() {
+  const athlete = useAthleteId();
   const { plan, garmin, readiness, athleteState, isLoading, error } = useAthlete();
-  const { data: gym } = useQuery(gymQO());
+  const { data: gym } = useQuery(gymQO(athlete));
   const { data: insights } = useQuery(insightsQO());
   const update = useUpdatePlan();
 
@@ -100,18 +105,28 @@ function HoyPage() {
     return all[hashStr(todayIso) % all.length];
   }, [insights, todayIso]);
 
+  // Carrera del atleta activo: viene del backend en gym.race, ya resuelta
+  // server-side para el perfil. Si /gym sigue en vuelo o no trae race, la
+  // tarjeta de cuenta regresiva no se pinta (nada de NaN ni fechas rotas).
+  const raceName = gym?.race?.name;
+  const raceDateIso = gym?.race?.race_date;
+
   // Días completos que faltan para la carrera (medianoche a medianoche local).
-  const daysToRace = Math.round(
-    (new Date(RACE_DATE + "T00:00:00").getTime() - today.getTime()) / 86_400_000,
-  );
-  // Progreso del bloque: siempre contra la fecha de carrera y no contra las
-  // semanas del plan, que pueden estar desactualizadas y dejar la semana
-  // actual como última (barra al 100 % con un mes por delante).
+  const daysToRace =
+    raceDateIso == null
+      ? null
+      : Math.round((new Date(raceDateIso + "T00:00:00").getTime() - today.getTime()) / 86_400_000);
+  // Progreso del bloque: siempre contra la fecha de carrera y el inicio fijo
+  // del calendario estructurado, y no contra las semanas del plan, que pueden
+  // estar desactualizadas y dejar la semana actual como última (barra al
+  // 100 % con un mes por delante).
   const blockProgress = useMemo(() => {
-    const total = BLOCK_WEEKS * 7;
-    const elapsed = total - daysToRace;
+    if (raceDateIso == null) return 0;
+    const total = new Date(raceDateIso + "T00:00:00").getTime() - BLOCK_START.getTime();
+    if (total <= 0) return 0;
+    const elapsed = today.getTime() - BLOCK_START.getTime();
     return Math.min(1, Math.max(0, elapsed / total));
-  }, [daysToRace]);
+  }, [raceDateIso, today]);
 
   const stColor = stateColor(athleteState);
   const stLabel = stateLabel(athleteState);
@@ -122,7 +137,7 @@ function HoyPage() {
       subtitle={ALTITUDE_LABEL}
     >
       {/* Cuenta regresiva a la carrera */}
-      {daysToRace >= 0 && (
+      {raceName && daysToRace != null && daysToRace >= 0 && (
         <div className="club-card mt-6 p-5 flex flex-wrap items-center gap-5">
           <div
             className="flex items-center justify-center rounded-lg w-12 h-12 shrink-0"
@@ -131,7 +146,7 @@ function HoyPage() {
             <Flag size={22} />
           </div>
           <div className="flex-1 min-w-[180px]">
-            <div className="eyebrow">{RACE_NAME}</div>
+            <div className="eyebrow">{raceName}</div>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="metric-num text-3xl leading-none">{daysToRace}</span>
               <span className="text-sm" style={{ color: "var(--text-muted)" }}>

@@ -1,9 +1,41 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Settings, Zap } from "lucide-react";
 import { useAthlete } from "@/hooks/use-athlete";
+import { useAthleteId } from "@/hooks/use-athlete-id";
+import { setActiveAthlete, type AthleteId } from "@/lib/athlete/store";
 import { READINESS_COLORS } from "@/lib/readiness";
 import { NAV_TABS } from "@/lib/navigation";
 import { stateColor, stateLabel } from "@/lib/athlete-state";
+
+const PROFILES: { id: AthleteId; label: string }[] = [
+  { id: "jose", label: "José" },
+  { id: "andrea", label: "Andrea" },
+];
+
+function ProfileSwitch() {
+  const athlete = useAthleteId();
+  return (
+    <div className="flex shrink-0 items-center gap-1 p-0.5 rounded bg-surface-2">
+      {PROFILES.map((p) => {
+        const active = p.id === athlete;
+        return (
+          <button
+            key={p.id}
+            type="button"
+            onClick={() => setActiveAthlete(p.id)}
+            aria-pressed={active}
+            className={
+              "px-2 py-1 rounded text-[10px] font-bold tracking-[0.06em] uppercase transition-colors " +
+              (active ? "bg-gold/10 text-gold" : "text-muted hover:text-fg")
+            }
+          >
+            {p.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 export function MobileTopBar() {
   const { readiness, athleteState } = useAthlete();
@@ -41,6 +73,7 @@ export function MobileTopBar() {
           </div>
         )}
       </div>
+      <ProfileSwitch />
       <Link
         to="/ajustes"
         aria-label="Ajustes"
