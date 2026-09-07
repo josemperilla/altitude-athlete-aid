@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { planQO } from "@/lib/api";
+import { useAthleteId } from "@/hooks/use-athlete-id";
 import type { PlanSession, PlanWeek } from "@/lib/schemas";
 import { dedupeSessions } from "@/lib/session-dates";
 import { deriveSport } from "@/lib/spotify-intensity";
@@ -22,7 +23,8 @@ export const Route = createFileRoute("/plan")({
 });
 
 function PlanPage() {
-  const { data, isLoading, error } = useQuery(planQO());
+  const athlete = useAthleteId();
+  const { data, isLoading, error } = useQuery(planQO(athlete));
   const [showWeeklyPanel, setShowWeeklyPanel] = useState(false);
 
   // El plan puede traer la misma sesión más de una vez (ver dedupeSessions).

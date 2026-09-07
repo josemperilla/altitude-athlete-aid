@@ -383,6 +383,19 @@ function DiagnoseResultView({ result }: { result: DiagnoseResult }) {
             {String(result.summary)}
           </p>
         )}
+        {result.advice && <p className="mt-3 text-sm text-fg">{result.advice}</p>}
+        {(result.returnEstimate || result.seekCare) && (
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+            {result.returnEstimate && (
+              <span className="text-muted">Vuelta a carga completa: {result.returnEstimate}</span>
+            )}
+            {result.seekCare && (
+              <span className="rounded border border-warn/40 bg-warn/10 px-2 py-0.5 text-warn">
+                Conviene ver a un profesional
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {cyclingAdjustments.length > 0 && (

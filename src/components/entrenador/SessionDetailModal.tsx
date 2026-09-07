@@ -5,6 +5,7 @@ import { deriveIntensity, deriveSport, type IntensityLevel } from "@/lib/spotify
 import { sessionDate } from "@/lib/session-dates";
 import { extractSteps, mmss, stepLabel, stepMeasure, type Step } from "@/lib/workout-steps";
 import { garminQO } from "@/lib/api";
+import { useAthleteId } from "@/hooks/use-athlete-id";
 import type { GarminData, PlanSession } from "@/lib/schemas";
 import { PlaylistControl } from "./PlaylistControl";
 
@@ -86,7 +87,8 @@ export function SessionDetailModal({
   }, [onClose]);
 
   const queryClient = useQueryClient();
-  const garmin = queryClient.getQueryData<GarminData>(garminQO().queryKey) ?? undefined;
+  const athlete = useAthleteId();
+  const garmin = queryClient.getQueryData<GarminData>(garminQO(athlete).queryKey) ?? undefined;
 
   const sport = kind ? (kind === "bike" ? "cycling" : "running") : deriveSport(session);
   const accent = SPORT_COLOR[sport];

@@ -344,11 +344,36 @@ export type Insights = z.infer<typeof InsightsSchema>;
 // ── POST /diagnose ──────────────────────────────────────────────────────────
 // Normaliza la sopa de alias a una forma canónica de mostrar.
 
-type AdjustmentInput = string | { description?: string | null; text?: string | null };
+// El backend devuelve cada advertencia como {date, session, warning} — no como
+// {description} ni {text}. La cadena de alias no lo contemplaba, así que el
+// `JSON.stringify` de respaldo escupía el objeto crudo en pantalla. Aquí van
+// todos los nombres que el modelo ha usado; `session` no es texto de la
+// advertencia, es su contexto, y se antepone si viene.
+type AdjustmentInput =
+  | string
+  | {
+      description?: string | null;
+      text?: string | null;
+      warning?: string | null;
+      note?: string | null;
+      advice?: string | null;
+      message?: string | null;
+      session?: string | null;
+    };
 
 const AdjustmentItemSchema = z.union([
   z.string(),
-  z.object({ description: optStr, text: optStr }).catchall(z.unknown()),
+  z
+    .object({
+      description: optStr,
+      text: optStr,
+      warning: optStr,
+      note: optStr,
+      advice: optStr,
+      message: optStr,
+      session: optStr,
+    })
+    .catchall(z.unknown()),
 ]);
 
 const AdjustmentList = z.array(AdjustmentItemSchema).nullish().catch(undefined);
@@ -360,8 +385,12 @@ export const DiagnoseResultSchema = z
     level: optStr,
     category: optStr,
     summary: optStr,
+    pain_summary: optStr,
     message: optStr,
     recommendation: optStr,
+    general_advice: optStr,
+    return_to_full_load_estimate: optStr,
+    seek_professional_care: z.boolean().nullish().catch(undefined),
     cycling_adjustments: AdjustmentList,
     bike_adjustments: AdjustmentList,
     runna_warnings: AdjustmentList,
@@ -384,13 +413,22 @@ export const DiagnoseResultSchema = z
           : raw || "RESULTADO";
 
     const toText = (items: AdjustmentInput[] | undefined): string[] =>
-      (items ?? []).map((a) =>
-        typeof a === "string" ? a : (a.description ?? a.text ?? JSON.stringify(a)),
-      );
+      (items ?? []).map((a) => {
+        if (typeof a === "string") return a;
+        const body =
+          a.description ?? a.text ?? a.warning ?? a.note ?? a.advice ?? a.message ?? undefined;
+        // Sin ningún campo reconocible, antes que un volcado de JSON en la
+        // cara del usuario, mejor decir que llegó algo que no se entiende.
+        if (!body) return "Aviso sin texto legible (el backend cambió de forma).";
+        return a.session ? `${a.session}: ${body}` : body;
+      });
 
     return {
       level,
-      summary: r.summary ?? r.message ?? r.recommendation ?? undefined,
+      summary: r.summary ?? r.pain_summary ?? r.message ?? r.recommendation ?? undefined,
+      advice: r.general_advice ?? undefined,
+      returnEstimate: r.return_to_full_load_estimate ?? undefined,
+      seekCare: r.seek_professional_care ?? undefined,
       cyclingAdjustments: toText(
         (r.cycling_adjustments ?? r.bike_adjustments ?? r.adjustments?.cycling) as
           | AdjustmentInput[]
@@ -405,6 +443,10 @@ export const DiagnoseResultSchema = z
 export type DiagnoseResult = {
   level: string;
   summary?: string | null;
+  /** Lo más accionable que devuelve el modelo, y lo que antes se descartaba. */
+  advice?: string | null;
+  returnEstimate?: string | null;
+  seekCare?: boolean;
   cyclingAdjustments: string[];
   runnaWarnings: string[];
 };
