@@ -1,0 +1,12 @@
+{
+  "lane": "claude-opus",
+  "status": "COMPLETE",
+  "summary": "Toggle Hecha + panel de pesos en GymSessionCard, franja conjunta Jose/Andrea en gimnasio.tsx",
+  "files_changed": [
+    "src/components/entrenador/gym/GymSessionCard.tsx",
+    "src/routes/gimnasio.tsx"
+  ],
+  "deviations": 2,
+  "blocking_requests": 0,
+  "confidence": "high"
+}
