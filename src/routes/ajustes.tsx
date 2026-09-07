@@ -1,17 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { ExternalLink, Loader2, Music, RefreshCw, Trash2 } from "lucide-react";
+import { ExternalLink, Loader2, Moon, Music, RefreshCw, Sun, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { disconnectSpotify, prunePastPlaylists, startSpotifyLogin } from "@/lib/spotify";
 import { useCreatedPlaylists, useSpotifyConnected } from "@/hooks/use-spotify-store";
 import { useUpdatePlan } from "@/hooks/use-update-plan";
+import { useTheme } from "@/hooks/use-theme";
+import { setTheme, type Theme } from "@/lib/theme/store";
 import { PageShell } from "@/components/entrenador/PageShell";
 
 export const Route = createFileRoute("/ajustes")({
   head: () => ({
     meta: [
       { title: "Ajustes · Entrenador" },
-      { name: "description", content: "Conexión de Spotify, playlists creadas y plan." },
+      { name: "description", content: "Tema, conexión de Spotify, playlists creadas y plan." },
     ],
   }),
   component: AjustesPage,
@@ -19,11 +21,61 @@ export const Route = createFileRoute("/ajustes")({
 
 function AjustesPage() {
   return (
-    <PageShell title="Ajustes" subtitle="Spotify · Playlists · Plan">
+    <PageShell title="Ajustes" subtitle="Apariencia · Spotify · Playlists · Plan">
+      <AparienciaSection />
       <SpotifySection />
       <PlaylistsSection />
       <PlanSection />
     </PageShell>
+  );
+}
+
+const THEMES: { id: Theme; label: string; icon: typeof Sun; hint: string }[] = [
+  { id: "dark", label: "Oscuro", icon: Moon, hint: "El de toda la vida" },
+  { id: "light", label: "Claro", icon: Sun, hint: "Lienzo cálido" },
+];
+
+function AparienciaSection() {
+  const theme = useTheme();
+
+  return (
+    <section className="club-card p-5 mt-6">
+      <h2 className="eyebrow mb-1">Apariencia</h2>
+      <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>
+        El tema se guarda en este navegador y se aplica a todo, incluidas las figuras del gimnasio.
+      </p>
+      <div className="grid grid-cols-2 gap-2 mt-4">
+        {THEMES.map((t) => {
+          const active = t.id === theme;
+          const Icon = t.icon;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTheme(t.id)}
+              aria-pressed={active}
+              className={
+                "flex items-center gap-2.5 px-3 py-2.5 rounded border text-sm font-semibold transition-colors " +
+                (active
+                  ? "border-gold bg-gold/10 text-gold"
+                  : "border-border text-muted hover:text-fg hover:border-border-strong")
+              }
+            >
+              <Icon size={15} />
+              <span>
+                {t.label}
+                <span
+                  className="block text-[10px] font-normal"
+                  style={{ color: "var(--text-faint)" }}
+                >
+                  {t.hint}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -123,7 +175,7 @@ function PlaylistsSection() {
               href={pl.externalUrl}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center justify-between gap-3 py-1.5 text-sm rounded transition-colors hover:bg-white/5 px-2 -mx-2"
+              className="flex items-center justify-between gap-3 py-1.5 text-sm rounded transition-colors hover:bg-surface-2 px-2 -mx-2"
             >
               <span className="min-w-0 truncate">
                 <span className="metric-num text-xs">{key.slice(0, 10)}</span>{" "}

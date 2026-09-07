@@ -107,7 +107,7 @@ export function SessionDetailModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-6"
-      style={{ background: "rgba(2,1,1,0.82)" }}
+      style={{ background: "var(--scrim)" }}
       onClick={onClose}
     >
       <div

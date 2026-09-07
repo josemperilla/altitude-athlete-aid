@@ -38,9 +38,5 @@ function SpotifyCallbackPage() {
       .finally(() => navigate({ to: "/" }));
   }, [code, error, navigate]);
 
-  return (
-    <div className="p-10 text-center" style={{ color: "#9A9A9A" }}>
-      Conectando con Spotify…
-    </div>
-  );
+  return <div className="p-10 text-center text-sm text-muted">Conectando con Spotify…</div>;
 }

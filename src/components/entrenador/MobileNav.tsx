@@ -6,6 +6,7 @@ import { setActiveAthlete, type AthleteId } from "@/lib/athlete/store";
 import { READINESS_COLORS } from "@/lib/readiness";
 import { NAV_TABS } from "@/lib/navigation";
 import { stateColor, stateLabel } from "@/lib/athlete-state";
+import { ThemeToggle } from "@/components/entrenador/ThemeToggle";
 
 const PROFILES: { id: AthleteId; label: string }[] = [
   { id: "jose", label: "José" },
@@ -74,6 +75,7 @@ export function MobileTopBar() {
         )}
       </div>
       <ProfileSwitch />
+      <ThemeToggle />
       <Link
         to="/ajustes"
         aria-label="Ajustes"

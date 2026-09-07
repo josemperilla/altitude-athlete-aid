@@ -6,6 +6,22 @@ import { insightsQO } from "@/lib/api";
 import type { Insight, InsightCategory } from "@/lib/schemas";
 import { PageShell } from "@/components/entrenador/PageShell";
 
+/* Los hexes de acento llegan del backend afinados para el tema oscuro; sobre
+   fondo claro serían ilegibles (#E9CEA9 sobre blanco no se lee). Se traducen
+   al token equivalente del tema activo; un hex desconocido pasa tal cual. */
+const ACCENT_VARS: Record<string, string> = {
+  "#E9CEA9": "var(--gold)",
+  "#CEA970": "var(--gold-deep)",
+  "#FFBC7D": "var(--gold-light)",
+  "#10B981": "var(--ok)",
+  "#3B82F6": "var(--run)",
+};
+
+const accentVar = (hex: string | null | undefined): string => {
+  if (!hex) return "var(--gold)";
+  return ACCENT_VARS[hex.toUpperCase()] ?? hex;
+};
+
 export const Route = createFileRoute("/aprende")({
   head: () => ({
     meta: [
@@ -30,20 +46,21 @@ function AprendePage() {
         {categories.map((cat, i) => {
           const isOpen = openCat != null && openCat === (cat.id ?? cat.title ?? null);
           const insights = cat.insights ?? [];
+          const accent = accentVar(cat.color);
 
           return (
             <div key={cat.id ?? cat.title ?? i} className="club-card overflow-hidden">
               {/* Category header — clickable */}
               <button
                 onClick={() => setOpenCat(isOpen ? null : (cat.id ?? cat.title ?? null))}
-                className="w-full flex items-center justify-between px-6 py-4 text-left transition-colors hover:bg-white/5"
+                className="w-full flex items-center justify-between px-6 py-4 text-left transition-colors hover:bg-surface-2"
               >
                 <div className="flex items-center gap-3">
                   <span className="text-xl">{cat.icon}</span>
                   <div>
                     <div
                       className="text-sm font-bold tracking-widest uppercase"
-                      style={{ color: cat.color ?? "var(--gold)" }}
+                      style={{ color: accent }}
                     >
                       {cat.title}
                     </div>
@@ -53,7 +70,7 @@ function AprendePage() {
                 <ChevronDown
                   size={18}
                   style={{
-                    color: cat.color ?? "var(--gold)",
+                    color: accent,
                     transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
                     transition: "transform 0.2s",
                     flexShrink: 0,
@@ -68,7 +85,7 @@ function AprendePage() {
                   style={{ borderTop: "1px solid var(--border)" }}
                 >
                   {insights.map((ins, i) => (
-                    <InsightCard key={i} ins={ins} accentColor={cat.color ?? "var(--gold)"} />
+                    <InsightCard key={i} ins={ins} accentColor={accent} />
                   ))}
                 </div>
               )}
@@ -86,7 +103,7 @@ function InsightCard({ ins, accentColor }: { ins: Insight; accentColor: string }
       className="flex flex-col gap-3 p-4 rounded-lg mt-4"
       style={{
         background: "var(--surface-2)",
-        border: `1px solid ${accentColor}22`,
+        border: `1px solid color-mix(in srgb, ${accentColor} 13%, transparent)`,
       }}
     >
       {/* Source */}

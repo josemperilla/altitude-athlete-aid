@@ -89,8 +89,59 @@
   --err: #ef4444;
   --spotify: #1ed760;
 
+  /* Alfas que antes vivían incrustadas en componentes (grillas de charts,
+     scrim del modal, selección de texto). Como tokens, cada tema pone la suya. */
+  --chart-grid: rgba(233, 206, 169, 0.08);
+  --chart-axis: rgba(233, 206, 169, 0.15);
+  --scrim: rgba(2, 1, 1, 0.82);
+  --selection: rgba(233, 206, 169, 0.28);
+
   --shadow-club: 0 4px 24px rgba(0, 0, 0, 0.45);
   --radius: 10px;
+}
+
+/* ── Tema claro ──────────────────────────────────────────────────────────────
+ *
+ * "Lienzo cálido": misma familia térmica que el negro cálido del tema oscuro,
+ * derivado de la paleta aprobada de Aura (lienzo #faf6ef, tinta #1f1e1b,
+ * arena para superficies suaves). El oro se oscurece para seguir cumpliendo
+ * AA como texto; los semánticos bajan un escalón para sostener 4.5:1 sobre
+ * blanco. El interruptor es data-theme en <html> (lo fija un script en el
+ * head antes del primer paint), así que TODO lo que consume var(--...) —
+ * incluidas las figuras SVG del gimnasio — se re-tema sin tocar código.
+ */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #faf6ef;
+  --surface: #ffffff;
+  --surface-2: #f3ecdd;
+
+  --border: rgba(72, 56, 24, 0.2);
+  --border-strong: rgba(72, 56, 24, 0.4);
+
+  --text: #1f1e1b;
+  --text-muted: #6b6252;
+  --text-faint: #736a58;
+
+  --gold: #7a5a1e;
+  --gold-deep: #5f4614;
+  --gold-light: #8f6a1e;
+  --gold-wash: rgba(122, 90, 30, 0.08);
+
+  --run: #1d4ed8;
+  --bike: #047857;
+  --ok: #047857;
+  --warn: #a16207;
+  --err: #b91c1c;
+  --spotify: #0e7c3f;
+
+  --chart-grid: rgba(72, 56, 24, 0.13);
+  --chart-axis: rgba(72, 56, 24, 0.2);
+  --scrim: rgba(45, 38, 25, 0.42);
+  --selection: rgba(122, 90, 30, 0.22);
+
+  --shadow-club: 0 4px 24px rgba(72, 56, 24, 0.1);
 }
 
 @layer base {
@@ -119,7 +170,7 @@
   }
 
   ::selection {
-    background: rgba(233, 206, 169, 0.28);
+    background: var(--selection);
     color: var(--text);
   }
 

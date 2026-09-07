@@ -12,6 +12,7 @@ import appCss from "../styles.css?url";
 import { Sidebar } from "@/components/entrenador/Sidebar";
 import { MobileTopBar, MobileBottomNav } from "@/components/entrenador/MobileNav";
 import { Toaster } from "@/components/ui/sonner";
+import { useTheme } from "@/hooks/use-theme";
 
 function NotFoundComponent() {
   return (
@@ -119,8 +120,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
+    // suppressHydrationWarning: el script del head añade data-theme ANTES de
+    // hidratar (tema persistido), así que el atributo de <html> legítimamente
+    // no coincide con lo que renderizó el servidor. Es el patrón canónico de
+    // los conmutadores de tema; sin esto React lo reporta en cada carga.
+    <html lang="es" suppressHydrationWarning>
       <head>
+        {/* Antes del primer paint: fija data-theme desde localStorage para que
+            el tema persistido no provoque un destello del tema contrario.
+            React no gestiona este atributo (nunca lo renderiza), así que no
+            pelea con la hidratación. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              '(function(){try{var t=localStorage.getItem("theme");' +
+              'document.documentElement.dataset.theme=t==="light"?"light":"dark";' +
+              '}catch(e){document.documentElement.dataset.theme="dark";}})();',
+          }}
+        />
         <HeadContent />
       </head>
       <body>
@@ -133,6 +150,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const theme = useTheme();
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -144,7 +162,7 @@ function RootComponent() {
         </main>
         <MobileBottomNav />
       </div>
-      <Toaster theme="dark" />
+      <Toaster theme={theme} />
     </QueryClientProvider>
   );
 }

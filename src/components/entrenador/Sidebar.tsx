@@ -8,6 +8,7 @@ import { NAV_TABS } from "@/lib/navigation";
 import { ALTITUDE_LABEL } from "@/lib/config";
 import { stateColor, stateLabel } from "@/lib/athlete-state";
 import { useUpdatePlan } from "@/hooks/use-update-plan";
+import { ThemeToggle } from "@/components/entrenador/ThemeToggle";
 
 const PROFILES: { id: AthleteId; label: string }[] = [
   { id: "jose", label: "José" },
@@ -143,12 +144,15 @@ export function Sidebar() {
       </nav>
 
       <div className="mt-auto flex flex-col gap-2">
-        <Link
-          to="/ajustes"
-          className="flex items-center gap-2 px-3 py-2 text-xs text-muted rounded transition-colors hover:text-fg"
-        >
-          <Settings size={13} /> Ajustes
-        </Link>
+        <div className="flex items-center gap-1">
+          <Link
+            to="/ajustes"
+            className="flex-1 flex items-center gap-2 px-3 py-2 text-xs text-muted rounded transition-colors hover:text-fg"
+          >
+            <Settings size={13} /> Ajustes
+          </Link>
+          <ThemeToggle />
+        </div>
         {athlete === "jose" && (
           <button
             onClick={() => update.mutate()}

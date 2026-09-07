@@ -181,7 +181,7 @@ function HoyPage() {
                 {daysToRace === 1 ? "día para la carrera" : "días para la carrera"}
               </span>
             </div>
-            <div className="mt-3 h-1 rounded" style={{ background: "rgba(233,206,169,0.12)" }}>
+            <div className="mt-3 h-1 rounded" style={{ background: "var(--border)" }}>
               <div
                 className="h-1 rounded"
                 style={{ width: `${Math.round(blockProgress * 100)}%`, background: "var(--gold)" }}

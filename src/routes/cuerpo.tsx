@@ -129,11 +129,11 @@ function ChartCard({ title, data }: { title: string; data: { date: string; value
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-              <CartesianGrid stroke="rgba(233,206,169,0.08)" vertical={false} />
+              <CartesianGrid stroke="var(--chart-grid)" vertical={false} />
               <XAxis
                 dataKey="date"
                 tick={{ fill: "var(--text-muted)", fontSize: 11 }}
-                axisLine={{ stroke: "rgba(233,206,169,0.15)" }}
+                axisLine={{ stroke: "var(--chart-axis)" }}
                 tickLine={false}
               />
               <YAxis
