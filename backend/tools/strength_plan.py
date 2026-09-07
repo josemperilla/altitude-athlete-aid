@@ -12,7 +12,8 @@ Consumidores:
                                 strength_sessions al augmented_plan.json
   - tools/export_gym_plan.py  → exporta web/public/plan.json para la app de Railway
 
-Bloque: 7-sep-2026 → 4-oct-2026 (medio maratón el domingo 4-oct).
+Bloque: 7-sep-2026 → 4-oct-2026 (medio maratón el domingo 4-oct) + semana de
+transición 5–11 oct, sin sesión fija (Andrea corre Chicago el 11-oct).
 Revisado contra handoff_revision_claude.md el 2-sep-2026; ver CHANGELOG abajo.
 
 CHANGELOG vs. la propuesta del handoff
@@ -30,7 +31,11 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 
-RACE_DATE = date(2026, 10, 4)
+from athletes import DEFAULT_ATHLETE, RACES
+
+# La del bloque estructurado (W12–W15). La de cada atleta en particular vive en
+# athletes.RACES — as_dict(athlete) la expone por separado en `race`.
+RACE_DATE = RACES["jose"]["race_date"]
 
 # Días de la semana con gimnasio. generate_plan.py lo usa para bloquear ciclismo.
 GYM_WEEKDAYS = {0: "A", 2: "B"}  # 0 = lunes, 2 = miércoles
@@ -532,6 +537,19 @@ WEEKS = [
             {"date": date(2026, 9, 28), "session": "M", "scale": 1.0},
         ],
     },
+    {
+        "runna_week": "W16",
+        "start": date(2026, 10, 5),
+        "phase": "Transición",
+        "intent": (
+            "Sin sesión cableada. Jose corrió su medio maratón el domingo 4 y "
+            "está en las primeras 72 horas de recuperación; Andrea entra al "
+            "taper final de Chicago (11-oct). Ninguno de los dos necesita carga "
+            "nueva. Si el cuerpo pide algo, movilidad ligera y ya."
+        ),
+        "loading": "Nada fijo esta semana.",
+        "sessions": [],
+    },
 ]
 
 # Sesiones de casa. No están en WEEKS a propósito: son opcionales y no cuentan
@@ -660,6 +678,11 @@ RULES = [
      "rótula o tibia es señal."),
     ("A 2.600 metros recuperas más lento.",
      "Los descansos largos entre series no son pereza, son parte de la prescripción."),
+    ("El calendario estructurado cierra el 28 de septiembre.",
+     "Andrea corre el Maratón de Chicago el 11 de octubre, una semana después "
+     "del medio maratón de Jose (4-oct). La semana del 5 al 11 no lleva sesión "
+     "fija: Jose está en recuperación, Andrea en taper final. Si aparece, es "
+     "opcional."),
 ]
 
 
@@ -723,10 +746,21 @@ def _serialize_session(code: str) -> dict:
     }
 
 
-def as_dict() -> dict:
-    """Plan completo serializable — lo consume export_gym_plan.py y la app web."""
+def as_dict(athlete: str = DEFAULT_ATHLETE) -> dict:
+    """Plan completo serializable — lo consume export_gym_plan.py y la app web.
+
+    Sesiones, semanas y reglas son compartidas: el gimnasio es conjunto y no
+    se filtra nada por atleta. Lo único que cambia es `race`, con la carrera
+    real del atleta que se pida (`race_date` superior sigue siendo la del
+    bloque W12–W15 por compatibilidad).
+    """
     return {
         "race_date": RACE_DATE.isoformat(),
+        "race": {
+            k: (v.isoformat() if k == "race_date" else v)
+            for k, v in RACES[athlete].items()
+            if k != "has_garmin"
+        },
         "sessions": {code: _serialize_session(code) for code in SESSIONS},
         "weeks": [
             {

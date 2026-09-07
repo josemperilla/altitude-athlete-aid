@@ -2,10 +2,12 @@
 FastAPI backend — expone los datos del Entrenador como REST API.
 Lovable (u otro frontend) se conecta aquí.
 
-Endpoints:
+Endpoints (los de datos aceptan ?athlete=jose|andrea; por defecto, jose):
   GET  /plan          → plan aumentado actual (sesiones Runna + ciclismo)
   GET  /garmin        → datos de Garmin (actividades, salud, zonas)
   GET  /diagnosis     → último diagnóstico guardado
+  GET  /gym           → bloque de fuerza compartido + carrera del atleta
+  GET/POST /gym/done  → sesiones de gimnasio marcadas como hechas, por atleta
   GET  /insights      → insights educativos por categoría
   POST /update        → corre fetch + generate + upload (actualiza el plan)
   POST /diagnose      → analiza una molestia física
@@ -16,12 +18,12 @@ import json
 import os
 import subprocess
 import sys
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -36,10 +38,39 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 GARMIN_DATA = DATA_DIR / "garmin_data.json"
 PLAN_DATA   = DATA_DIR / "augmented_plan.json"
-DIAGNOSIS   = DATA_DIR / "diagnosis.json"
 
 # Compartido con el resto de herramientas, que leen .tmp/ por su cuenta.
 os.environ.setdefault("DATA_DIR", str(DATA_DIR))
+
+# Después de fijar DATA_DIR en el entorno: paths.py lo resuelve al importarse.
+sys.path.insert(0, str(ROOT / "tools"))
+
+from athletes import (  # noqa: E402
+    DEFAULT_ATHLETE,
+    RACES,
+    TRAINING_ALTITUDE_M,
+    TRAINING_LOCATION,
+    resolve_athlete,
+)
+from paths import data_file  # noqa: E402
+
+
+def diagnosis_path(athlete: str) -> Path:
+    return data_file(f"diagnosis_{athlete}.json")
+
+
+def gym_done_path(athlete: str) -> Path:
+    return data_file(f"gym_done_{athlete}.json")
+
+
+# Migración (una sola vez): el volumen de Railway ya tiene un diagnosis.json
+# real de Jose. Al particionar por atleta hay que traerlo a
+# diagnosis_jose.json, o su historial desaparece de /diagnosis.
+_LEGACY_DIAGNOSIS = DATA_DIR / "diagnosis.json"
+if not diagnosis_path("jose").exists() and _LEGACY_DIAGNOSIS.exists():
+    diagnosis_path("jose").write_text(
+        _LEGACY_DIAGNOSIS.read_text(encoding="utf-8"), encoding="utf-8"
+    )
 
 app = FastAPI(title="Entrenador API", version="1.0")
 
@@ -106,6 +137,14 @@ class DiagnoseRequest(BaseModel):
     additional_notes: str = ""
 
 
+class GymDoneRequest(BaseModel):
+    date: str
+    code: str
+    done: bool = True
+    note: str = ""
+    weights: dict[str, str] = {}
+
+
 # ── Endpoints ──────────────────────────────────────────────────────────────────
 
 @app.get("/")
@@ -114,7 +153,12 @@ def root():
 
 
 @app.get("/plan")
-def get_plan() -> dict:
+def get_plan(athlete: str = Query(DEFAULT_ATHLETE)) -> dict:
+    athlete = resolve_athlete(athlete)
+    if not RACES[athlete]["has_garmin"]:
+        # "Sin Garmin todavía" es un estado esperado, no un error: el frontend
+        # ya tiene estado vacío para esto y un 404 dispararía su error genérico.
+        return {}
     data = _read(PLAN_DATA)
     if not data:
         raise HTTPException(404, "Plan no encontrado. Ejecuta /update primero.")
@@ -122,7 +166,11 @@ def get_plan() -> dict:
 
 
 @app.get("/garmin")
-def get_garmin() -> dict:
+def get_garmin(athlete: str = Query(DEFAULT_ATHLETE)) -> dict:
+    athlete = resolve_athlete(athlete)
+    if not RACES[athlete]["has_garmin"]:
+        # Ídem /plan: vacío con 200, nunca 404.
+        return {}
     data = _read(GARMIN_DATA)
     if not data:
         raise HTTPException(404, "Datos de Garmin no encontrados. Ejecuta /update primero.")
@@ -130,25 +178,53 @@ def get_garmin() -> dict:
 
 
 @app.get("/diagnosis")
-def get_diagnosis() -> dict:
-    data = _read(DIAGNOSIS)
+def get_diagnosis(athlete: str = Query(DEFAULT_ATHLETE)) -> dict:
+    athlete = resolve_athlete(athlete)
+    data = _read(diagnosis_path(athlete))
     if not data:
         raise HTTPException(404, "Sin diagnóstico previo.")
     return data
 
 
 @app.get("/gym")
-def get_gym() -> dict:
+def get_gym(athlete: str = Query(DEFAULT_ATHLETE)) -> dict:
     """El bloque de fuerza: sesiones, semanas, reglas y el calendario de la semana.
 
     El bloque en sí es estático (vive en tools/strength_plan.py), así que este
     endpoint responde aunque Garmin esté caído o no se haya corrido /update: en
     ese caso el calendario va sin las sesiones de carrera, pero la guía de
     gimnasio —que es lo que se consulta entre series— sirve igual.
+
+    Sesiones, semanas y reglas son compartidas (el gimnasio es conjunto); lo
+    único que cambia por atleta es `race` y, para quien no tiene Garmin, el
+    calendario de carrera/ciclismo va vacío.
     """
-    sys.path.insert(0, str(ROOT / "tools"))
+    athlete = resolve_athlete(athlete)
     import export_gym_plan
-    return export_gym_plan.build()
+    return export_gym_plan.build(athlete)
+
+
+@app.get("/gym/done")
+def get_gym_done() -> dict:
+    """Vista conjunta: lo que cada atleta marcó, para todo el bloque."""
+    return {a: (_read(gym_done_path(a)) or {}) for a in RACES}
+
+
+@app.post("/gym/done")
+def post_gym_done(body: GymDoneRequest, athlete: str = Query(DEFAULT_ATHLETE)) -> dict:
+    athlete = resolve_athlete(athlete)
+    path = gym_done_path(athlete)
+    data = _read(path) or {}
+    if body.done:
+        data[body.date] = {
+            "code": body.code, "note": body.note, "weights": body.weights,
+            "updated_at": datetime.now().isoformat(timespec="seconds"),
+        }
+    else:
+        data.pop(body.date, None)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    return data
 
 
 @app.get("/insights")
@@ -178,22 +254,26 @@ def update_plan() -> dict:
 
 
 @app.post("/diagnose")
-def diagnose(body: DiagnoseRequest) -> dict:
+def diagnose(body: DiagnoseRequest, athlete: str = Query(DEFAULT_ATHLETE)) -> dict:
     """Calls Claude to analyze a physical complaint."""
     import anthropic
     sys.path.insert(0, str(ROOT / "tools"))
     from usage_log import log_usage
 
+    athlete = resolve_athlete(athlete)
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         raise HTTPException(500, "ANTHROPIC_API_KEY no configurada.")
 
     research_path = ROOT / "context" / "research_insights.md"
     research = research_path.read_text(encoding="utf-8")[:25000] if research_path.exists() else ""
-    plan_ctx = json.dumps(_read(PLAN_DATA) or {})[:3000]
+    # El plan de ciclismo que sirve de contexto es de Jose; Andrea no tiene
+    # plan generado todavía.
+    plan_ctx = json.dumps(_read(PLAN_DATA) or {})[:3000] if athlete == "jose" else ""
 
+    race = RACES[athlete]
     system = f"""Eres un asesor de entrenamiento con conocimiento en medicina deportiva.
-Evalúa la molestia física de un corredor que prepara un medio maratón en Bogotá (2.600 m).
+Evalúa la molestia física de un atleta que entrena en {TRAINING_LOCATION} ({TRAINING_ALTITUDE_M} m) y prepara {race['distance_label']}; la carrera es en {race['race_location']} ({race['race_altitude_m']} m).
 Las sesiones de Runna son SOLO LECTURA — no las modifiques, solo emite advertencias.
 Ante la duda, recomienda menos carga. No diagnostiques condiciones médicas.
 
@@ -239,7 +319,8 @@ PLAN ACTUAL:
     result = json.loads(raw.strip())
 
     # Save for later retrieval
-    DIAGNOSIS.parent.mkdir(parents=True, exist_ok=True)
-    DIAGNOSIS.write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
+    path = diagnosis_path(athlete)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
 
     return result
