@@ -266,9 +266,23 @@ export const GymSessionSchema = z.object({
 });
 export type GymSession = z.infer<typeof GymSessionSchema>;
 
+/** La carrera del atleta activo — `/gym?athlete=` la resuelve server-side. */
+export const RaceInfoSchema = z
+  .object({
+    name: optStr,
+    distance_label: optStr,
+    race_date: optStr,
+    race_location: optStr,
+    race_altitude_m: optNum,
+  })
+  .nullish()
+  .catch(undefined);
+export type RaceInfo = z.infer<typeof RaceInfoSchema>;
+
 export const GymDataSchema = z
   .object({
     race_date: optStr,
+    race: RaceInfoSchema,
     sessions: lenientRecord(GymSessionSchema, "gym.sessions"),
     weeks: z.array(z.unknown()).nullish().catch(undefined),
     rules: z
@@ -280,6 +294,24 @@ export const GymDataSchema = z
   })
   .catchall(z.unknown());
 export type GymData = z.infer<typeof GymDataSchema>;
+
+// ── GET/POST /gym/done ──────────────────────────────────────────────────────
+// "Hecha" + peso por ejercicio, namespaced por atleta en el backend — vive ahí
+// y no en localStorage porque la vista conjunta necesita que un teléfono vea
+// lo que el otro marcó.
+
+export const GymDoneEntrySchema = z.object({
+  code: z.string(),
+  note: z.string().default(""),
+  weights: z.record(z.string(), z.string()).default({}),
+  updated_at: optStr,
+});
+export type GymDoneEntry = z.infer<typeof GymDoneEntrySchema>;
+
+export const GymDoneMapSchema = z
+  .record(z.string(), lenientRecord(GymDoneEntrySchema, "gym-done"))
+  .catch({});
+export type GymDoneMap = z.infer<typeof GymDoneMapSchema>;
 
 // ── GET /insights ───────────────────────────────────────────────────────────
 

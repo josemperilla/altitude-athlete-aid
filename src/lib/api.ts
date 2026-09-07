@@ -8,14 +8,17 @@ import {
   GarminDataSchema,
   PlanDataSchema,
   GymDataSchema,
+  GymDoneMapSchema,
   InsightsSchema,
   DiagnoseResultSchema,
   type GarminData,
   type PlanData,
   type GymData,
+  type GymDoneMap,
   type Insights,
   type DiagnoseResult,
 } from "@/lib/schemas";
+import type { AthleteId } from "@/lib/athlete/store";
 
 export type {
   GarminData,
@@ -25,10 +28,17 @@ export type {
   GymSession,
   GymBlock,
   GymExercise,
+  GymDoneEntry,
+  GymDoneMap,
+  RaceInfo,
   Insights,
   InsightCategory,
   DiagnoseResult,
 } from "@/lib/schemas";
+
+const DEFAULT_ATHLETE: AthleteId = "jose";
+/** "jose" no manda ?athlete= — retrocompatible con lo que ya sirve el backend. */
+const athleteQS = (athlete: AthleteId) => (athlete === DEFAULT_ATHLETE ? "" : `?athlete=${athlete}`);
 
 const BASE = ""; // rutas relativas — el proxy de Vite (dev) o server.ts (prod) reenvían al backend
 
@@ -51,26 +61,49 @@ export async function apiFetch<T = unknown>(path: string, init?: RequestInit): P
   }
 }
 
-export const garminQO = () => ({
-  queryKey: ["garmin"] as const,
+export const garminQO = (athlete: AthleteId = DEFAULT_ATHLETE) => ({
+  queryKey: ["garmin", athlete] as const,
   queryFn: async (): Promise<GarminData> =>
-    parseWith(GarminDataSchema, await apiFetch("/garmin"), "GET /garmin"),
+    parseWith(GarminDataSchema, await apiFetch(`/garmin${athleteQS(athlete)}`), "GET /garmin"),
   staleTime: 60_000,
 });
 
-export const planQO = () => ({
-  queryKey: ["plan"] as const,
+export const planQO = (athlete: AthleteId = DEFAULT_ATHLETE) => ({
+  queryKey: ["plan", athlete] as const,
   queryFn: async (): Promise<PlanData> =>
-    parseWith(PlanDataSchema, await apiFetch("/plan"), "GET /plan"),
+    parseWith(PlanDataSchema, await apiFetch(`/plan${athleteQS(athlete)}`), "GET /plan"),
   staleTime: 60_000,
 });
 
-export const gymQO = () => ({
-  queryKey: ["gym"] as const,
+export const gymQO = (athlete: AthleteId = DEFAULT_ATHLETE) => ({
+  queryKey: ["gym", athlete] as const,
   queryFn: async (): Promise<GymData> =>
-    parseWith(GymDataSchema, await apiFetch("/gym"), "GET /gym"),
+    parseWith(GymDataSchema, await apiFetch(`/gym${athleteQS(athlete)}`), "GET /gym"),
   staleTime: 5 * 60_000,
 });
+
+/**
+ * Vista conjunta: lo que CADA atleta marcó, para todo el bloque — por eso no
+ * lleva `athlete` en la query, el backend siempre devuelve los dos.
+ */
+export const gymDoneQO = () => ({
+  queryKey: ["gym-done"] as const,
+  queryFn: async (): Promise<GymDoneMap> =>
+    parseWith(GymDoneMapSchema, await apiFetch("/gym/done"), "GET /gym/done"),
+  staleTime: 30_000,
+});
+
+export function postGymDone(
+  input: { date: string; code: string; done?: boolean; note?: string; weights?: Record<string, string> },
+  athlete: AthleteId = DEFAULT_ATHLETE,
+) {
+  // Explícito siempre (a diferencia de athleteQS): una escritura no debe
+  // depender de un default implícito para saber a quién pertenece.
+  return apiFetch<GymDoneMap>(`/gym/done?athlete=${athlete}`, {
+    method: "POST",
+    body: JSON.stringify({ done: true, note: "", weights: {}, ...input }),
+  });
+}
 
 export const insightsQO = () => ({
   queryKey: ["insights"] as const,
