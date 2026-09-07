@@ -33,6 +33,38 @@ run_step "Subir workouts"    "upload_workouts.py"
 # El gimnasio ya no se exporta: /gym lo construye al vuelo desde
 # tools/strength_plan.py, así que se refresca solo con este mismo run.
 
+# ── Latido de /health ─────────────────────────────────────────────────────────
+# La app avisa cuando el plan lleva días sin refrescarse; la fecha sale de aquí.
+# Se escribe SOLO si fetch/generate/upload pasaron: run_step hace exit 1 al
+# primer fallo, así que llegar a esta línea ya significa que el trabajo de
+# verdad salió bien — un latido que mintiera sería peor que ninguno. Va antes
+# de la publicación para que el archivo suba al volumen de Railway con el
+# resto y el /health desplegado también lo vea.
+LAST_RUN_FILE="$($PYTHON -c 'import sys; sys.path.insert(0, "tools"); from paths import data_file; print(data_file("last_run.json"))')"
+if $PYTHON - "$LAST_RUN_FILE" <<'PYEOF' 2>> "$LOG"
+import json
+import sys
+from datetime import datetime
+from pathlib import Path
+
+path = Path(sys.argv[1])
+path.write_text(
+    json.dumps(
+        {
+            "last_run": datetime.now().isoformat(timespec="seconds"),
+            "steps_ok": ["fetch_garmin.py", "generate_plan.py", "upload_workouts.py"],
+        },
+        ensure_ascii=False,
+    ),
+    encoding="utf-8",
+)
+PYEOF
+then
+    echo "✓ Latido escrito: $LAST_RUN_FILE" >> "$LOG"
+else
+    echo "⚠ No se pudo escribir el latido — /health seguirá sin fecha" >> "$LOG"
+fi
+
 # ── Publicación ───────────────────────────────────────────────────────────────
 # Todo lo que sigue puede fallar sin romper la semana: el plan local ya quedó
 # bien y los servicios siguen sirviendo la versión anterior. Por eso va fuera de
@@ -44,7 +76,7 @@ run_step "Subir workouts"    "upload_workouts.py"
 # Garmin; solo sirve lo que este script le deja.
 echo "\n--- Sincronizar datos con el backend ---" >> "$LOG"
 sync_ok=1
-for f in garmin_data.json augmented_plan.json; do
+for f in garmin_data.json augmented_plan.json last_run.json; do
     if railway volume files --volume api-volume upload --overwrite \
         "$APP_DIR/.tmp/$f" "/$f" >> "$LOG" 2>&1; then
         echo "✓ $f subido al volumen" >> "$LOG"
