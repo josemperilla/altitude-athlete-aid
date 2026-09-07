@@ -102,7 +102,12 @@ export const gymDoneQO = () => ({
   queryKey: ["gym-done"] as const,
   queryFn: async (): Promise<GymDoneMap> =>
     parseWith(GymDoneMapSchema, await apiFetch("/gym/done"), "GET /gym/done"),
-  staleTime: 30_000,
+  // Corta a propósito: los dos entrenan juntos y en el mismo rato, así que uno
+  // marca en su teléfono y el otro tiene que verlo sin recargar. Es un JSON de
+  // dos claves, sondearlo cada 20 s no cuesta nada.
+  staleTime: 15_000,
+  refetchInterval: 20_000,
+  refetchOnWindowFocus: true,
 });
 
 export function postGymDone(
@@ -120,6 +125,22 @@ export function postGymDone(
     body: JSON.stringify({ done: true, note: "", weights: {}, ...input }),
   });
 }
+
+/**
+ * Latido del trabajo semanal. `last_run` es cuándo terminó bien por última vez
+ * `run_weekly.sh` (fetch de Garmin → plan → subida), en ISO local, o `null` si
+ * nunca ha corrido desde que se registra.
+ *
+ * Existe porque el plan lo genera un trabajo programado, y si ese trabajo deja
+ * de correr nada en la app lo delata: se sigue viendo un plan, solo que viejo.
+ * Ahora dependen dos personas de él, así que el silencio no sirve.
+ */
+export const healthQO = () => ({
+  queryKey: ["health"] as const,
+  queryFn: () => apiFetch<{ last_run?: string | null }>("/health"),
+  staleTime: 5 * 60_000,
+  retry: false,
+});
 
 export const insightsQO = () => ({
   queryKey: ["insights"] as const,

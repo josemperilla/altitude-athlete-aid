@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { gymDoneQO, gymQO, type GymDoneMap } from "@/lib/api";
 import { useAthleteId } from "@/hooks/use-athlete-id";
+import { diaCorto, semanaVigente, todayISO, type SemanaGym } from "@/lib/gym/weeks";
 import { PageShell } from "@/components/entrenador/PageShell";
 import { QueryState } from "@/components/entrenador/QueryState";
 import { GymSessionPicker } from "@/components/entrenador/gym/GymSessionPicker";
@@ -32,54 +33,6 @@ const ATLETAS: { id: string; label: string }[] = [
   { id: "jose", label: "José" },
   { id: "andrea", label: "Andrea" },
 ];
-
-/** Igual que en GymSessionCard: fecha local, no UTC. Se repite a propósito —
- *  los dos archivos son del mismo carril y no hay dónde compartirla sin tocar
- *  un archivo de otro. */
-function todayISO(): string {
-  const d = new Date();
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-}
-
-type SemanaGym = { start: string; end: string; sessions: { date: string; session: string }[] };
-
-/**
- * `gym.weeks` llega como `unknown[]` desde el contrato (schemas.ts lo deja sin
- * tipar porque solo esta vista lo usa). Se estrecha aquí, campo a campo, y lo
- * que no calce se descarta en vez de romper la página.
- */
-function parseSemana(raw: unknown): SemanaGym | null {
-  if (!raw || typeof raw !== "object") return null;
-  const w = raw as Record<string, unknown>;
-  if (typeof w.start !== "string" || typeof w.end !== "string") return null;
-  const sessions: SemanaGym["sessions"] = [];
-  for (const s of Array.isArray(w.sessions) ? w.sessions : []) {
-    if (!s || typeof s !== "object") continue;
-    const e = s as Record<string, unknown>;
-    if (typeof e.date === "string" && typeof e.session === "string") {
-      sessions.push({ date: e.date, session: e.session });
-    }
-  }
-  return { start: w.start, end: w.end, sessions };
-}
-
-/** La semana que contiene hoy; si el bloque ya terminó (o aún no arranca), la
- *  siguiente que quede por delante. */
-function semanaVigente(weeks: unknown[] | undefined, hoy: string): SemanaGym | null {
-  const parsed = (weeks ?? []).map(parseSemana).filter((w): w is SemanaGym => w !== null);
-  return (
-    parsed.find((w) => w.start <= hoy && hoy <= w.end) ?? parsed.find((w) => w.start > hoy) ?? null
-  );
-}
-
-const DIAS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-
-function diaCorto(iso: string): string {
-  const [y, m, d] = iso.split("-").map(Number);
-  if (!y || !m || !d) return iso;
-  return `${DIAS[new Date(y, m - 1, d).getDay()]} ${d}`;
-}
 
 /**
  * La vista conjunta: quién marcó qué, en las sesiones agendadas de esta semana.

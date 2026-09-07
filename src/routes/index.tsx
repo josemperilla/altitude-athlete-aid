@@ -1,8 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { ArrowRight, BookOpen, Dumbbell, Flag, HeartPulse, Music, RefreshCw } from "lucide-react";
-import { gymQO, insightsQO, planQO } from "@/lib/api";
+import {
+  AlertTriangle,
+  ArrowRight,
+  BookOpen,
+  Dumbbell,
+  Flag,
+  HeartPulse,
+  Music,
+  RefreshCw,
+} from "lucide-react";
+import { gymQO, healthQO, insightsQO, planQO } from "@/lib/api";
 import type { Insight, PlanSession, PlanWeek } from "@/lib/schemas";
 import { useAthlete } from "@/hooks/use-athlete";
 import { useAthleteId } from "@/hooks/use-athlete-id";
@@ -52,6 +61,7 @@ function HoyPage() {
   const { plan, garmin, readiness, athleteState, isLoading, error } = useAthlete();
   const { data: gym } = useQuery(gymQO(athlete));
   const { data: insights } = useQuery(insightsQO());
+  const { data: health } = useQuery(healthQO());
   const update = useUpdatePlan();
 
   const today = startOfDay(new Date());
@@ -127,6 +137,24 @@ function HoyPage() {
     const elapsed = today.getTime() - BLOCK_START.getTime();
     return Math.min(1, Math.max(0, elapsed / total));
   }, [raceDateIso, today]);
+
+  /**
+   * Días desde la última corrida del trabajo semanal, o `null` si va al día.
+   *
+   * El umbral es 8 y no 7 a propósito: corre los domingos, así que al séptimo
+   * día es normal que aún no haya corrido el de esta semana. Avisar a los 7
+   * daría una alarma falsa cada sábado y la gente aprendería a ignorarla.
+   * Si `last_run` es null (el backend nunca ha registrado una), no se avisa:
+   * no distinguiría "el cron está muerto" de "la función es nueva".
+   */
+  const planStale = useMemo(() => {
+    const iso = health?.last_run;
+    if (!iso) return null;
+    const t = new Date(iso).getTime();
+    if (Number.isNaN(t)) return null;
+    const dias = Math.floor((Date.now() - t) / 86_400_000);
+    return dias >= 8 ? dias : null;
+  }, [health]);
 
   const stColor = stateColor(athleteState);
   const stLabel = stateLabel(athleteState);
@@ -229,6 +257,22 @@ function HoyPage() {
           </div>
         )}
       </div>
+
+      {planStale != null && (
+        <div
+          className="club-card mt-6 flex items-start gap-3 p-4"
+          style={{ borderLeft: "4px solid var(--warn)" }}
+          role="status"
+        >
+          <AlertTriangle size={18} className="mt-0.5 shrink-0 text-warn" />
+          <div className="text-sm">
+            <b className="text-warn">El plan lleva {planStale} días sin actualizarse.</b>{" "}
+            <span className="text-muted">
+              El trabajo semanal no ha corrido. Las sesiones que ves abajo pueden estar viejas.
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* El error se propaga a propósito: sin él, un backend caído no se
           distingue de un día sin nada agendado y Hoy recomendaba descansar

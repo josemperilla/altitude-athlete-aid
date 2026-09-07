@@ -4,17 +4,12 @@ import { toast } from "sonner";
 import { gymDoneQO, postGymDone, type GymSession } from "@/lib/api";
 import { useAthleteId } from "@/hooks/use-athlete-id";
 import { WEIGHT_GUIDE } from "@/lib/gym/loads.js";
+import { todayISO } from "@/lib/gym/weeks";
+import { lastWeightFor } from "@/lib/gym/weights";
 import { GymExercise } from "./GymExercise";
 
-/**
- * Fecha de hoy en horario local. `toISOString()` no sirve: a las 8 p.m. en
- * Bogotá ya es el día siguiente en UTC y la sesión quedaría marcada mañana.
- */
-function todayISO(): string {
-  const d = new Date();
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-}
+/** Cómo se llama cada perfil en pantalla, para que el botón diga a quién marca. */
+const NOMBRE: Record<string, string> = { jose: "José", andrea: "Andrea" };
 
 /**
  * Los ejercicios donde "cuánto cargaste" es una pregunta real.
@@ -93,6 +88,10 @@ export function GymSessionCard({ session }: { session: GymSession }) {
           }`}
         >
           {isDone ? "Hecha hoy ✓" : "Marcar hecha hoy"}
+          {/* Quién queda registrado. Sin login, el perfil activo es un toggle
+              fácil de pasar por alto: si el botón no lo dice, un descuido
+              guarda el entrenamiento en la cuenta de la otra persona. */}
+          <span className="ml-1 opacity-60">· {NOMBRE[athlete] ?? athlete}</span>
         </button>
       </div>
 
@@ -100,23 +99,27 @@ export function GymSessionCard({ session }: { session: GymSession }) {
         <div className="mx-4 mt-3 rounded-md border border-border bg-surface-2/40 p-3">
           <h4 className="text-xs tracking-wide text-faint uppercase">Qué cargaste hoy</h4>
           <div className="mt-2 flex flex-col gap-1.5">
-            {items.map((it) => (
-              <label key={it.id} className="flex items-center justify-between gap-3 text-sm">
-                <span className="text-muted">{it.name}</span>
-                <input
-                  type="text"
-                  inputMode="text"
-                  placeholder="—"
-                  value={drafts[it.id] ?? savedWeights[it.id] ?? ""}
-                  onChange={(e) => setDrafts((d) => ({ ...d, [it.id]: e.target.value }))}
-                  onBlur={(e) => saveWeight(it.id, e.target.value)}
-                  className="mono w-20 shrink-0 rounded border border-border bg-surface px-2 py-1 text-right text-fg focus:border-gold focus:outline-none"
-                />
-              </label>
-            ))}
+            {items.map((it) => {
+              const previo = lastWeightFor(done, athlete, it.id, date);
+              return (
+                <label key={it.id} className="flex items-center justify-between gap-3 text-sm">
+                  <span className="text-muted">{it.name}</span>
+                  <input
+                    type="text"
+                    inputMode="text"
+                    placeholder={previo ?? "—"}
+                    title={previo ? `La última vez: ${previo}` : undefined}
+                    value={drafts[it.id] ?? savedWeights[it.id] ?? ""}
+                    onChange={(e) => setDrafts((d) => ({ ...d, [it.id]: e.target.value }))}
+                    onBlur={(e) => saveWeight(it.id, e.target.value)}
+                    className="mono w-20 shrink-0 rounded border border-border bg-surface px-2 py-1 text-right text-fg focus:border-gold focus:outline-none"
+                  />
+                </label>
+              );
+            })}
           </div>
           <p className="mt-2 text-xs text-faint">
-            Se guarda al salir del campo. Escribe la unidad que uses: «40 kg», «pin 6».
+            Se guarda al salir del campo. En gris, lo que cargaste la última vez.
           </p>
         </div>
       )}
