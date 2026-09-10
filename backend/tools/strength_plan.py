@@ -14,7 +14,8 @@ Consumidores:
 
 Bloque: 7-sep-2026 → 4-oct-2026 (medio maratón el domingo 4-oct) + semana de
 transición 5–11 oct, sin sesión fija (Andrea corre Chicago el 11-oct).
-Revisado contra handoff_revision_claude.md el 2-sep-2026; ver CHANGELOG abajo.
+Revisado el 2-sep-2026 contra una propuesta previa de Claude; el CHANGELOG de
+abajo recoge en qué se apartó de ella (el documento original ya no está en el repo).
 
 CHANGELOG vs. la propuesta del handoff
   - Pliometría movida de miércoles a lunes. El handoff la ponía "al inicio y fresco"
