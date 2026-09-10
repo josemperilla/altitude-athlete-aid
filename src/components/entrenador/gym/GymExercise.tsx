@@ -3,6 +3,7 @@ import type { GymExercise as GymExerciseType } from "@/lib/api";
 import { WEIGHT_GUIDE } from "@/lib/gym/loads.js";
 import { PHOTOS, PHOTO_CAVEATS } from "@/lib/gym/photos.js";
 import { GymFigure } from "./GymFigure";
+import { GymTimer } from "./GymTimer";
 
 type Guide = {
   inicio: string;
@@ -78,6 +79,11 @@ export function GymExercise({ item }: { item: GymExerciseType }) {
           {item.load && <span className="loadc mono">{item.load}</span>}
         </div>
       </div>
+
+      {/* Fuera del gate `hasMore` a propósito: los calentamientos por tiempo
+          ("Bici o remo suave · 5 min") llegan sin id y ese gate los dejaría sin
+          cronómetro, que es justo lo único que necesitan. */}
+      <GymTimer prescription={item.prescription} name={item.name} />
 
       {/* La animación va siempre visible. Estuvo detrás de un botón y el
           resultado era una lista sin una sola animación a la vista: nadie pulsa

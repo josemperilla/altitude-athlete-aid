@@ -1,0 +1,19 @@
+{
+  "name": "Entrenador — Medio Maratón Bogotá",
+  "short_name": "Entrenador",
+  "description": "Copiloto diario de entrenamiento en altitud.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#070605",
+  "theme_color": "#070605",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

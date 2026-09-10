@@ -558,6 +558,153 @@
   stroke-dasharray: 3 4;
 }
 
+/* Cronómetro de los ejercicios por tiempo.
+   Misma geometría que .gym-load (margen 16px, borde dorado a la izquierda):
+   son dos franjas hermanas bajo la prescripción y tienen que leerse como
+   parte del mismo bloque, no como un widget pegado encima. */
+.gym-timer {
+  margin: 10px 16px 0;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border-left: 2px solid var(--gold);
+  border-radius: 0 8px 8px 0;
+}
+.gym-timer-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.gym-timer-clock {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.gym-timer-num {
+  font:
+    700 30px/1 ui-monospace,
+    Menlo,
+    monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+  /* Ancho fijo: sin esto la fila entera se desplaza al pasar de 1:00 a 59. */
+  font-feature-settings: "tnum";
+}
+.gym-timer-seg {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.gym-timer-seg em {
+  font-style: normal;
+  color: var(--text-muted);
+}
+.gym-timer-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* 44px de alto: se pulsa con las manos sudadas y a media serie. */
+.gym-timer-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--gold);
+  border-radius: 9px;
+  background: var(--gold-wash);
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+.gym-timer-go:hover {
+  background: var(--gold);
+  color: var(--bg);
+}
+.gym-timer-rst {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+.gym-timer-rst:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+.gym-timer-rst:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.gym-timer-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.gym-timer-chip {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: none;
+  color: var(--text-faint);
+  font:
+    600 11px/1 ui-monospace,
+    Menlo,
+    monospace;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+.gym-timer-chip[data-state="active"] {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: var(--gold-wash);
+}
+.gym-timer-chip[data-state="done"] {
+  border-color: color-mix(in srgb, var(--ok) 45%, transparent);
+  color: var(--ok);
+}
+.gym-timer-fin {
+  margin: 8px 0 0;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.gym-timer-perm {
+  margin-top: 8px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 8px;
+  background: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+.gym-timer-perm:hover {
+  color: var(--text);
+}
+
 /* Guía de carga compacta */
 .gym-load {
   margin: 10px 16px 0;
