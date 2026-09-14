@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { diaCorto, parseSemana, semanaVigente, todayISO } from "./weeks";
+import { diaCorto, msUntilNextMidnight, parseSemana, semanaVigente, todayISO } from "./weeks";
 
 // El bloque real de 2026, reducido a los campos que parseSemana lee.
 const bloque: unknown[] = [
@@ -84,5 +84,30 @@ describe("diaCorto", () => {
     // (UTC-5) eso ya es domingo 6. La función parsea a mano justamente para
     // que el día no dependa de la zona horaria — y esta prueba tampoco.
     expect(diaCorto("2026-09-07")).toBe("Lun 7");
+  });
+});
+
+// ── msUntilNextMidnight ─────────────────────────────────────────────────────
+
+describe("msUntilNextMidnight", () => {
+  test("dentro del mismo día", () => {
+    // 14-sep 10:00 → medianoche del 15 + 5 s de colchón = 14 h y 5 s.
+    const ms = msUntilNextMidnight(new Date(2026, 8, 14, 10, 0, 0));
+    expect(ms).toBe(14 * 3_600_000 + 5_000);
+  });
+
+  test("cruza el fin de mes sin quedarse en septiembre", () => {
+    const ms = msUntilNextMidnight(new Date(2026, 8, 30, 23, 0, 0));
+    expect(ms).toBe(3_600_000 + 5_000);
+  });
+
+  test("cruza el fin de año", () => {
+    const ms = msUntilNextMidnight(new Date(2026, 11, 31, 23, 59, 0));
+    expect(ms).toBe(60_000 + 5_000);
+  });
+
+  test("en el último milisegundo del día sigue despertando DESPUÉS de medianoche", () => {
+    // El colchón de 5 s es lo que garantiza que al despertar el día ya cambió.
+    expect(msUntilNextMidnight(new Date(2026, 8, 14, 23, 59, 59, 999))).toBe(5_001);
   });
 });

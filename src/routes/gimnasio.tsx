@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { gymDoneQO, gymQO, type GymDoneMap } from "@/lib/api";
 import { useAthleteId } from "@/hooks/use-athlete-id";
-import { diaCorto, semanaVigente, todayISO, type SemanaGym } from "@/lib/gym/weeks";
+import { useToday } from "@/hooks/use-today";
+import { diaCorto, semanaVigente, type SemanaGym } from "@/lib/gym/weeks";
 import { PageShell } from "@/components/entrenador/PageShell";
 import { QueryState } from "@/components/entrenador/QueryState";
 import { GymSessionPicker } from "@/components/entrenador/gym/GymSessionPicker";
@@ -39,8 +40,15 @@ const ATLETAS: { id: string; label: string }[] = [
  * Es lo único de la página que mira a los DOS atletas a la vez — por eso lee
  * `gymDoneQO()` sin parámetro (el backend siempre devuelve los dos).
  */
-function FranjaConjunta({ semana, done }: { semana: SemanaGym; done: GymDoneMap | undefined }) {
-  const hoy = todayISO();
+function FranjaConjunta({
+  semana,
+  done,
+  hoy,
+}: {
+  semana: SemanaGym;
+  done: GymDoneMap | undefined;
+  hoy: string;
+}) {
   if (semana.sessions.length === 0) return null;
 
   return (
@@ -76,6 +84,9 @@ function FranjaConjunta({ semana, done }: { semana: SemanaGym; done: GymDoneMap 
 
 function GimnasioPage() {
   const athlete = useAthleteId();
+  // El día se lee del reloj vivo, no del render: la app se queda abierta toda
+  // la semana en el teléfono (ver useToday).
+  const hoy = useToday();
   const { data, isLoading, error } = useQuery(gymQO(athlete));
   const { data: done } = useQuery(gymDoneQO());
   const [showPick, setShowPick] = useState(false);
@@ -91,7 +102,7 @@ function GimnasioPage() {
   // primer render `sessions` está vacío y ese valor se quedaría congelado.
   const active = (picked && sessions[picked] && picked) || bloque[0] || casa[0];
   const session = active ? sessions[active] : null;
-  const semana = semanaVigente(data?.weeks ?? undefined, todayISO());
+  const semana = semanaVigente(data?.weeks ?? undefined, hoy);
 
   return (
     <PageShell title="Gimnasio" subtitle="Bloque de fuerza · Sesiones, cargas y reglas">
@@ -103,7 +114,7 @@ function GimnasioPage() {
         emptyMessage="Sin sesiones de fuerza disponibles."
       >
         <div className="gym mt-6 flex flex-col gap-2">
-          {semana && <FranjaConjunta semana={semana} done={done} />}
+          {semana && <FranjaConjunta semana={semana} done={done} hoy={hoy} />}
 
           {bloque.length > 0 && (
             <>

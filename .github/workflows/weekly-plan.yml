@@ -13,7 +13,12 @@ on:
   schedule:
     # Domingos 20:00 UTC = 15:00 en Bogotá, la misma hora del cron que reemplaza.
     # GitHub interpreta el cron SIEMPRE en UTC, no en la zona del repo.
-    - cron: "0 20 * * 0"
+    #
+    # El minuto 17 y no el 0 a propósito: la cola de GitHub se atasca en las
+    # horas en punto, que es cuando programa todo el mundo. La corrida del
+    # 13-sep pedida a las 20:00 arrancó a las 21:52 — casi dos horas tarde.
+    # Un minuto impar pilla la cola despejada y el retraso baja a minutos.
+    - cron: "17 20 * * 0"
   # Para poder dispararlo a mano desde la pestaña Actions sin esperar al domingo.
   workflow_dispatch:
 
@@ -66,3 +71,26 @@ jobs:
             exit 1
           fi
           echo "Plan semanal actualizado."
+
+      # El 200 dice que los tres pasos respondieron bien; el latido dice que el
+      # resultado quedó ESCRITO en el volumen de Railway, que es lo que la app
+      # lee. Son cosas distintas: un contenedor sin volumen montado devuelve 200
+      # y pierde el trabajo, y nadie se enteraría hasta que el aviso de "plan
+      # viejo" saltara ocho días después. /health es público, no lleva token.
+      - name: Comprobar el latido
+        env:
+          API_BASE: ${{ secrets.API_BASE }}
+        run: |
+          set -euo pipefail
+          last=$(curl -sS --max-time 30 --retry 2 "${API_BASE%/}/health" \
+                   | python3 -c "import json,sys; print(json.load(sys.stdin).get('last_run') or '')")
+          hoy=$(date -u +%Y-%m-%d)
+          ayer=$(date -u -d yesterday +%Y-%m-%d 2>/dev/null || date -u -v-1d +%Y-%m-%d)
+          echo "last_run=${last:-<vacío>}"
+          case "$last" in
+            # El backend escribe el latido en hora local suya, así que se acepta
+            # también la fecha de ayer en UTC: al correr a las 20:17 UTC del
+            # domingo, en Bogotá son las 15:17 del mismo domingo.
+            "$hoy"*|"$ayer"*) echo "Latido fresco." ;;
+            *) echo "El /update dijo 200 pero el latido no se movió: los datos no llegaron al volumen." >&2; exit 1 ;;
+          esac

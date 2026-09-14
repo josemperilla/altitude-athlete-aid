@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { ExternalLink, Loader2, Moon, Music, RefreshCw, Sun, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { healthQO } from "@/lib/api";
 import { disconnectSpotify, prunePastPlaylists, startSpotifyLogin } from "@/lib/spotify";
 import { useCreatedPlaylists, useSpotifyConnected } from "@/hooks/use-spotify-store";
 import { useUpdatePlan } from "@/hooks/use-update-plan";
@@ -210,16 +212,47 @@ function PlaylistsSection() {
   );
 }
 
+/**
+ * Cuándo corrió por última vez el trabajo semanal, en palabras.
+ *
+ * La alarma de «plan viejo» de Hoy solo salta a los 8 días, que es lo correcto
+ * para no dar falsos positivos cada sábado — pero deja sin respuesta la
+ * pregunta normal: «¿de verdad corrió el domingo?». Aquí se puede mirar.
+ */
+function ultimaCorrida(iso: string | null | undefined): string {
+  if (!iso) return "El backend todavía no ha registrado ninguna.";
+  const t = new Date(iso);
+  if (Number.isNaN(t.getTime())) return "Fecha no reconocida.";
+  const dias = Math.floor((Date.now() - t.getTime()) / 86_400_000);
+  const cuando = t.toLocaleString("es-CO", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const hace = dias === 0 ? "hoy" : dias === 1 ? "hace un día" : `hace ${dias} días`;
+  return `${cuando} (${hace}).`;
+}
+
 function PlanSection() {
   const update = useUpdatePlan();
+  const { data: health } = useQuery(healthQO());
 
   return (
     <section className="club-card p-5 mt-4">
       <h2 className="eyebrow mb-1">Plan</h2>
       <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>
-        «Actualizar plan» regenera el plan en el backend con tus últimos datos de Garmin (consume
-        una llamada al asistente) y refresca las métricas. Úsalo al empezar la semana o tras cambiar
-        algo en Runna.
+        El plan se regenera solo cada domingo por la tarde: un trabajo programado en GitHub llama a
+        «/update» del backend, que es quien tiene las llaves de Garmin. No depende de que este
+        computador esté encendido.
+      </p>
+      <p className="text-sm mt-2" style={{ color: "var(--text-faint)" }}>
+        Última actualización automática: {ultimaCorrida(health?.last_run)}
+      </p>
+      <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>
+        «Actualizar plan» hace lo mismo a mano, con tus últimos datos de Garmin (consume una llamada
+        al asistente). Úsalo tras cambiar algo en Runna sin esperar al domingo.
       </p>
       <button
         type="button"

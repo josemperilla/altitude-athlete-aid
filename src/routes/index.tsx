@@ -15,6 +15,7 @@ import { gymQO, healthQO, insightsQO, planQO } from "@/lib/api";
 import type { Insight, PlanSession, PlanWeek } from "@/lib/schemas";
 import { useAthlete } from "@/hooks/use-athlete";
 import { useAthleteId } from "@/hooks/use-athlete-id";
+import { useToday } from "@/hooks/use-today";
 import { useUpdatePlan } from "@/hooks/use-update-plan";
 import {
   currentPlanWeekRange,
@@ -64,8 +65,10 @@ function HoyPage() {
   const { data: health } = useQuery(healthQO());
   const update = useUpdatePlan();
 
-  const today = startOfDay(new Date());
-  const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  // Un solo reloj para toda la página, y uno que despierta al cambiar de día:
+  // Hoy es la pantalla que más tiempo pasa abierta sin recargar.
+  const todayIso = useToday();
+  const today = useMemo(() => startOfDay(new Date(`${todayIso}T00:00:00`)), [todayIso]);
 
   // Misma deduplicación que el calendario: una sola lista para Hoy y el strip.
   const { todaySessions, weekSessions, weekRange, weekMeta } = useMemo(() => {
@@ -88,8 +91,9 @@ function HoyPage() {
       weekRange: range,
       weekMeta: currentWeek as PlanWeek | undefined,
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [plan]);
+    // `today` entra en las dependencias: al cruzar la medianoche con la app
+    // abierta, "hoy toca" tiene que recalcularse, no quedarse en el día de ayer.
+  }, [plan, today]);
 
   // Gimnasio del día: el calendario del backend trae fecha exacta; si no está,
   // cae al weekday declarado de la sesión ("Lunes"/"Miércoles").

@@ -702,6 +702,32 @@ def gym_dates_between(start: date, end: date) -> dict[str, str]:
     return {d: c for d, c in gym_dates().items() if start.isoformat() <= d <= end.isoformat()}
 
 
+def week_start(today: date | None = None) -> date:
+    """El domingo de la semana en curso.
+
+    Es el corte que usa TODO lo que mira hacia adelante, y tiene que ser uno
+    solo: las semanas del plan van de domingo a sábado y la app enseña la
+    semana entera, así que si el calendario cortara por "hoy" y la franja del
+    gimnasio por el domingo, el martes dejarían de coincidir.
+    """
+    d = today or date.today()
+    return d - timedelta(days=(d.weekday() + 1) % 7)
+
+
+def gym_dates_from(start: date | None = None) -> dict[str, str]:
+    """Las fechas con gimnasio de esta semana en adelante.
+
+    `gym_dates()` devuelve el bloque ENTERO, del 7-sep al 28-sep, y eso está
+    bien para pintar el calendario del bloque. Pero todo lo que mira hacia
+    adelante — el calendario que sirve /gym, las `strength_sessions` del plan
+    aumentado, el bloque que se le inyecta a Claude — estaba usando esa misma
+    lista, así que el 14 de septiembre el plan seguía anunciando el gimnasio
+    del 7 y del 9 como si estuvieran por venir. Aquí se corta por hoy.
+    """
+    floor = (start or week_start()).isoformat()
+    return {d: c for d, c in gym_dates().items() if d >= floor}
+
+
 def _serialize_item(item: dict) -> dict:
     ex_id = item.get("ex")
     out = {
@@ -787,11 +813,20 @@ def as_dict(athlete: str = DEFAULT_ATHLETE) -> dict:
     }
 
 
-def prompt_block() -> str:
-    """Bloque de texto que generate_plan.py inyecta en el system prompt."""
+def prompt_block(since: date | None = None) -> str:
+    """Bloque de texto que generate_plan.py inyecta en el system prompt.
+
+    Solo de `since` (por defecto hoy) en adelante: el prompt existe para que el
+    modelo no le encime ciclismo a una sesión de fuerza, y una sesión que ya
+    pasó no puede chocar con nada. Listarla solo gastaba contexto y le daba al
+    modelo fechas viejas con las que desalinear la semana.
+    """
+    floor = since or date.today()
     lines = []
     for week in WEEKS:
         for s in week["sessions"]:
+            if s["date"] < floor:
+                continue
             sess = SESSIONS[s["session"]]
             lines.append(
                 f"  {s['date'].isoformat()} | {sess['weekday']:<9} | Gimnasio {sess['code']} "

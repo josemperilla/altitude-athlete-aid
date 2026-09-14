@@ -17,7 +17,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from datetime import date
+from datetime import date, timedelta
 
 import anthropic
 from dotenv import load_dotenv
@@ -216,10 +216,8 @@ PLAN RUNNA — próximas semanas (intensidad ya calculada, no la infieras del no
 
 
 def build_user_message(garmin: dict) -> str:
-    from datetime import timedelta
     today = date.today()
-    days_since_sunday = (today.weekday() + 1) % 7
-    week1_sun = today - timedelta(days=days_since_sunday)
+    week1_sun = strength_plan.week_start(today)
     week1_sat = week1_sun + timedelta(days=6)
     week2_sun = week1_sun + timedelta(days=7)
     week2_sat = week2_sun + timedelta(days=6)
@@ -238,7 +236,7 @@ IMPORTANTE: En el campo weeks_plan, usa exactamente estas fechas:
 {_summarise_garmin(garmin)}
 
 PLAN GIMNASIO — fechas bloqueadas, NO pongas ciclismo en ninguna de ellas:
-{strength_plan.prompt_block()}
+{strength_plan.prompt_block(week1_sun)}
 
 Genera el plan para las PRÓXIMAS 2 SEMANAS. Devuelve únicamente el objeto JSON."""
 
@@ -363,7 +361,10 @@ def attach_strength(plan: dict) -> list[str]:
     de fechas descartadas para que main() las reporte en vez de perderlas en
     silencio.
     """
-    gym = strength_plan.gym_dates()
+    # Del domingo de esta semana en adelante. Con el bloque entero, el plan que
+    # se sirve el 14 de septiembre seguía anunciando el gimnasio del 7 y del 9
+    # como parte de "lo que viene".
+    gym = strength_plan.gym_dates_from(strength_plan.week_start())
     plan["strength_sessions"] = [
         {
             "date": d,

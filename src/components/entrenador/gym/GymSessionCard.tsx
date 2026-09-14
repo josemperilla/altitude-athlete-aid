@@ -3,8 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { gymDoneQO, postGymDone, type GymSession } from "@/lib/api";
 import { useAthleteId } from "@/hooks/use-athlete-id";
+import { useToday } from "@/hooks/use-today";
 import { WEIGHT_GUIDE } from "@/lib/gym/loads.js";
-import { todayISO } from "@/lib/gym/weeks";
 import { lastWeightFor } from "@/lib/gym/weights";
 import { GymExercise } from "./GymExercise";
 
@@ -39,7 +39,9 @@ export function GymSessionCard({ session }: { session: GymSession }) {
   const { data: done } = useQuery(gymDoneQO());
   const [drafts, setDrafts] = useState<Record<string, string>>({});
 
-  const date = todayISO();
+  // Del reloj vivo: con `todayISO()` en el render, una pestaña abierta desde
+  // el lunes anterior guardaba la sesión en la fecha de ese lunes.
+  const date = useToday();
   const entry = done?.[athlete]?.[date];
   // La entrada del día es una sola: si hoy quedó marcada otra sesión, esta no
   // está hecha (y marcarla la reemplaza, que es justo lo que uno querría).

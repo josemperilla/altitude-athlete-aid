@@ -65,3 +65,17 @@ export function diaCorto(iso: string): string {
   if (!y || !m || !d) return iso;
   return `${DIAS[new Date(y, m - 1, d).getDay()]} ${d}`;
 }
+
+/**
+ * Milisegundos hasta la próxima medianoche local, con cinco segundos de
+ * colchón para no despertar justo en el borde y leer todavía el día anterior.
+ *
+ * Existe separado del hook porque es la única parte comprobable sin montar
+ * React, y es justo la que se puede equivocar: los cambios de mes y de año son
+ * los dos casos donde un cálculo a mano se rompe (`new Date(y, m, d + 1)`
+ * normaliza solo, sumar 86.400.000 ms no).
+ */
+export function msUntilNextMidnight(now: Date = new Date()): number {
+  const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5, 0);
+  return next.getTime() - now.getTime();
+}

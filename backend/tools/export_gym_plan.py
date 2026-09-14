@@ -106,7 +106,11 @@ def build_calendar(garmin: dict, plan: dict) -> list[dict]:
             "detail": f"{s.get('duration_min', '?')} min · {s.get('primary_zone', '')}".strip(" ·"),
         })
 
-    for d, code in strength_plan.gym_dates().items():
+    # De hoy en adelante: este calendario es lo que la app lee como "lo que
+    # viene". Con el bloque entero, el 14 de septiembre seguía trayendo el
+    # gimnasio del 7 y del 9 y creando sus días en el calendario, aunque no
+    # hubiera ninguna sesión de carrera esa semana que los justificara.
+    for d, code in strength_plan.gym_dates_from().items():
         slot(d)["gym"] = code
 
     return [by_date[d] for d in sorted(by_date)]
