@@ -52,19 +52,29 @@ Sistema de entrenamiento para un medio maratón en Bogotá (2.600 m), combinando
 y ciclismo. Este proyecto es el **backend**: trae datos de Garmin, genera el plan de
 ciclismo con Claude, y lo sube de vuelta a Garmin.
 
-### Los dos proyectos
+### Los dos servicios
 
-| | Este proyecto (`Personal_trainer`) | `../altitude-athlete-aid` |
+Backend y frontend viven en este mismo repo (`josemperilla/altitude-athlete-aid`)
+y se despliegan por separado a Railway: el frontend desde la raíz, el API desde
+`backend/`.
+
+| | `backend/` (este) | raíz del repo |
 |---|---|---|
-| Rol | Backend: datos, plan, integración con Garmin | Frontend: la interfaz que usa el atleta |
+| Rol | Datos, plan, integración con Garmin | La interfaz que usa el atleta |
 | Stack | FastAPI + Python | React 19 / TanStack Start / TypeScript |
-| Puerto | 8503 | 5173 |
-| Git | Sin repo (local) | GitHub `josemperilla/altitude-athlete-aid` |
+| Puerto local | 8503 | 5173 |
 
-Son complementarios, no alternativos. `entrenador.sh` arranca los dos y abre el
-navegador en `http://127.0.0.1:5173`. Eso es lo que dispara `Entrenador.app` del
-escritorio. Se usa `127.0.0.1` y no `localhost` porque Spotify (la generación de
-playlists en el frontend) exige la IP explícita como redirect URI de OAuth.
+Son complementarios, no alternativos. `backend/entrenador.sh` arranca los dos y abre
+el navegador en `http://127.0.0.1:5173`. Eso es lo que dispara `Entrenador.app` del
+escritorio y el alias `Entrenador` del `.zshrc`. Se usa `127.0.0.1` y no `localhost`
+porque Spotify (la generación de playlists en el frontend) exige la IP explícita
+como redirect URI de OAuth.
+
+El repo `josemperilla/Personal_trainer` fue el hogar original de este backend y de
+una app de gimnasio en HTML plano. Todo lo vivo se trajo aquí; el repo queda en
+GitHub, archivado de hecho, solo como historia. Si alguna vez hace falta el service
+worker de aquella app (soporte sin señal, que esta todavía no tiene), está ahí en
+`web/public/sw.js`.
 
 La interfaz Streamlit vieja (`app.py`) se eliminó: duplicaba exactamente las cuatro
 pestañas del frontend React. La única UI es la de React.
