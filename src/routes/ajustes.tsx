@@ -223,7 +223,11 @@ function ultimaCorrida(iso: string | null | undefined): string {
   if (!iso) return "El backend todavía no ha registrado ninguna.";
   const t = new Date(iso);
   if (Number.isNaN(t.getTime())) return "Fecha no reconocida.";
-  const dias = Math.floor((Date.now() - t.getTime()) / 86_400_000);
+  // Días de CALENDARIO, no bloques de 24 h: la corrida del domingo a las 11:54
+  // p. m. lleva quince horas, pero decir "hoy" un lunes es justo lo contrario
+  // de lo que esta línea existe para responder.
+  const medianoche = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const dias = Math.round((medianoche(new Date()) - medianoche(t)) / 86_400_000);
   const cuando = t.toLocaleString("es-CO", {
     weekday: "long",
     day: "numeric",
@@ -231,7 +235,7 @@ function ultimaCorrida(iso: string | null | undefined): string {
     hour: "2-digit",
     minute: "2-digit",
   });
-  const hace = dias === 0 ? "hoy" : dias === 1 ? "hace un día" : `hace ${dias} días`;
+  const hace = dias <= 0 ? "hoy" : dias === 1 ? "ayer" : `hace ${dias} días`;
   return `${cuando} (${hace}).`;
 }
 
