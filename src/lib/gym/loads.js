@@ -3,14 +3,38 @@
  * los 1RM, cómo progresar semana a semana y dónde parar.
  *
  * Ancla de todo el plan: RIR 2 — el peso con el que las últimas dos
- * repeticiones son duras pero completas. Los kg de arranque son el punto
- * típico para un corredor de ~70 kg con meses de gimnasio; el primer día
- * calibra y a partir de ahí manda la regla, no el número.
+ * repeticiones son duras pero completas. El primer día se calibra y a partir de
+ * ahí manda la regla, no el número.
+ *
+ * DE DÓNDE SALEN LOS KG (bioimpedancia del 16-sep-2026, ver
+ * backend/tools/athletes.py). Antes decían "el punto típico para un corredor de
+ * ~70 kg", un cuerpo prestado. El real: 85,3 kg, 27,3 % de grasa → 23,3 kg de
+ * grasa y 62,0 kg de masa magra.
+ *
+ * Ese par de números separa dos cosas que la báscula sola confunde, y por eso
+ * los kg de barra NO subieron pese a pesar 15 kg más:
+ *
+ *   Lo que levanta es la masa magra: 62,0 kg, frente a los ~59,5 kg del
+ *   corredor de 70 kg que se asumía antes. Un 4 % de diferencia. El motor es
+ *   prácticamente el mismo, así que los arranques de barra, mancuerna y máquina
+ *   se quedan donde estaban. Subirlos "porque pesa más" sería cargar sobre un
+ *   músculo que no creció.
+ *
+ *   Lo que se carga a sí mismo es el peso entero: 85,3 kg contra 70, un 22 %
+ *   más. Cada elevación de talón a una pierna, cada búlgara sin peso, cada pogo
+ *   y cada plancha mueven ese 22 % extra. Ahí las progresiones que iban por
+ *   calendario ("suma 2 reps por semana") pedían de más sin decirlo, y ahora van
+ *   por técnica.
+ *
+ * Cuando haya una medición nueva, lo que cambia es este bloque y los avisos de
+ * los ejercicios a peso corporal. Los kg de barra solo se mueven si cambia la
+ * masa magra.
  */
 
 export const PICK_RULES = [
-  "Arranca con un peso donde las últimas 2 reps sean duras pero completas (RIR 2). Los kg son el punto de partida típico para un corredor de ~70 kg; ajústalos a tu sensación el primer día.",
+  "Arranca con un peso donde las últimas 2 reps sean duras pero completas (RIR 2). Los kg están calibrados para tus 62 kg de masa magra (bioimpedancia del 16-sep); ajústalos a tu sensación el primer día.",
   "Progresa cada semana: +2,5 kg en barra, siguiente mancuerna (~+2 kg) o +1 pin en máquina. Si no mantienes RIR 2 con buena técnica, vuelve al peso anterior.",
+  "En lo que va a peso corporal ya cargas 85 kg, un 22 % más que el plan genérico. Cuenta las repeticiones que te salen limpias y sube desde ahí; no desde el calendario.",
   "Este plan es neural, no de récords: respeta los techos y en semana de carrera baja a cargas ligeras de mantenimiento (60–65 % en sentadilla).",
 ];
 
@@ -51,8 +75,10 @@ export const WEIGHT_GUIDE = {
       "Rodilla doblada 25° y sostenida ahí: las últimas 2 de 12 deben costar sin que la rodilla se enderece.",
     arranque:
       "Solo tu peso, una pierna. Si no llegas a 12 limpias, haz las que salgan y anota cuántas.",
-    progresion: "Suma 2 repeticiones por serie cada semana hasta llegar a 3 × 15.",
-    techo: "En 3 × 15 limpias, ponte una mochila con 5 kg y vuelve a 12.",
+    progresion:
+      "Sube de 2 en 2 solo cuando las 12 de la semana anterior salgan limpias, no por calendario: a 85 kg cada repetición carga un 22 % más que el plan genérico. Si te quedas en 9, esta semana son 9.",
+    techo:
+      "3 × 15 limpias a peso corporal es el techo de este bloque. La mochila con peso no: sobre un pie ya estás moviendo 85 kg, y eso es más de lo que cargaba el plan con mancuerna.",
     aviso:
       "Si la rodilla se estira al subir o el brazo de la pared empieza a empujar, baja repeticiones.",
   },
@@ -95,15 +121,17 @@ export const WEIGHT_GUIDE = {
   sideplank: {
     inicio: "Variante con la que los 20–30 s exijan sin caer la cadera.",
     arranque: "Apoyo desde las rodillas, con abducción de pierna lenta.",
-    progresion: "Pasa a apoyo desde los pies con las piernas apiladas.",
+    progresion:
+      "Pasa a apoyo desde los pies cuando aguantes los 30 s de rodillas sin que caiga la cadera. El salto es grande: desde los pies sostienes tus 85 kg sobre un codo y un canto del pie.",
     techo: "30 s por lado con abducción lenta y cuerpo en línea.",
     aviso: "Si la cadera cae o la columna se arquea, vuelve a la variante de rodillas.",
   },
   calfsingle: {
     inicio: "Variante con la que las últimas 2 de 12 por pierna cuesten con control.",
     arranque: "Peso corporal en el escalón, una mano en la pared.",
-    progresion: "Quita el apoyo de la mano y luego suma mancuerna de 6–8 kg.",
-    techo: "12 reps limpias por lado con mancuerna de 8 kg.",
+    progresion:
+      "Primero quita el apoyo de la mano: a 85 kg eso ya es un escalón grande por sí solo. La mancuerna de 6 kg viene después, y solo si las 12 sin mano salen sin acortar el rango.",
+    techo: "12 reps limpias por lado, sin mano, con mancuerna de 6 kg.",
     aviso:
       "Si el tobillo se va hacia adentro o el rango se acorta, regresa a la variante anterior.",
   },
@@ -145,15 +173,17 @@ export const WEIGHT_GUIDE = {
   pogo: {
     inicio: "Rebotes cortos con contacto mínimo y tobillo firme.",
     arranque: "2×20 rebotes bajos sobre las puntas, rodillas casi rectas.",
-    progresion: "Haz el contacto más corto y rígido, luego pasa a 2×25.",
+    progresion:
+      "Primero el contacto más corto y rígido, que es lo que se entrena aquí. Las 25 repeticiones solo si las 20 terminan igual de rígidas que empezaron; con 85 kg el tobillo se cansa antes que el cronómetro.",
     techo: "2×25 rebotes elásticos con aterrizaje quieto.",
     aviso: "Si el talón se hunde o pierdes el ritmo, baja las reps.",
   },
   boxjump: {
     inicio: "Altura con la que aterrices suave y estable, no alto.",
     arranque: "Cajón de 30 cm, 4 saltos con aterrizaje silencioso.",
-    progresion: "Sube a 35 y luego a 40 cm cuando el aterrizaje sea perfecto.",
-    techo: "Cajón de 40 cm.",
+    progresion:
+      "Sube a 35 cm solo si los 4 saltos aterrizan en silencio. A 85 kg el cajón alto no te hace más potente, te hace aterrizar más fuerte; la velocidad de salida es el objetivo, la altura es la consecuencia.",
+    techo: "Cajón de 35 cm en este bloque. Los 40 cm quedan para después de la carrera.",
     aviso: "Si el aterrizaje es duro o ruidoso, baja la altura. Nunca cargues peso aquí.",
   },
 };
