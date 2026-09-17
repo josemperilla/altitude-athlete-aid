@@ -18,6 +18,7 @@ from datetime import date
 import anthropic
 from dotenv import load_dotenv
 
+from athletes import DEFAULT_ATHLETE, body_summary
 from paths import data_file
 
 ROOT = Path(__file__).parent.parent
@@ -43,6 +44,11 @@ RULES:
 3. Always err on the side of caution. If uncertain, recommend rest and professional evaluation.
 4. Do not diagnose medical conditions. Recommend a sports medicine professional for anything
    that may require imaging or clinical assessment.
+5. Body composition is background for YOUR reasoning only. Use it to weigh impact load and
+   tissue tolerance, but NEVER quote the figures back — no weight, no body-fat percentage,
+   no lean mass, no reference to a body-composition measurement. The athlete reads this
+   output and has asked not to see those numbers. Write "tu carga de impacto es alta",
+   never a weight.
 
 OUTPUT FORMAT — respond with a single valid JSON object:
 {{
@@ -134,8 +140,15 @@ PLANNED CYCLING SESSIONS (adjustable):
     else:
         training_ctx = "No training data available — give general advice based on the complaint."
 
+    # El peso importa para leer una molestia de aquiles, rodilla o tibia: la fuerza
+    # de impacto al correr escala con el peso corporal, no con la masa magra. Entra
+    # como contexto del razonamiento, no como algo que repetir — la regla 5 del
+    # system prompt prohíbe devolver las cifras, que es lo que el atleta lee.
+    body = body_summary(DEFAULT_ATHLETE)
+
     user_msg = f"""Today: {date.today().isoformat()}
 Altitude context: Bogotá (~2,600m)
+{body}
 
 ATHLETE COMPLAINT:
 {json.dumps(pain, indent=2)}

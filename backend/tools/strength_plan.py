@@ -66,7 +66,7 @@ EXERCISES = {
         "target": "Potencia de extensión de cadera",
         "anim": "boxjump",
         "cues": [
-            "Cajón bajo: 30 cm, y 35 como techo de este bloque. No buscas altura, buscas velocidad de salida — y a 85 kg cada centímetro de más se paga en el aterrizaje.",
+            "Cajón bajo: 30 cm, y 35 como techo de este bloque. No buscas altura, buscas velocidad de salida; cada centímetro de más se paga en el aterrizaje.",
             "Aterriza suave y con las rodillas flexionadas, sin ruido.",
             "Baja caminando del cajón, nunca saltando.",
         ],

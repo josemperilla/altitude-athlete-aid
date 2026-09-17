@@ -32,9 +32,9 @@
  */
 
 export const PICK_RULES = [
-  "Arranca con un peso donde las últimas 2 reps sean duras pero completas (RIR 2). Los kg están calibrados para tus 62 kg de masa magra (bioimpedancia del 16-sep); ajústalos a tu sensación el primer día.",
+  "Arranca con un peso donde las últimas 2 reps sean duras pero completas (RIR 2). Los kg de esta guía ya están ajustados a ti; el primer día calibra y a partir de ahí manda la regla, no el número.",
   "Progresa cada semana: +2,5 kg en barra, siguiente mancuerna (~+2 kg) o +1 pin en máquina. Si no mantienes RIR 2 con buena técnica, vuelve al peso anterior.",
-  "En lo que va a peso corporal ya cargas 85 kg, un 22 % más que el plan genérico. Cuenta las repeticiones que te salen limpias y sube desde ahí; no desde el calendario.",
+  "En lo que va a peso corporal, sube cuando lo anterior salga limpio y no cuando pase la semana. Cuenta las repeticiones reales que te salen y anótalas: esa cuenta es la que manda.",
   "Este plan es neural, no de récords: respeta los techos y en semana de carrera baja a cargas ligeras de mantenimiento (60–65 % en sentadilla).",
 ];
 
@@ -76,9 +76,9 @@ export const WEIGHT_GUIDE = {
     arranque:
       "Solo tu peso, una pierna. Si no llegas a 12 limpias, haz las que salgan y anota cuántas.",
     progresion:
-      "Sube de 2 en 2 solo cuando las 12 de la semana anterior salgan limpias, no por calendario: a 85 kg cada repetición carga un 22 % más que el plan genérico. Si te quedas en 9, esta semana son 9.",
+      "Sube de 2 en 2 solo cuando las 12 de la semana anterior salgan limpias, nunca por calendario. Si te quedas en 9, esta semana son 9.",
     techo:
-      "3 × 15 limpias a peso corporal es el techo de este bloque. La mochila con peso no: sobre un pie ya estás moviendo 85 kg, y eso es más de lo que cargaba el plan con mancuerna.",
+      "3 × 15 limpias a peso corporal es el techo de este bloque. Sin mochila ni mancuerna: a una pierna ya llevas encima más que de sobra.",
     aviso:
       "Si la rodilla se estira al subir o el brazo de la pared empieza a empujar, baja repeticiones.",
   },
@@ -122,7 +122,7 @@ export const WEIGHT_GUIDE = {
     inicio: "Variante con la que los 20–30 s exijan sin caer la cadera.",
     arranque: "Apoyo desde las rodillas, con abducción de pierna lenta.",
     progresion:
-      "Pasa a apoyo desde los pies cuando aguantes los 30 s de rodillas sin que caiga la cadera. El salto es grande: desde los pies sostienes tus 85 kg sobre un codo y un canto del pie.",
+      "Pasa a apoyo desde los pies cuando aguantes los 30 s de rodillas sin que caiga la cadera. El salto es grande: desde los pies sostienes todo el cuerpo sobre un codo y un canto del pie.",
     techo: "30 s por lado con abducción lenta y cuerpo en línea.",
     aviso: "Si la cadera cae o la columna se arquea, vuelve a la variante de rodillas.",
   },
@@ -130,7 +130,7 @@ export const WEIGHT_GUIDE = {
     inicio: "Variante con la que las últimas 2 de 12 por pierna cuesten con control.",
     arranque: "Peso corporal en el escalón, una mano en la pared.",
     progresion:
-      "Primero quita el apoyo de la mano: a 85 kg eso ya es un escalón grande por sí solo. La mancuerna de 6 kg viene después, y solo si las 12 sin mano salen sin acortar el rango.",
+      "Primero quita el apoyo de la mano: ese solo ya es un escalón grande. La mancuerna de 6 kg viene después, y solo si las 12 sin mano salen sin acortar el rango.",
     techo: "12 reps limpias por lado, sin mano, con mancuerna de 6 kg.",
     aviso:
       "Si el tobillo se va hacia adentro o el rango se acorta, regresa a la variante anterior.",
@@ -174,7 +174,7 @@ export const WEIGHT_GUIDE = {
     inicio: "Rebotes cortos con contacto mínimo y tobillo firme.",
     arranque: "2×20 rebotes bajos sobre las puntas, rodillas casi rectas.",
     progresion:
-      "Primero el contacto más corto y rígido, que es lo que se entrena aquí. Las 25 repeticiones solo si las 20 terminan igual de rígidas que empezaron; con 85 kg el tobillo se cansa antes que el cronómetro.",
+      "Primero el contacto más corto y rígido, que es lo que se entrena aquí. Las 25 repeticiones solo si las 20 terminan igual de rígidas que empezaron: el tobillo se cansa antes que el cronómetro.",
     techo: "2×25 rebotes elásticos con aterrizaje quieto.",
     aviso: "Si el talón se hunde o pierdes el ritmo, baja las reps.",
   },
@@ -182,7 +182,7 @@ export const WEIGHT_GUIDE = {
     inicio: "Altura con la que aterrices suave y estable, no alto.",
     arranque: "Cajón de 30 cm, 4 saltos con aterrizaje silencioso.",
     progresion:
-      "Sube a 35 cm solo si los 4 saltos aterrizan en silencio. A 85 kg el cajón alto no te hace más potente, te hace aterrizar más fuerte; la velocidad de salida es el objetivo, la altura es la consecuencia.",
+      "Sube a 35 cm solo si los 4 saltos aterrizan en silencio. El cajón alto no te hace más potente, te hace aterrizar más fuerte: la velocidad de salida es el objetivo, la altura es la consecuencia.",
     techo: "Cajón de 35 cm en este bloque. Los 40 cm quedan para después de la carrera.",
     aviso: "Si el aterrizaje es duro o ruidoso, baja la altura. Nunca cargues peso aquí.",
   },
