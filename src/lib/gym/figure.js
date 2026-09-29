@@ -57,6 +57,13 @@ function solveStand(p) {
       p.toe[0] - SEG.toe * Math.cos(rad(footDeg)),
       p.toe[1] - SEG.toe * Math.sin(rad(footDeg)),
     ];
+  } else if (p.heel) {
+    // Raíz en el talón: el tibial sube la punta pivotando sobre él. Con la
+    // raíz en el tobillo el talón giraba en espejo y se hundía en el suelo.
+    ankle = [
+      p.heel[0] + SEG.heel * Math.cos(rad(footDeg)),
+      p.heel[1] + SEG.heel * Math.sin(rad(footDeg)),
+    ];
   } else {
     ankle = p.ankle;
   }
@@ -71,6 +78,12 @@ function solveStand(p) {
   const hand = up(el, SEG.farm, p.farm ?? 180);
 
   const out = { ankle, toe, heel, knee, hip, sh, head, el, hand };
+
+  // Brazo de atrás opcional, mismo convenio que el de adelante.
+  if (p.uarm2 !== undefined) {
+    out.el2 = up(sh, SEG.uarm, p.uarm2);
+    out.hand2 = up(out.el2, SEG.farm, p.farm2 ?? 180);
+  }
 
   // Pierna de atrás opcional (búlgara, subida al cajón, peso muerto a una
   // pierna). Comparte cadera, así que sólo hace falta la cadena hacia abajo.
@@ -117,6 +130,8 @@ const BONES = [
   ["sh", "head"],
   ["sh", "el"],
   ["el", "hand"],
+  ["sh", "el2"],
+  ["el2", "hand2"],
   ["ankle", "toe"],
   ["ankle", "heel"],
   ["hip", "knee2"],
@@ -430,6 +445,21 @@ function archCloseup(g, heel, ankle, toe, s = 1) {
 }
 
 /**
+ * Pinta una extremidad con halo: primero la silueta engordada en el color del
+ * fondo, luego la extremidad encima. Todo el muñeco es de un solo color, y sin
+ * esto el brazo que pasa por delante del tronco (remo, press, Pallof) o el
+ * muslo que se pega al pecho en el fondo de la sentadilla desaparecen dentro
+ * de la silueta: justo la parte que se mueve es la que no se ve. Se pintan dos
+ * grupos completos para que el halo no deje costuras en las articulaciones.
+ */
+function haloed(g, draw) {
+  const halo = el("g", { class: "halo" });
+  draw(halo);
+  g.appendChild(halo);
+  draw(g);
+}
+
+/**
  * Pinta un cuadro. Devuelve el grupo <g> para poder reemplazarlo entero en el
  * siguiente frame: es más barato y más simple que ir moviendo cada nodo.
  *
@@ -456,6 +486,12 @@ function renderFrame(j, spec, trailPts) {
   // figura pase por encima y la estela se lea como el camino recorrido.
   if (trailPts && trailPts.length > 1) g.appendChild(polyline(trailPts, "trail"));
 
+  // En vista frontal (spec.frontal) los dos lados están a la misma distancia
+  // de la cámara y se pintan igual; en la lateral, el lado de atrás se apaga.
+  const far = spec.frontal ? "limb" : "limb far";
+  // De frente no hay lado cercano: el halo en un solo lado partía la figura.
+  const near = spec.frontal ? (t, draw) => draw(t) : haloed;
+
   if (j.knee2) {
     // La pierna de atrás se pinta primero y en un tono más apagado: sin eso las
     // dos piernas se confunden en una sola masa y no se entiende cuál trabaja.
@@ -465,7 +501,7 @@ function renderFrame(j, spec, trailPts) {
         j.hip,
         j.knee2,
         BONE.thigh.map((w) => w * S),
-        "limb far",
+        far,
       );
     if (has("knee2", "ankle2"))
       bone(
@@ -473,30 +509,34 @@ function renderFrame(j, spec, trailPts) {
         j.knee2,
         j.ankle2,
         BONE.shin.map((w) => w * S),
-        "limb far",
+        far,
       );
-    if (has("heel2", "ankle2", "toe2")) foot(g, j.heel2, j.ankle2, j.toe2, S, "limb far");
+    if (has("heel2", "ankle2", "toe2")) foot(g, j.heel2, j.ankle2, j.toe2, S, far);
   }
+
+  // El brazo de atrás, igual que la pierna: primero y apagado. En el dead bug
+  // es el que se queda arriba mientras el otro baja, que es todo el ejercicio.
+  if (has("sh", "el2"))
+    bone(
+      g,
+      j.sh,
+      j.el2,
+      BONE.uarm.map((w) => w * S),
+      far,
+    );
+  if (has("el2", "hand2"))
+    bone(
+      g,
+      j.el2,
+      j.hand2,
+      BONE.farm.map((w) => w * S),
+      far,
+    );
 
   if (has("heel", "ankle", "toe") && !j.knee) {
     archCloseup(g, j.heel, j.ankle, j.toe, S);
   } else {
     if (has("sh", "hip")) torso(g, j.sh, j.hip, S);
-    if (has("hip", "knee"))
-      bone(
-        g,
-        j.hip,
-        j.knee,
-        BONE.thigh.map((w) => w * S),
-      );
-    if (has("knee", "ankle"))
-      bone(
-        g,
-        j.knee,
-        j.ankle,
-        BONE.shin.map((w) => w * S),
-      );
-    if (has("heel", "ankle", "toe")) foot(g, j.heel, j.ankle, j.toe, S);
     if (has("sh", "head"))
       bone(
         g,
@@ -504,20 +544,39 @@ function renderFrame(j, spec, trailPts) {
         j.head,
         BONE.neck.map((w) => w * S),
       );
-    if (has("sh", "el"))
-      bone(
-        g,
-        j.sh,
-        j.el,
-        BONE.uarm.map((w) => w * S),
-      );
-    if (has("el", "hand"))
-      bone(
-        g,
-        j.el,
-        j.hand,
-        BONE.farm.map((w) => w * S),
-      );
+    near(g, (t) => {
+      if (has("hip", "knee"))
+        bone(
+          t,
+          j.hip,
+          j.knee,
+          BONE.thigh.map((w) => w * S),
+        );
+      if (has("knee", "ankle"))
+        bone(
+          t,
+          j.knee,
+          j.ankle,
+          BONE.shin.map((w) => w * S),
+        );
+      if (has("heel", "ankle", "toe")) foot(t, j.heel, j.ankle, j.toe, S);
+    });
+    near(g, (t) => {
+      if (has("sh", "el"))
+        bone(
+          t,
+          j.sh,
+          j.el,
+          BONE.uarm.map((w) => w * S),
+        );
+      if (has("el", "hand"))
+        bone(
+          t,
+          j.el,
+          j.hand,
+          BONE.farm.map((w) => w * S),
+        );
+    });
 
     if (j.head) {
       g.appendChild(el("circle", { cx: j.head[0], cy: j.head[1], r: SEG.head * S, class: "head" }));
@@ -592,6 +651,82 @@ function renderFrame(j, spec, trailPts) {
 }
 
 /**
+ * Encuadre a la medida del movimiento.
+ *
+ * Con un viewBox fijo de 136×142 dentro de una caja 2:1, una figura de pie
+ * ocupaba dos tercios del alto y los ejercicios tumbados (curl femoral, dead
+ * bug, plancha) dejaban más de la mitad del recuadro vacío. Aquí se recorre el
+ * ciclo entero, se toma la caja que ocupa todo lo que se dibuja —cuerpo, carga,
+ * aparatos, suelo— y se ensancha lo justo para llenar la proporción del <svg>.
+ *
+ * MIN_H pone techo al zoom: sin él un ejercicio tumbado saldría el doble de
+ * grande que uno de pie en la misma sesión, y la diferencia de escala se lee
+ * como un error.
+ */
+const FIT_PAD = 7;
+const MIN_H = 74;
+
+function fitView(spec, poses, tl, aspect) {
+  let x0 = Infinity;
+  let y0 = Infinity;
+  let x1 = -Infinity;
+  let y1 = -Infinity;
+  const add = (x, y, r = 0) => {
+    x0 = Math.min(x0, x - r);
+    x1 = Math.max(x1, x + r);
+    y0 = Math.min(y0, y - r);
+    y1 = Math.max(y1, y + r);
+  };
+
+  const n = poses.length;
+  const STEPS = 48;
+  for (let i = 0; i <= STEPS; i++) {
+    const s = sampleTimeline(tl, (tl.period * i) / STEPS);
+    const j = s.from === s.to ? poses[s.from] : blendPose(poses[s.from], poses[s.to], s.k);
+    for (const [k, p] of Object.entries(j)) add(p[0], p[1], k === "head" ? SEG.head : 4);
+    if (spec.load === "bar") {
+      const a = spec.loadAt === "sh" ? j.sh : j.hand;
+      if (a) {
+        add(a[0] - 15, a[1] - 6);
+        add(a[0] + 15, a[1] + 6);
+      }
+    }
+    if (spec.load === "db" && j.hand) add(j.hand[0], j.hand[1], 6);
+  }
+
+  for (const p of spec.props || []) {
+    if (p.type === "box") {
+      add(p.x, p.y);
+      add(p.x + p.w, p.y + p.h);
+    } else if (p.type === "line") {
+      // Paredes y postes: cuenta dónde están, no cuánto miden. Se salen del
+      // encuadre por arriba sin que eso obligue a alejar la cámara.
+      add(p.x1, Math.max(y0, Math.min(y1, p.y1)));
+      add(p.x2, Math.max(y0, Math.min(y1, p.y2)));
+    }
+  }
+  if (spec.band)
+    for (const e of [spec.band.from, spec.band.to]) if (Array.isArray(e)) add(e[0], e[1]);
+  if (spec.ground !== false) {
+    const gy = spec.groundY ?? 104;
+    y1 = Math.max(y1, gy);
+  }
+
+  x0 -= FIT_PAD;
+  x1 += FIT_PAD;
+  y0 -= FIT_PAD;
+  y1 += FIT_PAD * 0.6; // el suelo cerca del borde de abajo: la figura se apoya en algo
+
+  let w = x1 - x0;
+  let h = Math.max(y1 - y0, MIN_H);
+  if (w / h > aspect) h = w / aspect;
+  else w = h * aspect;
+  const cx = (x0 + x1) / 2;
+  // El sobrante vertical va arriba: el suelo se queda abajo.
+  return { x: cx - w / 2, y: y1 - h, w, h };
+}
+
+/**
  * Anima un ejercicio dentro de un <svg>.
  * Recorre las poses de ida y vuelta (ping-pong) o en ciclo (spec.loop ===
  * 'cycle') según buildTimeline; los tiempos por tramo y las pausas salen de
@@ -602,13 +737,15 @@ function renderFrame(j, spec, trailPts) {
 export function animate(svg, spec) {
   const poses = spec.poses.map(solve);
   const n = poses.length;
-  // Con margen arriba: al exagerar la altura de los saltos (pogos, cajón) la
-  // cabeza se salía por el borde superior y la figura aparecía decapitada.
-  const view = spec.view || "-3 -20 136 142";
-  svg.setAttribute("viewBox", view);
-  svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
-
   const tl = buildTimeline(spec, n);
+
+  // La proporción sale de la caja real; 2:1 es la del CSS (.gym-anim) por si
+  // el <svg> todavía no tiene tamaño.
+  const box = svg.getBoundingClientRect();
+  const aspect = box.width > 0 && box.height > 0 ? box.width / box.height : 2;
+  const fit = spec.view ? null : fitView(spec, poses, tl, aspect);
+  svg.setAttribute("viewBox", spec.view || `${fit.x} ${fit.y} ${fit.w} ${fit.h}`);
+  svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
 
   let group = null;
   let raf = null;
@@ -641,11 +778,12 @@ export function animate(svg, spec) {
       // El <svg> se reconstruye entero la primera vez: fondo, suelo y props.
       const b = el("g", { class: "base" });
       if (spec.ground !== false) {
+        // De borde a borde: un suelo que se corta a media caja parece una tabla.
         b.appendChild(
           el("line", {
-            x1: 4,
+            x1: fit ? fit.x : 4,
             y1: spec.groundY ?? 104,
-            x2: 126,
+            x2: fit ? fit.x + fit.w : 126,
             y2: spec.groundY ?? 104,
             class: "ground",
           }),
@@ -679,4 +817,4 @@ export function animate(svg, spec) {
   return () => cancelAnimationFrame(raf);
 }
 
-export { SEG };
+export { SEG, fitView };

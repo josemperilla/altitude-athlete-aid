@@ -26,6 +26,11 @@
 
 const G = 104; // suelo
 
+// Escalón de las elevaciones de talón. Alto a propósito: con 8 unidades el
+// talón bajaba por debajo del borde pero el borde casi no se veía, y la mitad
+// de abajo del rango —la que el plan pide no saltarse— no se leía.
+const STEP = { type: "box", x: 58, y: 88, w: 34, h: 16, kind: "gear" };
+
 export const POSES = {
   squat: {
     load: "bar",
@@ -225,26 +230,26 @@ export const POSES = {
   // el estímulo del tendón), bajar más lento todavía.
   calfstanding: {
     duration: 1600,
-    props: [{ type: "box", x: 58, y: 96, w: 34, h: 8, kind: "gear" }],
+    props: [STEP],
     weights: [1, 1],
     weightsBack: [1.5, 1.5],
     holds: [300, 0, 500],
     poses: [
-      { toe: [64, 96], foot: -34, shin: 3, thigh: 0, trunk: 0, uarm: 180, farm: 180 },
-      { toe: [64, 96], foot: 12, shin: 2, thigh: 0, trunk: 0, uarm: 180, farm: 180 },
-      { toe: [64, 96], foot: 56, shin: 2, thigh: 0, trunk: 0, uarm: 180, farm: 180 },
+      { toe: [64, STEP.y], foot: -34, shin: 3, thigh: 0, trunk: 0, uarm: 180, farm: 180 },
+      { toe: [64, STEP.y], foot: 12, shin: 2, thigh: 0, trunk: 0, uarm: 180, farm: 180 },
+      { toe: [64, STEP.y], foot: 56, shin: 2, thigh: 0, trunk: 0, uarm: 180, farm: 180 },
     ],
   },
 
   calfsingle: {
     duration: 1600,
-    props: [{ type: "box", x: 58, y: 96, w: 34, h: 8, kind: "gear" }],
+    props: [STEP],
     weights: [1, 1],
     weightsBack: [1.5, 1.5],
     holds: [300, 0, 500],
     poses: [
       {
-        toe: [64, 96],
+        toe: [64, STEP.y],
         foot: -34,
         shin: 3,
         thigh: 0,
@@ -255,7 +260,7 @@ export const POSES = {
         shin2: 250,
       },
       {
-        toe: [64, 96],
+        toe: [64, STEP.y],
         foot: 12,
         shin: 2,
         thigh: 0,
@@ -266,7 +271,7 @@ export const POSES = {
         shin2: 250,
       },
       {
-        toe: [64, 96],
+        toe: [64, STEP.y],
         foot: 56,
         shin: 2,
         thigh: 0,
@@ -289,13 +294,13 @@ export const POSES = {
    */
   calfsinglebent: {
     duration: 1600,
-    props: [{ type: "box", x: 58, y: 96, w: 34, h: 8, kind: "gear" }],
+    props: [STEP],
     weights: [1, 1],
     weightsBack: [1.5, 1.5],
     holds: [300, 0, 500],
     poses: [
       {
-        toe: [64, 96],
+        toe: [64, STEP.y],
         foot: -34,
         shin: 22,
         thigh: -10,
@@ -306,7 +311,7 @@ export const POSES = {
         shin2: 252,
       },
       {
-        toe: [64, 96],
+        toe: [64, STEP.y],
         foot: 12,
         shin: 22,
         thigh: -10,
@@ -317,7 +322,7 @@ export const POSES = {
         shin2: 252,
       },
       {
-        toe: [64, 96],
+        toe: [64, STEP.y],
         foot: 56,
         shin: 22,
         thigh: -10,
@@ -386,6 +391,10 @@ export const POSES = {
     ],
   },
 
+  // Brazo y pierna CONTRARIOS: se mueven el brazo de adelante (oscuro) y la
+  // pierna de atrás (gris); el otro brazo y la otra pierna se quedan arriba.
+  // Con una sola pierna y un solo brazo, la figura bajaba los del mismo lado y
+  // enseñaba justo el patrón que no es.
   deadbug: {
     mode: "raw",
     duration: 2800,
@@ -394,7 +403,7 @@ export const POSES = {
     weightsBack: [1, 1.2],
     holds: [350, 0, 400],
     poses: [
-      // Punto de partida: brazo vertical y muslo a 90°, rodilla también a 90°.
+      // Punto de partida: brazos verticales y muslos a 90°, rodillas también a 90°.
       {
         mode: "raw",
         joints: {
@@ -402,11 +411,17 @@ export const POSES = {
           sh: [42, 92],
           el: [42, 76],
           hand: [42, 60],
+          el2: [42, 76],
+          hand2: [42, 60],
           hip: [80, 94],
           knee: [80, 74],
           ankle: [96, 68],
           heel: [92, 64],
           toe: [103, 73],
+          knee2: [80, 74],
+          ankle2: [96, 68],
+          heel2: [92, 64],
+          toe2: [103, 73],
         },
       },
       {
@@ -416,11 +431,17 @@ export const POSES = {
           sh: [42, 92],
           el: [34, 78],
           hand: [24, 68],
+          el2: [42, 76],
+          hand2: [42, 60],
           hip: [80, 94],
-          knee: [88, 82],
-          ankle: [104, 78],
-          heel: [100, 74],
-          toe: [111, 82],
+          knee: [80, 74],
+          ankle: [96, 68],
+          heel: [92, 64],
+          toe: [103, 73],
+          knee2: [88, 82],
+          ankle2: [104, 78],
+          heel2: [100, 74],
+          toe2: [111, 82],
         },
       },
       // Brazo y pierna contrarios extendidos, casi rozando el suelo.
@@ -431,11 +452,17 @@ export const POSES = {
           sh: [42, 92],
           el: [26, 84],
           hand: [10, 78],
+          el2: [42, 76],
+          hand2: [42, 60],
           hip: [80, 94],
-          knee: [100, 92],
-          ankle: [120, 91],
-          heel: [116, 87],
-          toe: [125, 95],
+          knee: [80, 74],
+          ankle: [96, 68],
+          heel: [92, 64],
+          toe: [103, 73],
+          knee2: [100, 92],
+          ankle2: [120, 91],
+          heel2: [116, 87],
+          toe2: [125, 95],
         },
       },
     ],
@@ -509,9 +536,12 @@ export const POSES = {
     weights: [1, 1],
     weightsBack: [1.3, 1],
     holds: [300, 0, 250],
+    // Codo un poco por delante del tronco y antebrazo vertical: la mancuerna
+    // sube en línea recta sobre el hombro. Con el codo atrás (215) el arranque
+    // parecía un curl de bíceps.
     poses: [
-      { ankle: [52, G], shin: 0, thigh: 0, trunk: 0, uarm: 215, farm: 20 },
-      { ankle: [52, G], shin: 0, thigh: 0, trunk: 0, uarm: 60, farm: 12 },
+      { ankle: [52, G], shin: 0, thigh: 0, trunk: 0, uarm: 160, farm: 6 },
+      { ankle: [52, G], shin: 0, thigh: 0, trunk: 0, uarm: 45, farm: 0 },
       { ankle: [52, G], shin: 0, thigh: 0, trunk: 0, uarm: 8, farm: 4 },
     ],
   },
@@ -522,42 +552,90 @@ export const POSES = {
     weights: [1, 1.2],
     weightsBack: [1.2, 1],
     holds: [250, 0, 250],
+    // El codo viaja hacia la cadera (uarm ~240, paralelo al tronco) con el
+    // antebrazo vertical: la mancuerna sube en línea recta. Antes el codo se
+    // quedaba a medio camino y el gesto no se distinguía de estar colgando.
     poses: [
       { ankle: [52, G], shin: -6, thigh: -34, trunk: 62, uarm: 180, farm: 180, neck: -38 },
-      { ankle: [52, G], shin: -6, thigh: -34, trunk: 62, uarm: 202, farm: 166, neck: -38 },
-      { ankle: [52, G], shin: -6, thigh: -34, trunk: 62, uarm: 222, farm: 152, neck: -38 },
+      { ankle: [52, G], shin: -6, thigh: -34, trunk: 62, uarm: 212, farm: 180, neck: -38 },
+      { ankle: [52, G], shin: -6, thigh: -34, trunk: 62, uarm: 240, farm: 174, neck: -38 },
     ],
   },
 
-  // Ciclo de dos poses: abrir y cerrar el paso. Antes eran tres poses con la
-  // tercera igual a la primera, y el tramo de cierre del ciclo no se animaba.
+  // Vista FRONTAL. De lado, un paso lateral es invisible y la pierna que se
+  // abría parecía una patada hacia atrás. De frente se ve lo que importa: la
+  // pierna se separa contra la banda, el tronco no se balancea y las rodillas
+  // se quedan semiflexionadas. Manos en la cadera, el agarre habitual.
   monsterwalk: {
-    duration: 2400,
-    loop: "cycle",
-    band: { from: "ankle", to: "ankle2", lift: 8 },
+    mode: "raw",
+    frontal: true,
+    duration: 2200,
+    band: { from: "ankle", to: "ankle2", lift: 9 },
     weights: [1, 1],
+    weightsBack: [1.1, 1],
+    ease: ["in", "out"],
+    easeBack: ["in", "out"],
+    holds: [300, 0, 250],
     poses: [
-      // El paso abre de verdad: con la separación anterior (7 unidades entre
-      // tobillos) ni la abducción ni la banda estirada se leían.
       {
-        ankle: [46, G],
-        shin: 8,
-        thigh: -16,
-        trunk: 12,
-        uarm: 190,
-        farm: 200,
-        thigh2: 198,
-        shin2: 174,
+        mode: "raw",
+        joints: {
+          head: [64, 19],
+          sh: [64, 32],
+          el: [55, 42],
+          hand: [58, 55],
+          el2: [73, 42],
+          hand2: [70, 55],
+          hip: [64, 58],
+          knee: [57, 80],
+          ankle: [54, 101],
+          heel: [55, G],
+          toe: [49, G],
+          knee2: [71, 80],
+          ankle2: [74, 101],
+          heel2: [73, 104],
+          toe2: [79, 104],
+        },
       },
       {
-        ankle: [46, G],
-        shin: 8,
-        thigh: -16,
-        trunk: 12,
-        uarm: 190,
-        farm: 200,
-        thigh2: 232,
-        shin2: 208,
+        mode: "raw",
+        joints: {
+          head: [66, 19],
+          sh: [66, 32],
+          el: [57, 42],
+          hand: [60, 55],
+          el2: [75, 42],
+          hand2: [72, 55],
+          hip: [66, 58],
+          knee: [58, 80],
+          ankle: [54, 101],
+          heel: [55, G],
+          toe: [49, G],
+          knee2: [76, 78],
+          ankle2: [82, 96],
+          heel2: [81, 99],
+          toe2: [87, 99],
+        },
+      },
+      {
+        mode: "raw",
+        joints: {
+          head: [68, 19],
+          sh: [68, 32],
+          el: [59, 42],
+          hand: [62, 55],
+          el2: [77, 42],
+          hand2: [74, 55],
+          hip: [68, 58],
+          knee: [59, 80],
+          ankle: [54, 101],
+          heel: [55, G],
+          toe: [49, G],
+          knee2: [80, 80],
+          ankle2: [88, 101],
+          heel2: [87, 104],
+          toe2: [93, 104],
+        },
       },
     ],
   },
@@ -568,10 +646,12 @@ export const POSES = {
     weights: [1, 1],
     weightsBack: [1.2, 1],
     holds: [250, 0, 300],
+    // Raíz en el talón: es el pivote real. Con la raíz en el tobillo el talón
+    // giraba en espejo con la punta y se hundía en el suelo en cada repetición.
     poses: [
-      { ankle: [52, G], foot: 14, shin: -4, thigh: -2, trunk: -4, uarm: 178, farm: 176 },
-      { ankle: [52, G], foot: -18, shin: -4, thigh: -2, trunk: -4, uarm: 178, farm: 176 },
-      { ankle: [52, G], foot: -52, shin: -4, thigh: -2, trunk: -4, uarm: 178, farm: 176 },
+      { heel: [46, G], foot: 0, shin: -4, thigh: -2, trunk: -4, uarm: 178, farm: 176 },
+      { heel: [46, G], foot: -24, shin: -4, thigh: -2, trunk: -4, uarm: 178, farm: 176 },
+      { heel: [46, G], foot: -46, shin: -4, thigh: -2, trunk: -4, uarm: 178, farm: 176 },
     ],
   },
 

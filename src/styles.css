@@ -501,6 +501,12 @@
 .gym-anim .limb.far {
   fill: var(--text-muted);
 }
+.gym-anim .halo .limb {
+  fill: var(--bg);
+  stroke: var(--bg);
+  stroke-width: 2.2;
+  stroke-linejoin: round;
+}
 .gym-anim .head {
   fill: var(--text);
   stroke: none;
