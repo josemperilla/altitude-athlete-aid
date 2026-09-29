@@ -248,12 +248,16 @@ def post_gym_done(body: GymDoneRequest) -> dict:
 def get_performance() -> dict:
     """Tablero de rendimiento calculado al vuelo desde activity_history.json.
 
-    Vacío con 200 si todavía no hay historial (nunca se corrió /update con esta
-    versión): el frontend tiene estado vacío para eso, igual que /diagnosis.
+    Sin historial responde 200 con solo `history_status` (qué pasó en la última
+    descarga, o nada si nunca se corrió /update con esta versión): el frontend
+    lo muestra en el estado vacío en vez de un vacío mudo.
     """
     import performance
     history = _read_list(data_file("activity_history.json"))
-    return performance.build(history) if history else {}
+    if history:
+        return performance.build(history)
+    status = _read(data_file("activity_history_status.json"))
+    return {"history_status": status} if status else {}
 
 
 def _read_list(path: Path) -> list:

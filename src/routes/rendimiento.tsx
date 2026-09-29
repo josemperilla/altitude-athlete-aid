@@ -52,6 +52,7 @@ const monthLabel = (ym: string) => MONTHS[Number(ym.slice(5, 7)) - 1];
 function RendimientoPage() {
   const { data, isLoading, error } = useQuery(performanceQO());
   const empty = !data?.kpis || data.weekly.length === 0;
+  const failed = data?.history_status?.ok === false;
 
   return (
     <PageShell title="Rendimiento" subtitle="Últimas 26 semanas · historial de Garmin">
@@ -60,7 +61,11 @@ function RendimientoPage() {
         error={error}
         isEmpty={empty}
         loadingMessage="Calculando tu rendimiento…"
-        emptyMessage="Todavía no hay historial. Pulsa “Actualizar plan” y el tablero se arma con tus carreras de Garmin."
+        emptyMessage={
+          failed
+            ? `Garmin no entregó el historial en la última actualización (${data?.history_status?.at ?? "—"}). Vuelve a pulsar “Actualizar plan” en unos minutos. Detalle: ${data?.history_status?.error ?? "desconocido"}`
+            : "Todavía no hay historial. Pulsa “Actualizar plan” y el tablero se arma con tus carreras de Garmin."
+        }
       >
         {data && <Dashboard perf={data} />}
       </QueryState>

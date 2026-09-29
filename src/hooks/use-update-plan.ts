@@ -11,6 +11,7 @@ export function useUpdatePlan() {
       toast.success("Plan actualizado");
       qc.invalidateQueries({ queryKey: ["plan"] });
       qc.invalidateQueries({ queryKey: ["garmin"] });
+      qc.invalidateQueries({ queryKey: ["performance"] });
     },
     onError: (e) =>
       toast.error(`Error: ${e instanceof Error ? e.message : "no se pudo actualizar"}`),

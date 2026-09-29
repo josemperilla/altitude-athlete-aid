@@ -27,6 +27,10 @@ load_dotenv(ROOT / ".env")
 
 OUTPUT = data_file("garmin_data.json")
 HISTORY = data_file("activity_history.json")
+# Resultado de la última descarga del historial. El paso de Garmin no falla si
+# el historial falla (el plan sale igual), así que sin esto el tablero se
+# quedaba vacío sin decir por qué.
+HISTORY_STATUS = data_file("activity_history_status.json")
 
 
 def login() -> garminconnect.Garmin:
@@ -311,12 +315,20 @@ def main():
     # frontend y 250 actividades no hacen falta en cada pantalla. Si falla, el
     # tablero se queda con el anterior y el plan sale igual.
     print("Fetching activity history (tablero de rendimiento)...")
-    try:
-        history = fetch_history(client)
-        HISTORY.write_text(json.dumps(history, ensure_ascii=False), encoding="utf-8")
-        print(f"  → {len(history)} carreras en el historial")
-    except Exception as e:
-        print(f"  WARNING: no se pudo bajar el historial ({e}); se conserva el anterior.", file=sys.stderr)
+    status: dict = {"at": date.today().isoformat()}
+    for attempt in (1, 2):
+        try:
+            history = fetch_history(client)
+            HISTORY.write_text(json.dumps(history, ensure_ascii=False), encoding="utf-8")
+            status.update(ok=True, runs=len(history))
+            print(f"  → {len(history)} carreras en el historial")
+            break
+        except Exception as e:
+            status.update(ok=False, error=f"{type(e).__name__}: {e}"[:300])
+            print(f"  WARNING: no se pudo bajar el historial, intento {attempt} ({e})", file=sys.stderr)
+            if attempt == 1:
+                time.sleep(10)
+    HISTORY_STATUS.write_text(json.dumps(status, ensure_ascii=False), encoding="utf-8")
 
     print("Fetching scheduled workouts (Runna plan, próximos 60 días)...")
     weekly_plan = fetch_scheduled_workouts(client)

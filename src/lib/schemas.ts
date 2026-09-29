@@ -397,6 +397,11 @@ export const PerformanceSchema = z
     weekly: lenientArray(PerformanceWeekSchema, "performance.weekly"),
     monthly: lenientArray(PerformanceMonthSchema, "performance.monthly"),
     insights: lenientArray(PerformanceInsightSchema, "performance.insights"),
+    // Solo viene cuando no hay historial: resultado de la última descarga.
+    history_status: z
+      .object({ ok: z.boolean().nullish(), error: optStr, at: optStr })
+      .nullish()
+      .catch(undefined),
   })
   .catchall(z.unknown());
 export type Performance = z.infer<typeof PerformanceSchema>;
