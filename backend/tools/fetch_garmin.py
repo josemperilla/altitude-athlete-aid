@@ -18,6 +18,7 @@ import garminconnect
 from garminconnect import GarminConnectTooManyRequestsError
 
 import runna_checks
+from upload_workouts import ADJUSTED_PREFIX
 from paths import data_file
 
 ROOT = Path(__file__).parent.parent
@@ -103,6 +104,11 @@ def fetch_scheduled_workouts(client: garminconnect.Garmin, days_ahead: int = 60)
                 except ValueError:
                     continue
                 if not (today <= item_date <= cutoff):
+                    continue
+                # Las carreras ajustadas son nuestras, no de Runna: si entraran al
+                # plan, la revisión siguiente ajustaría el ajuste (y la app las
+                # pintaría dos veces). El original de Runna sigue ahí ese día.
+                if (item.get("title") or "").startswith(ADJUSTED_PREFIX):
                     continue
                 # `id` es el id de la programación en el calendario: identifica
                 # una sesión concreta en un día concreto. Si faltara, la terna

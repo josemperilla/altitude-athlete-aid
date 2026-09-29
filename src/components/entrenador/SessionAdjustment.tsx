@@ -25,8 +25,9 @@ export function AlternativeTag({
   );
 }
 
-// Los ajustes son sugerencias sobre una carrera de Runna: Runna no se entera.
-// El atleta decide si lo cambia en Runna o si corre directamente esta versión.
+// Los ajustes se aplican sobre la carrera de Runna y, cuando caben en las
+// operaciones del backend, llegan al reloj como «Ajustado · <nombre>», al lado de
+// la original. Runna no se entera: su sesión sigue igual.
 
 const VERDICT_LABEL: Record<string, string> = {
   ajustar: "Ajuste sugerido",
@@ -60,6 +61,9 @@ export function AdjustmentNote({
         {label(adjustment)}
       </div>
       <p className="text-sm mt-1.5 leading-relaxed text-fg">{adjustment.change}</p>
+      {compact && adjustment.pushed && (
+        <p className="text-[11px] mt-1 text-faint">En tu reloj: abre la «Ajustado».</p>
+      )}
       {!compact && adjustment.rationale && (
         <p className="text-xs mt-1.5 leading-relaxed text-muted">{adjustment.rationale}</p>
       )}
@@ -68,7 +72,9 @@ export function AdjustmentNote({
           {adjustment.source === "regla"
             ? "Regla automática de sesión pico. "
             : "Revisión semanal contra la evidencia y tus señales de Garmin. "}
-          Runna no lo sabe: cámbialo allá o corre esta versión.
+          {adjustment.pushed
+            ? "Ya está en tu reloj como «Ajustado», al lado de la de Runna: abre esa."
+            : "No cabe en un workout automático: aplícalo a mano sobre la de Runna."}
         </p>
       )}
     </div>

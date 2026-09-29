@@ -27,6 +27,7 @@ from datetime import date, timedelta
 import anthropic
 from dotenv import load_dotenv
 
+import adjust_workout
 import build_cycling_workout
 import runna_checks
 import strength_plan
@@ -99,7 +100,9 @@ REVISIÓN DE LAS CARRERAS DE RUNNA (semana a semana):
 Runna es el esqueleto: su periodización y sus ritmos se respetan por defecto. Tú revisas cada carrera
 de PLAN RUNNA dentro del horizonte de 2 semanas contra los principios de arriba, las señales de Garmin
 y el CICLO COMPLETO DE RUNNA, y propones un ajuste SOLO donde la evidencia o las señales lo pidan.
-No reescribes nada: el atleta aplica el ajuste. Una sesión que está bien NO se incluye (ausencia = mantener).
+Cada ajuste llega al reloj: el sistema toma el workout real de Runna, le aplica tus "ops" y lo sube a
+Garmin como «Ajustado · <nombre>», al lado del original. Una sesión que está bien NO se incluye
+(ausencia = mantener).
 
 Veredictos:
   "ajustar"          — misma sesión con un cambio concreto: recortar distancia, poner techo de FC a un
@@ -116,6 +119,17 @@ Reglas de ajuste:
     del segundo umbral, el ajuste es por FC usando ZONAS FC, no bajar el ritmo a ojo.
   - Pocos y bien justificados: máximo 2 ajustes por semana. Runna ya periodiza.
   - "change" es una instrucción que el atleta ejecuta sin pensar: km, minutos, bpm.
+
+Operaciones ("ops") — lo que el sistema aplica al workout de Runna. Solo estas cuatro; "change" debe
+describir exactamente lo mismo que las ops, con palabras:
+  {{"op": "set_distance_km", "km": 18.5}}    distancia total; se escalan calentamiento, bloques continuos y
+                                           enfriamiento (las series no se tocan)
+  {{"op": "set_reps", "reps": 4}}            número de repeticiones del bloque de series
+  {{"op": "hr_cap", "bpm": 160}}             cambia el objetivo de ritmo por un techo de FC (usa ZONAS FC)
+  {{"op": "easy_run", "km": 8, "bpm": 150}}  reemplaza toda la sesión por un rodaje fácil; obligatoria con
+                                           "cambiar_a_facil"
+  Si un ajuste no cabe en estas ops (p. ej., "añade 4 aceleraciones"), no lo propongas: el atleta no lo
+  vería en el reloj.
 
 FORMATO DE SALIDA — responde con un único objeto JSON válido. No incluyas "runna_sessions" ni
 "garmin_workout": el sistema los construye aparte a partir de tu decisión.
@@ -155,7 +169,8 @@ Para cada semana describe:
       "date": "YYYY-MM-DD",
       "verdict": "ajustar | cambiar_a_facil",
       "change": "string en español: la instrucción concreta, con km, minutos o bpm",
-      "rationale": "string en español: la señal o el principio que lo justifica (1-2 oraciones)"
+      "rationale": "string en español: la señal o el principio que lo justifica (1-2 oraciones)",
+      "ops": [{{"op": "set_distance_km | set_reps | hr_cap | easy_run", "...": "ver Operaciones"}}]
     }}
   ],
   "load_analysis": {{
@@ -430,8 +445,25 @@ def save_outputs(plan: dict, garmin: dict) -> None:
     # lo que haya en la carpeta, y un archivo viejo marcado como alternativa
     # llegaría a Garmin aunque ese día Runna ya tenga series.
     WORKOUTS_DIR.mkdir(parents=True, exist_ok=True)
-    for old in WORKOUTS_DIR.glob("*_cycling.json"):
-        old.unlink()
+    for pattern in ("*_cycling.json", "*_ajustado.json"):
+        for old in WORKOUTS_DIR.glob(pattern):
+            old.unlink()
+
+    # Carreras de Runna con ajuste: el workout real de Runna con las ops
+    # aplicadas, listo para subir tal cual (ya viene en el formato de Garmin).
+    for session in plan.get("runna_sessions", []):
+        adjustment = session.get("adjustment")
+        if not adjustment:
+            continue
+        payload = adjust_workout.build(session, adjustment, hr_zones)
+        adjustment["pushed"] = payload is not None
+        if payload:
+            fname = WORKOUTS_DIR / f"{session['date']}_ajustado.json"
+            fname.write_text(
+                json.dumps({"payload_ready": True, "payload": payload}, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            print(f"Saved workout → {fname}")
 
     for session in plan.get("cycling_sessions", []):
         built = build_cycling_workout.build(session, hr_zones)

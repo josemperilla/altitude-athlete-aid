@@ -19,6 +19,8 @@ import math
 import re
 from datetime import date
 
+from adjust_workout import clean_ops
+
 SPIKE_THRESHOLD = 0.10
 VERDICTS = ("ajustar", "cambiar_a_facil")
 # La bici como alternativa a un rodaje: entre 1 y 1,3 veces su duración (por
@@ -184,6 +186,7 @@ def spike_adjustment(session: dict, flag: dict) -> dict:
         ),
         "source": "regla",
         "cap_km": cap,
+        "ops": [{"op": "set_distance_km", "km": cap}],
     }
 
 
@@ -225,7 +228,15 @@ def validate_adjustments(
             "change": change,
             "rationale": str(adj.get("rationale") or "").strip(),
             "source": "modelo",
+            # Lo que el código aplica al workout de Runna para subirlo ajustado.
+            # Sin ops válidas, el ajuste queda como nota y no llega al reloj.
+            "ops": clean_ops(adj.get("ops")),
         }
+        # "Cambiar a fácil" sin la op que lo dice no llegaría al reloj: se arma
+        # el rodaje con los mismos km de la sesión (y FC de Z2, en adjust_workout).
+        km = planned_km(runs_by_date[d])
+        if adj["verdict"] == "cambiar_a_facil" and km and not any(o["op"] == "easy_run" for o in out[d]["ops"]):
+            out[d]["ops"] = [{"op": "easy_run", "km": km}]
 
     # El recorte por pico no es negociable: si el modelo propuso otra cosa ese día
     # (un techo de FC, por ejemplo), se suma al recorte en vez de reemplazarlo.
@@ -241,10 +252,16 @@ def validate_adjustments(
             model["change"] = f"{model['change']} Máximo {cap_txt} km."
             model["rationale"] = f"{model['rationale']} {rule['rationale']}".strip()
             model["source"] = "regla"
+            model["ops"] = [
+                {**op, "km": min(op["km"], rule["cap_km"])} if op["op"] == "easy_run" else op
+                for op in model["ops"]
+            ]
         else:
             model["change"] = f"{rule['change']} Además: {model['change']}"
             model["rationale"] = f"{rule['rationale']} {model['rationale']}".strip()
             model["source"] = "regla"
+            # La distancia la manda la regla; lo demás (FC, repeticiones) se suma.
+            model["ops"] = rule["ops"] + [op for op in model["ops"] if op["op"] != "set_distance_km"]
 
     return [out[d] for d in sorted(out)]
 
@@ -300,5 +317,5 @@ def attach_adjustments(sessions: list[dict], adjustments: list[dict]) -> None:
     for s in sessions:
         adj = by_date.get(s.get("date")) if is_run(s) else None
         if adj:
-            s["adjustment"] = {k: adj[k] for k in ("verdict", "change", "rationale", "source")}
+            s["adjustment"] = {k: adj[k] for k in ("verdict", "change", "rationale", "source", "ops")}
             by_date.pop(s["date"])

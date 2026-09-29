@@ -133,6 +133,8 @@ export const SessionAdjustmentSchema = z
     rationale: optStr,
     // "modelo" = lo propuso Claude; "regla" = recorte automático por sesión pico.
     source: optStr,
+    // true = ya se subió a Garmin como «Ajustado · <nombre>», al lado del de Runna.
+    pushed: z.boolean().nullish().catch(undefined),
   })
   .nullish()
   .catch(undefined);

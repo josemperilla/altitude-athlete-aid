@@ -84,7 +84,8 @@ pestañas del frontend React. La única UI es la de React.
 - `tools/fetch_runna_plan.py` — lee el plan COMPLETO de Runna desde su feed iCalendar (`RUNNA_ICS_URL`) → `runna_plan.json`. Garmin solo trae ~2 semanas; el feed trae el ciclo entero con ritmos y la fecha de carrera. Sin URL o sin red, avisa y no falla
 - `tools/generate_plan.py` — cruza Garmin + feed de Runna + investigación, llama a Claude, produce `.tmp/augmented_plan.json` (ciclismo + revisión de las carreras de Runna) y un JSON de workout por sesión de ciclismo
 - `tools/runna_checks.py` — reglas deterministas: sesión pico (>10 % sobre la más larga de 30 días), semana de carrera/taper, validación de ajustes y ciclismo como alternativa a rodajes fáciles
-- `tools/upload_workouts.py` — sube y agenda esos workouts en Garmin (Runna los lee de ahí)
+- `tools/adjust_workout.py` — aplica las `ops` de un ajuste (`set_distance_km`, `set_reps`, `hr_cap`, `easy_run`) sobre el workout real de Runna y devuelve uno nuevo, «Ajustado · <nombre>», listo para Garmin
+- `tools/upload_workouts.py` — borra lo que subió la vez anterior (ciclismo y «Ajustado · …») y sube y agenda lo nuevo. El workout de Runna nunca se toca: el ajustado va al lado, el mismo día
 - `tools/diagnose.py` — evalúa una molestia física contra el plan de la semana
 - `tools/extract_papers.py` — extrae `Running_papers/*.pdf` → `context/research_insights.md`, con caché por tamaño+mtime
 
@@ -101,7 +102,8 @@ que no asumas que un arreglo equivale a un deporte — usa el campo `sport`. El 
 depende de esta forma; si la cambias, hay que ajustarlo allá también.
 
 Una carrera de Runna puede traer `adjustment` (`verdict`, `change`, `rationale`, `source`):
-un ajuste sugerido que el atleta aplica; Runna nunca se reescribe. Una sesión de ciclismo
+un ajuste; si trae `ops` que encajan (`pushed: true`) se sube a Garmin como «Ajustado · <nombre>» al lado
+del original, y fetch_garmin lo excluye del plan para no ajustar el ajuste. Runna nunca se reescribe. Una sesión de ciclismo
 con `alternative_to_easy_run: true` va el mismo día que un rodaje fácil y el atleta elige
 uno de los dos (upload la agenda igual, pese al bloqueo de días con carrera).
 

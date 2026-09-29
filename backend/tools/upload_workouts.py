@@ -1,6 +1,11 @@
 """
-Uploads cycling workout JSONs from .tmp/workouts/ to Garmin Connect and schedules
-them on their target dates. Completed workouts sync to Garmin → Runna reads them.
+Sube a Garmin Connect y agenda los workouts de .tmp/workouts/:
+  - <fecha>_cycling.json  ciclismo generado (formato simplificado → enrich_workout)
+  - <fecha>_ajustado.json carrera de Runna con el ajuste aplicado, ya en formato de
+                          Garmin (adjust_workout.py); va al lado del de Runna, que
+                          no se toca
+Antes de subir borra todo lo que subió la vez anterior, así lo que queda en el
+reloj es exactamente lo de esta actualización.
 
 Usage:
   python tools/upload_workouts.py           # upload & schedule
@@ -21,6 +26,18 @@ from paths import data_file
 ROOT = Path(__file__).parent.parent
 load_dotenv(ROOT / ".env")
 WORKOUTS_DIR = data_file("workouts")
+
+# Nombre de las carreras ajustadas. Es lo que las distingue de las de Runna en
+# Garmin: por él se borran en cada actualización y fetch_garmin las deja fuera
+# del plan (no son de Runna, son nuestras).
+ADJUSTED_PREFIX = "Ajustado · "
+
+
+def is_ours(sport: str, name: str, provider: str | None) -> bool:
+    """Workout subido por esta herramienta: ciclismo o carrera ajustada, nunca de Runna."""
+    if provider == "Runna":
+        return False
+    return sport == "cycling" or (sport == "running" and (name or "").startswith(ADJUSTED_PREFIX))
 
 # ── Garmin API lookup tables ───────────────────────────────────────────────────
 STEP_TYPES = {
@@ -166,20 +183,18 @@ def _fetch_calendar_months(client: garminconnect.Garmin, num_months: int = 3) ->
     return all_items
 
 
-def delete_our_cycling_workouts(client: garminconnect.Garmin,
-                                dry_run: bool,
-                                calendar_items: list[dict]) -> set[str]:
-    """
-    Delete all cycling workouts we uploaded. Returns set of running dates
-    extracted from the same calendar fetch — no extra API calls needed.
-    """
-    print("Limpiando workouts de ciclismo anteriores...")
+def delete_our_workouts(client: garminconnect.Garmin,
+                        dry_run: bool,
+                        calendar_items: list[dict]) -> None:
+    """Borra todo lo que subimos antes (ciclismo y carreras ajustadas) y
+    desprograma lo que haya quedado huérfano en el calendario."""
+    print("Limpiando workouts de ciclismo y carreras ajustadas anteriores...")
     workouts = client.get_workouts(0, 100)
     deleted_ids = set()
 
     for w in workouts:
         sport = w.get("sportType", {}).get("sportTypeKey", "")
-        if sport == "cycling" and w.get("workoutProvider") != "Runna":
+        if is_ours(sport, w.get("workoutName", ""), w.get("workoutProvider")):
             wid = w["workoutId"]
             if dry_run:
                 print(f"  [DRY RUN] Borraría: {w['workoutName']} (id={wid})")
@@ -194,7 +209,10 @@ def delete_our_cycling_workouts(client: garminconnect.Garmin,
 
     # Unschedule orphaned calendar entries using already-fetched items
     for item in calendar_items:
-        if item.get("sportTypeKey") == "cycling" and item.get("workoutId") not in deleted_ids:
+        ours_on_calendar = item.get("sportTypeKey") == "cycling" or (
+            item.get("sportTypeKey") == "running" and (item.get("title") or "").startswith(ADJUSTED_PREFIX)
+        )
+        if ours_on_calendar and item.get("workoutId") not in deleted_ids:
             sid = item["id"]
             if dry_run:
                 print(f"  [DRY RUN] Desprogramaría: {item.get('title')} el {item.get('date')}")
@@ -218,14 +236,17 @@ def extract_running_dates(calendar_items: list[dict]) -> set[str]:
 def upload_and_schedule(client: garminconnect.Garmin, workout_path: Path,
                         dry_run: bool, running_dates: set[str]):
     raw      = json.loads(workout_path.read_text(encoding="utf-8"))
-    payload  = enrich_workout(raw)
+    # Las carreras ajustadas ya vienen en el formato completo de Garmin.
+    ready    = bool(raw.get("payload_ready"))
+    payload  = raw["payload"] if ready else enrich_workout(raw)
     name     = payload["workoutName"]
     date_str = workout_path.stem[:10]
 
     # Hard block: nunca ciclismo en un día con carrera de Runna, salvo que sea la
     # alternativa a un rodaje fácil (generate_plan.py ya verificó que la carrera
-    # de ese día es BAJA). Las dos quedan agendadas y el atleta elige.
-    if date_str in running_dates and not raw.get("alternative_to_easy_run"):
+    # de ese día es BAJA). Las dos quedan agendadas y el atleta elige. La carrera
+    # ajustada va justamente el día de su carrera: el bloqueo no le aplica.
+    if not ready and date_str in running_dates and not raw.get("alternative_to_easy_run"):
         print(f"  ⛔ SALTADO: {name} el {date_str} — ese día ya tiene carrera de Runna.")
         return
 
@@ -255,10 +276,10 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Preview sin subir")
     args = parser.parse_args()
 
-    workout_files = sorted(WORKOUTS_DIR.glob("*_cycling.json"))
-    if not workout_files:
-        print(f"No hay workouts en {WORKOUTS_DIR}. Ejecuta tools/generate_plan.py primero.")
-        sys.exit(0)
+    # Sin archivos no se sale antes: la limpieza tiene que correr igual, o una
+    # carrera ajustada de la semana pasada se quedaría en el reloj aunque el
+    # ajuste ya no exista.
+    workout_files = sorted([*WORKOUTS_DIR.glob("*_cycling.json"), *WORKOUTS_DIR.glob("*_ajustado.json")])
 
     print("Conectando a Garmin Connect...")
     client = login() if not args.dry_run else None
@@ -275,10 +296,10 @@ def main():
     if running_dates:
         print(f"  → Días con running: {sorted(running_dates)}")
 
-    delete_our_cycling_workouts(real_client, args.dry_run, calendar_items)
+    delete_our_workouts(real_client, args.dry_run, calendar_items)
     print()
 
-    print(f"Subiendo {len(workout_files)} workout(s) de ciclismo...")
+    print(f"Subiendo {len(workout_files)} workout(s)...")
     for wf in workout_files:
         print(f"\nProcesando: {wf.name}")
         upload_and_schedule(real_client, wf, args.dry_run, running_dates)
