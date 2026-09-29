@@ -13,7 +13,6 @@ import {
 import { toast } from "sonner";
 import { diagnosisQO, garminQO, postDiagnose } from "@/lib/api";
 import type { DiagnoseInput, DiagnoseResult, GarminActivity } from "@/lib/api";
-import { useAthleteId } from "@/hooks/use-athlete-id";
 import { PageShell } from "@/components/entrenador/PageShell";
 import { Field, RangeInput, SelectInput, TextAreaInput } from "@/components/ui/field";
 
@@ -84,8 +83,7 @@ function aggregateWeeks(activities: GarminActivity[] | null | undefined): WeekSu
 }
 
 function Señales() {
-  const athlete = useAthleteId();
-  const { data: garmin } = useQuery(garminQO(athlete));
+  const { data: garmin } = useQuery(garminQO());
 
   const hrvSeries = toSeries(garmin?.health?.hrv, "hrv").slice(-30);
   const rhrSeries = toSeries(garmin?.health?.resting_hr, "resting_hr").slice(-30);
@@ -239,7 +237,6 @@ const LEVEL_STYLE: Record<string, string> = {
 };
 
 function DolorSection() {
-  const athlete = useAthleteId();
   const [form, setForm] = useState<DiagnoseInput>({
     location: LOCATIONS[0],
     severity: 4,
@@ -251,14 +248,14 @@ function DolorSection() {
   });
 
   const mut = useMutation({
-    mutationFn: (data: DiagnoseInput) => postDiagnose(data, athlete),
+    mutationFn: (data: DiagnoseInput) => postDiagnose(data),
     onError: (e) => toast.error(`Error: ${e instanceof Error ? e.message : "no se pudo analizar"}`),
   });
 
   // GET /diagnosis existe en el backend pero su contrato no está fijado: se
   // muestra solo si responde una lista con forma reconocible. Va por atleta:
   // cada quien ve y escribe su propio historial de molestias.
-  const { data: historyRaw } = useQuery(diagnosisQO(athlete));
+  const { data: historyRaw } = useQuery(diagnosisQO());
   const history = useRecognizedDiagnoses(historyRaw);
 
   return (

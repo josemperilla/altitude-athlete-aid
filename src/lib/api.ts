@@ -18,7 +18,6 @@ import {
   type Insights,
   type DiagnoseResult,
 } from "@/lib/schemas";
-import type { AthleteId } from "@/lib/athlete/store";
 
 export type {
   GarminData,
@@ -35,22 +34,6 @@ export type {
   InsightCategory,
   DiagnoseResult,
 } from "@/lib/schemas";
-
-const DEFAULT_ATHLETE: AthleteId = "jose";
-
-/**
- * Toda ruta con datos de una persona lleva `?athlete=`, SIEMPRE y explícito —
- * también para "jose", aunque el backend lo tenga de default.
- *
- * La versión anterior lo omitía para jose por retrocompatibilidad, y eso dejaba
- * dos convenciones vivas a la vez: la lectura confiaba en un default implícito
- * y la escritura era explícita. En una app que usan dos personas, una petición
- * que no dice de quién es no se puede depurar mirando la red — y basta que el
- * default del backend cambie para que los datos de una terminen en el archivo
- * de la otra. Una sola regla: si la respuesta depende de quién pregunta, va el
- * parámetro.
- */
-const athleteQS = (athlete: AthleteId) => `?athlete=${athlete}`;
 
 const BASE = ""; // rutas relativas — el proxy de Vite (dev) o server.ts (prod) reenvían al backend
 
@@ -73,54 +56,43 @@ export async function apiFetch<T = unknown>(path: string, init?: RequestInit): P
   }
 }
 
-export const garminQO = (athlete: AthleteId = DEFAULT_ATHLETE) => ({
-  queryKey: ["garmin", athlete] as const,
+export const garminQO = () => ({
+  queryKey: ["garmin"] as const,
   queryFn: async (): Promise<GarminData> =>
-    parseWith(GarminDataSchema, await apiFetch(`/garmin${athleteQS(athlete)}`), "GET /garmin"),
+    parseWith(GarminDataSchema, await apiFetch("/garmin"), "GET /garmin"),
   staleTime: 60_000,
 });
 
-export const planQO = (athlete: AthleteId = DEFAULT_ATHLETE) => ({
-  queryKey: ["plan", athlete] as const,
+export const planQO = () => ({
+  queryKey: ["plan"] as const,
   queryFn: async (): Promise<PlanData> =>
-    parseWith(PlanDataSchema, await apiFetch(`/plan${athleteQS(athlete)}`), "GET /plan"),
+    parseWith(PlanDataSchema, await apiFetch("/plan"), "GET /plan"),
   staleTime: 60_000,
 });
 
-export const gymQO = (athlete: AthleteId = DEFAULT_ATHLETE) => ({
-  queryKey: ["gym", athlete] as const,
+export const gymQO = () => ({
+  queryKey: ["gym"] as const,
   queryFn: async (): Promise<GymData> =>
-    parseWith(GymDataSchema, await apiFetch(`/gym${athleteQS(athlete)}`), "GET /gym"),
+    parseWith(GymDataSchema, await apiFetch("/gym"), "GET /gym"),
   staleTime: 5 * 60_000,
 });
 
-/**
- * Vista conjunta: lo que CADA atleta marcó, para todo el bloque — por eso no
- * lleva `athlete` en la query, el backend siempre devuelve los dos.
- */
+/** Las sesiones de gimnasio marcadas como hechas, para todo el bloque. */
 export const gymDoneQO = () => ({
   queryKey: ["gym-done"] as const,
   queryFn: async (): Promise<GymDoneMap> =>
     parseWith(GymDoneMapSchema, await apiFetch("/gym/done"), "GET /gym/done"),
-  // Corta a propósito: los dos entrenan juntos y en el mismo rato, así que uno
-  // marca en su teléfono y el otro tiene que verlo sin recargar. Es un JSON de
-  // dos claves, sondearlo cada 20 s no cuesta nada.
-  staleTime: 15_000,
-  refetchInterval: 20_000,
-  refetchOnWindowFocus: true,
+  staleTime: 60_000,
 });
 
-export function postGymDone(
-  input: {
-    date: string;
-    code: string;
-    done?: boolean;
-    note?: string;
-    weights?: Record<string, string>;
-  },
-  athlete: AthleteId = DEFAULT_ATHLETE,
-) {
-  return apiFetch<GymDoneMap>(`/gym/done${athleteQS(athlete)}`, {
+export function postGymDone(input: {
+  date: string;
+  code: string;
+  done?: boolean;
+  note?: string;
+  weights?: Record<string, string>;
+}) {
+  return apiFetch<GymDoneMap>("/gym/done", {
     method: "POST",
     body: JSON.stringify({ done: true, note: "", weights: {}, ...input }),
   });
@@ -133,7 +105,6 @@ export function postGymDone(
  *
  * Existe porque el plan lo genera un trabajo programado, y si ese trabajo deja
  * de correr nada en la app lo delata: se sigue viendo un plan, solo que viejo.
- * Ahora dependen dos personas de él, así que el silencio no sirve.
  */
 export const healthQO = () => ({
   queryKey: ["health"] as const,
@@ -159,12 +130,7 @@ export type DiagnoseInput = {
   additional_notes: string;
 };
 
-/**
- * Dispara el fetch de Garmin + la generación del plan. NO lleva `athlete`: es
- * una tubería mono-atleta (corre con las credenciales de Garmin de Jose), y
- * fingir que acepta un perfil sería mentir sobre lo que hace. La UI la esconde
- * cuando el perfil activo no es el suyo.
- */
+/** Dispara el fetch de Garmin + el feed de Runna + la generación del plan. */
 export function postUpdate() {
   return apiFetch<unknown>("/update", { method: "POST", body: "" });
 }
@@ -172,17 +138,17 @@ export function postUpdate() {
 /**
  * Historial de molestias. El contrato del backend no está fijado (devuelve lo
  * que Claude haya escrito), así que se consume sin tipar y `cuerpo.tsx` filtra
- * lo que reconoce. Lo que sí está fijo es de quién es: un archivo por atleta.
+ * lo que reconoce.
  */
-export const diagnosisQO = (athlete: AthleteId = DEFAULT_ATHLETE) => ({
-  queryKey: ["diagnosis", athlete] as const,
-  queryFn: () => apiFetch<unknown>(`/diagnosis${athleteQS(athlete)}`),
+export const diagnosisQO = () => ({
+  queryKey: ["diagnosis"] as const,
+  queryFn: () => apiFetch<unknown>("/diagnosis"),
   staleTime: 60_000,
   retry: false,
 });
 
-export function postDiagnose(data: DiagnoseInput, athlete: AthleteId = DEFAULT_ATHLETE) {
-  return apiFetch<unknown>(`/diagnose${athleteQS(athlete)}`, {
+export function postDiagnose(data: DiagnoseInput) {
+  return apiFetch<unknown>("/diagnose", {
     method: "POST",
     body: JSON.stringify(data),
   }).then((raw) => parseWith(DiagnoseResultSchema, raw, "POST /diagnose"));

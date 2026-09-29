@@ -287,7 +287,7 @@ export const GymSessionSchema = z.object({
 });
 export type GymSession = z.infer<typeof GymSessionSchema>;
 
-/** La carrera del atleta activo — `/gym?athlete=` la resuelve server-side. */
+/** La carrera objetivo (backend/tools/athletes.py::RACE). */
 export const RaceInfoSchema = z
   .object({
     name: optStr,
@@ -330,9 +330,8 @@ export const GymDoneEntrySchema = z.object({
 });
 export type GymDoneEntry = z.infer<typeof GymDoneEntrySchema>;
 
-export const GymDoneMapSchema = z
-  .record(z.string(), lenientRecord(GymDoneEntrySchema, "gym-done"))
-  .catch({});
+/** Sesiones marcadas como hechas: {fecha ISO: entrada}. */
+export const GymDoneMapSchema = lenientRecord(GymDoneEntrySchema, "gym-done");
 export type GymDoneMap = z.infer<typeof GymDoneMapSchema>;
 
 // ── GET /insights ───────────────────────────────────────────────────────────

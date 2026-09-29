@@ -2,14 +2,10 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { gymDoneQO, postGymDone, type GymSession } from "@/lib/api";
-import { useAthleteId } from "@/hooks/use-athlete-id";
 import { useToday } from "@/hooks/use-today";
 import { WEIGHT_GUIDE } from "@/lib/gym/loads.js";
 import { lastWeightFor } from "@/lib/gym/weights";
 import { GymExercise } from "./GymExercise";
-
-/** Cómo se llama cada perfil en pantalla, para que el botón diga a quién marca. */
-const NOMBRE: Record<string, string> = { jose: "José", andrea: "Andrea" };
 
 /**
  * Los ejercicios donde "cuánto cargaste" es una pregunta real.
@@ -34,7 +30,6 @@ function weightedItems(session: GymSession): { id: string; name: string }[] {
 }
 
 export function GymSessionCard({ session }: { session: GymSession }) {
-  const athlete = useAthleteId();
   const qc = useQueryClient();
   const { data: done } = useQuery(gymDoneQO());
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -42,7 +37,7 @@ export function GymSessionCard({ session }: { session: GymSession }) {
   // Del reloj vivo: con `todayISO()` en el render, una pestaña abierta desde
   // el lunes anterior guardaba la sesión en la fecha de ese lunes.
   const date = useToday();
-  const entry = done?.[athlete]?.[date];
+  const entry = done?.[date];
   // La entrada del día es una sola: si hoy quedó marcada otra sesión, esta no
   // está hecha (y marcarla la reemplaza, que es justo lo que uno querría).
   const isDone = entry?.code === session.code;
@@ -50,7 +45,7 @@ export function GymSessionCard({ session }: { session: GymSession }) {
 
   const mut = useMutation({
     mutationFn: (vars: { done: boolean; weights: Record<string, string> }) =>
-      postGymDone({ date, code: session.code, done: vars.done, weights: vars.weights }, athlete),
+      postGymDone({ date, code: session.code, done: vars.done, weights: vars.weights }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["gym-done"] }),
     onError: (e) => toast.error(`Error: ${e instanceof Error ? e.message : "no se pudo guardar"}`),
   });
@@ -90,10 +85,6 @@ export function GymSessionCard({ session }: { session: GymSession }) {
           }`}
         >
           {isDone ? "Hecha hoy ✓" : "Marcar hecha hoy"}
-          {/* Quién queda registrado. Sin login, el perfil activo es un toggle
-              fácil de pasar por alto: si el botón no lo dice, un descuido
-              guarda el entrenamiento en la cuenta de la otra persona. */}
-          <span className="ml-1 opacity-60">· {NOMBRE[athlete] ?? athlete}</span>
         </button>
       </div>
 
@@ -102,7 +93,7 @@ export function GymSessionCard({ session }: { session: GymSession }) {
           <h4 className="text-xs tracking-wide text-faint uppercase">Qué cargaste hoy</h4>
           <div className="mt-2 flex flex-col gap-1.5">
             {items.map((it) => {
-              const previo = lastWeightFor(done, athlete, it.id, date);
+              const previo = lastWeightFor(done, it.id, date);
               return (
                 <label key={it.id} className="flex items-center justify-between gap-3 text-sm">
                   <span className="text-muted">{it.name}</span>

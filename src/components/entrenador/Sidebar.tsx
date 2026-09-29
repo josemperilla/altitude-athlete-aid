@@ -1,8 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { MapPin, RefreshCw, Settings, Zap } from "lucide-react";
 import { useAthlete } from "@/hooks/use-athlete";
-import { useAthleteId } from "@/hooks/use-athlete-id";
-import { setActiveAthlete, type AthleteId } from "@/lib/athlete/store";
 import { READINESS_COLORS } from "@/lib/readiness";
 import { NAV_TABS } from "@/lib/navigation";
 import { ALTITUDE_LABEL } from "@/lib/config";
@@ -10,39 +8,8 @@ import { stateColor, stateLabel } from "@/lib/athlete-state";
 import { useUpdatePlan } from "@/hooks/use-update-plan";
 import { ThemeToggle } from "@/components/entrenador/ThemeToggle";
 
-const PROFILES: { id: AthleteId; label: string }[] = [
-  { id: "jose", label: "José" },
-  { id: "andrea", label: "Andrea" },
-];
-
-function ProfileSwitch() {
-  const athlete = useAthleteId();
-  return (
-    <div className="mt-3 grid grid-cols-2 gap-1 p-1 rounded bg-surface-2">
-      {PROFILES.map((p) => {
-        const active = p.id === athlete;
-        return (
-          <button
-            key={p.id}
-            type="button"
-            onClick={() => setActiveAthlete(p.id)}
-            aria-pressed={active}
-            className={
-              "px-2 py-1 rounded text-[11px] font-bold tracking-[0.08em] uppercase transition-colors " +
-              (active ? "bg-gold/10 text-gold" : "text-muted hover:text-fg")
-            }
-          >
-            {p.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 export function Sidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
-  const athlete = useAthleteId();
   const { readiness, hrv, rhr, athleteState } = useAthlete();
   const update = useUpdatePlan();
 
@@ -57,7 +24,6 @@ export function Sidebar() {
           <MapPin size={10} />
           {ALTITUDE_LABEL}
         </div>
-        <ProfileSwitch />
       </div>
 
       <Link to="/cuerpo" className="club-card block px-3 py-3">
@@ -153,22 +119,20 @@ export function Sidebar() {
           </Link>
           <ThemeToggle />
         </div>
-        {athlete === "jose" && (
-          <button
-            onClick={() => update.mutate()}
-            disabled={update.isPending}
-            className="btn-gold w-full flex items-center justify-center gap-2 text-sm"
-          >
-            {update.isPending ? (
-              <>
-                <RefreshCw size={14} className="animate-spin" />
-                Actualizando…
-              </>
-            ) : (
-              "Actualizar plan"
-            )}
-          </button>
-        )}
+        <button
+          onClick={() => update.mutate()}
+          disabled={update.isPending}
+          className="btn-gold w-full flex items-center justify-center gap-2 text-sm"
+        >
+          {update.isPending ? (
+            <>
+              <RefreshCw size={14} className="animate-spin" />
+              Actualizando…
+            </>
+          ) : (
+            "Actualizar plan"
+          )}
+        </button>
       </div>
     </aside>
   );

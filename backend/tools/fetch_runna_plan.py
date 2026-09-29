@@ -29,6 +29,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from paths import data_file
+from runna_checks import km_in
 
 ROOT = Path(__file__).parent.parent
 load_dotenv(ROOT / ".env")
@@ -38,7 +39,7 @@ OUTPUT = data_file("runna_plan.json")
 # UID: UPCOMING_PLAN_WORKOUT-<planId>_plan_week_<N>_<KIND>_<i>
 _UID_RE = re.compile(r"_plan_week_(\d+)_([A-Z][A-Z_]*?)_\d+$")
 # SUMMARY: "🏃 1km Repeats • 10km" / "🏋️ Strong Foundation • 55m - 65m"
-_KM_RE = re.compile(r"(\d+(?:\.\d+)?)\s*km\b", re.I)
+RUN_EMOJI = "🏃"
 
 
 def _unfold(text: str) -> str:
@@ -85,17 +86,21 @@ def parse_ics(text: str) -> list[dict]:
             continue
         summary = ev.get("SUMMARY", "")
         title, _, measure = summary.partition("•")
-        km = _KM_RE.search(measure)
+        km = km_in(measure)
+        # Carrera si lo dice el emoji o trae km. Un rodaje por tiempo ("• 40m")
+        # no trae km pero sí el 🏃; clasificarlo como fuerza lo sacaba del volumen
+        # semanal y de la regla de sesión pico.
+        is_run = summary.lstrip().startswith(RUN_EMOJI) or km is not None
         # La descripción termina con un enlace a la app; no aporta nada al plan.
         description = ev.get("DESCRIPTION", "").split("📲")[0].strip()
         sessions.append({
             "date": day,
             "week": int(m.group(1)),
             "kind": m.group(2),
-            "sport": "running" if km else "strength",
+            "sport": "running" if is_run else "strength",
             # Sin el emoji del principio: "1km Repeats".
             "name": re.sub(r"^[^\w]+", "", title).strip(),
-            "distance_km": float(km.group(1)) if km else None,
+            "distance_km": km,
             "description": description,
         })
     return sorted(sessions, key=lambda s: (s["date"], s["kind"]))

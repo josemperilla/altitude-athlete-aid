@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { planQO } from "@/lib/api";
-import { useAthleteId } from "@/hooks/use-athlete-id";
 import type { PlanSession, PlanWeek } from "@/lib/schemas";
 import { dedupeSessions } from "@/lib/session-dates";
 import { deriveSport } from "@/lib/spotify-intensity";
@@ -23,8 +22,7 @@ export const Route = createFileRoute("/plan")({
 });
 
 function PlanPage() {
-  const athlete = useAthleteId();
-  const { data, isLoading, error } = useQuery(planQO(athlete));
+  const { data, isLoading, error } = useQuery(planQO());
   const [showWeeklyPanel, setShowWeeklyPanel] = useState(false);
 
   // El plan puede traer la misma sesión más de una vez (ver dedupeSessions).
@@ -78,14 +76,7 @@ function PlanPage() {
         error={error}
         isEmpty={weeks.length === 0}
         loadingMessage="Cargando plan…"
-        // "Pulsa Actualizar plan" es un callejón sin salida para quien no tiene
-        // ese botón: solo aparece con el perfil de Jose, porque /update corre
-        // contra SU Garmin. A Andrea hay que mandarla donde sí hay algo suyo.
-        emptyMessage={
-          athlete === "jose"
-            ? "Sin semanas planificadas todavía. Pulsa “Actualizar plan”."
-            : "Este calendario sale de Garmin y todavía no hay uno conectado a tu perfil. El bloque de fuerza, que sí es compartido, está en Gimnasio."
-        }
+        emptyMessage="Sin semanas planificadas todavía. Pulsa “Actualizar plan”."
       >
         <div className="flex flex-col gap-8 mt-6">
           {weeks.map((w, i) => (

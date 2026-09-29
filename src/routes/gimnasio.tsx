@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { gymDoneQO, gymQO, type GymDoneMap } from "@/lib/api";
-import { useAthleteId } from "@/hooks/use-athlete-id";
 import { useToday } from "@/hooks/use-today";
 import { diaCorto, semanaVigente, type SemanaGym } from "@/lib/gym/weeks";
 import { PageShell } from "@/components/entrenador/PageShell";
@@ -29,18 +28,8 @@ export const Route = createFileRoute("/gimnasio")({
 const BLOQUE = ["A", "B", "M"];
 const CASA = ["C1", "C2"];
 
-/** Los dos perfiles, en el orden en que se muestran en la franja conjunta. */
-const ATLETAS: { id: string; label: string }[] = [
-  { id: "jose", label: "José" },
-  { id: "andrea", label: "Andrea" },
-];
-
-/**
- * La vista conjunta: quién marcó qué, en las sesiones agendadas de esta semana.
- * Es lo único de la página que mira a los DOS atletas a la vez — por eso lee
- * `gymDoneQO()` sin parámetro (el backend siempre devuelve los dos).
- */
-function FranjaConjunta({
+/** Las sesiones agendadas de esta semana y cuáles ya quedaron marcadas. */
+function FranjaSemana({
   semana,
   done,
   hoy,
@@ -53,41 +42,35 @@ function FranjaConjunta({
 
   return (
     <div className="club-card flex flex-col gap-2 p-3">
-      <h2 className="eyebrow">Esta semana, los dos</h2>
+      <h2 className="eyebrow">Esta semana</h2>
       <div className="flex flex-col gap-1.5">
-        {semana.sessions.map((s) => (
-          <div key={s.date} className="flex items-center justify-between gap-3 text-sm">
-            <span className={s.date === hoy ? "text-gold" : "text-muted"}>
-              <span className="mono">{diaCorto(s.date)}</span> · Sesión {s.session}
-            </span>
-            <span className="flex shrink-0 gap-1.5">
-              {ATLETAS.map((a) => {
-                const hecha = done?.[a.id]?.[s.date]?.code === s.session;
-                return (
-                  <span
-                    key={a.id}
-                    className={`rounded border px-2 py-0.5 text-xs ${
-                      hecha ? "border-ok/40 bg-ok/10 text-ok" : "border-border text-faint"
-                    }`}
-                  >
-                    {a.label} {hecha ? "✓" : "–"}
-                  </span>
-                );
-              })}
-            </span>
-          </div>
-        ))}
+        {semana.sessions.map((s) => {
+          const hecha = done?.[s.date]?.code === s.session;
+          return (
+            <div key={s.date} className="flex items-center justify-between gap-3 text-sm">
+              <span className={s.date === hoy ? "text-gold" : "text-muted"}>
+                <span className="mono">{diaCorto(s.date)}</span> · Sesión {s.session}
+              </span>
+              <span
+                className={`shrink-0 rounded border px-2 py-0.5 text-xs ${
+                  hecha ? "border-ok/40 bg-ok/10 text-ok" : "border-border text-faint"
+                }`}
+              >
+                {hecha ? "Hecha ✓" : "–"}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
 function GimnasioPage() {
-  const athlete = useAthleteId();
   // El día se lee del reloj vivo, no del render: la app se queda abierta toda
   // la semana en el teléfono (ver useToday).
   const hoy = useToday();
-  const { data, isLoading, error } = useQuery(gymQO(athlete));
+  const { data, isLoading, error } = useQuery(gymQO());
   const { data: done } = useQuery(gymDoneQO());
   const [showPick, setShowPick] = useState(false);
   const [picked, setPicked] = useState<string | null>(null);
@@ -114,7 +97,7 @@ function GimnasioPage() {
         emptyMessage="Sin sesiones de fuerza disponibles."
       >
         <div className="gym mt-6 flex flex-col gap-2">
-          {semana && <FranjaConjunta semana={semana} done={done} hoy={hoy} />}
+          {semana && <FranjaSemana semana={semana} done={done} hoy={hoy} />}
 
           {bloque.length > 0 && (
             <>

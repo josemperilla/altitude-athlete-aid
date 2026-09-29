@@ -21,7 +21,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 import strength_plan
-from athletes import DEFAULT_ATHLETE, RACES
 from paths import data_file
 
 ROOT = Path(__file__).parent.parent
@@ -116,30 +115,20 @@ def build_calendar(garmin: dict, plan: dict) -> list[dict]:
     return [by_date[d] for d in sorted(by_date)]
 
 
-def build(athlete: str = DEFAULT_ATHLETE) -> dict:
-    """El plan de gimnasio completo, listo para servir.
-
-    La fuerza es compartida, pero el calendario que se mezcla aquí sale de
-    garmin_data.json y augmented_plan.json, que son SOLO de Jose. Para un
-    atleta sin Garmin (Andrea) calendar/athlete_state/week_summary van vacíos
-    a propósito: la guía de fuerza sirve igual y el frontend ya tiene estado
-    vacío para lo demás.
+def build() -> dict:
+    """El plan de gimnasio completo, listo para servir: el bloque de fuerza más
+    el calendario de la semana, que mezcla garmin_data.json y augmented_plan.json.
 
     Antes esto escribía web/public/plan.json y la app de gimnasio lo leía como
     archivo estático. Ahora lo sirve el endpoint /gym de api.py, así que el plan
     se refresca al correr run_weekly.sh sin necesidad de redesplegar el frontend.
     """
-    out = strength_plan.as_dict(athlete)
+    out = strength_plan.as_dict()
     out["generated_at"] = datetime.now().isoformat(timespec="seconds")
 
-    if not RACES[athlete]["has_garmin"]:
-        out["calendar"] = []
-        out["athlete_state"] = None
-        out["week_summary"] = None
-        return out
-
     garmin = _read(GARMIN_DATA)
-    plan = _read(PLAN_DATA)
+    # Sin plan todavía (nunca se corrió /update) la guía de fuerza sirve igual.
+    plan = _read(PLAN_DATA) or {}
     out["calendar"] = build_calendar(garmin, plan)
     out["athlete_state"] = plan.get("athlete_state")
     out["week_summary"] = plan.get("week_summary")

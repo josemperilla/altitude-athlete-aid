@@ -16,8 +16,8 @@ const bloque: unknown[] = [
     end: "2026-10-04",
     sessions: [{ date: "2026-09-28", session: "M" }],
   },
-  // La semana puente: existe y viene VACÍA a propósito (José recuperándose
-  // del medio del 4-oct, Andrea en taper de Chicago del 11-oct).
+  // La semana puente: existe y viene VACÍA a propósito (transición después
+  // de una carrera).
   { start: "2026-10-05", end: "2026-10-11", sessions: [] },
 ];
 

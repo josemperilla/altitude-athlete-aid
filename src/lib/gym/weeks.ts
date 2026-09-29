@@ -45,9 +45,8 @@ export function parseSemana(raw: unknown): SemanaGym | null {
  * La semana que contiene hoy; si el bloque aún no arranca, la siguiente que
  * quede por delante; si ya terminó, ninguna.
  *
- * Ojo: la semana del 5 al 11 de octubre existe y viene con `sessions: []` a
- * propósito (Jose recuperándose del medio maratón, Andrea en taper de Chicago).
- * Devolverla con cero sesiones NO es lo mismo que no encontrarla — quien
+ * Ojo: una semana puede existir con `sessions: []` a propósito (la de
+ * transición después de la carrera). Devolverla con cero sesiones NO es lo mismo que no encontrarla — quien
  * consume esto tiene que distinguir los dos casos.
  */
 export function semanaVigente(weeks: unknown[] | undefined, hoy: string): SemanaGym | null {

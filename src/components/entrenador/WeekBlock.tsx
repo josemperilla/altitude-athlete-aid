@@ -8,7 +8,6 @@ import { AdjustmentBadge, AlternativeTag } from "@/components/entrenador/Session
 import { getCreatedPlaylist, isSpotifyConnected, startSpotifyLogin } from "@/lib/spotify";
 import { usePlaylistMutation } from "@/hooks/use-playlist-mutation";
 import { garminQO } from "@/lib/api";
-import { useAthleteId } from "@/hooks/use-athlete-id";
 import type { GarminData, PlanSession, PlanWeek } from "@/lib/schemas";
 import {
   inRange,
@@ -193,8 +192,7 @@ function PlaylistButton({ session }: { session: PlanSession }) {
   const existing = getCreatedPlaylist(key);
   // Leemos el garmin cacheado para que el ajuste por fatiga (#8) tenga datos.
   const queryClient = useQueryClient();
-  const athlete = useAthleteId();
-  const garmin = queryClient.getQueryData<GarminData>(garminQO(athlete).queryKey) ?? undefined;
+  const garmin = queryClient.getQueryData<GarminData>(garminQO().queryKey) ?? undefined;
 
   const mut = usePlaylistMutation(session, key, garmin);
 

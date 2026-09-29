@@ -14,7 +14,6 @@ import {
 import { gymQO, healthQO, insightsQO, planQO } from "@/lib/api";
 import type { Insight, PlanSession, PlanWeek } from "@/lib/schemas";
 import { useAthlete } from "@/hooks/use-athlete";
-import { useAthleteId } from "@/hooks/use-athlete-id";
 import { useToday } from "@/hooks/use-today";
 import { useUpdatePlan } from "@/hooks/use-update-plan";
 import {
@@ -62,9 +61,8 @@ function hashStr(s: string): number {
 }
 
 function HoyPage() {
-  const athlete = useAthleteId();
   const { plan, garmin, readiness, athleteState, isLoading, error } = useAthlete();
-  const { data: gym } = useQuery(gymQO(athlete));
+  const { data: gym } = useQuery(gymQO());
   const { data: insights } = useQuery(insightsQO());
   const { data: health } = useQuery(healthQO());
   const update = useUpdatePlan();
@@ -435,19 +433,15 @@ function HoyPage() {
 
         {/* Acciones */}
         <section className="mt-8 pb-4 flex flex-wrap gap-3">
-          {/* Igual que el de la barra lateral: /update corre el fetch de Garmin
-              y el generador de plan de Jose. Bajo otro perfil no hace nada útil. */}
-          {athlete === "jose" && (
-            <button
-              type="button"
-              onClick={() => update.mutate()}
-              disabled={update.isPending}
-              className="btn-gold flex items-center gap-2 text-xs"
-            >
-              <RefreshCw size={13} className={update.isPending ? "animate-spin" : undefined} />
-              {update.isPending ? "Actualizando…" : "Actualizar plan"}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => update.mutate()}
+            disabled={update.isPending}
+            className="btn-gold flex items-center gap-2 text-xs"
+          >
+            <RefreshCw size={13} className={update.isPending ? "animate-spin" : undefined} />
+            {update.isPending ? "Actualizando…" : "Actualizar plan"}
+          </button>
           <Link to="/ajustes" className="btn-ghost flex items-center gap-2 text-xs">
             <Music size={13} /> Ajustes y Spotify
           </Link>

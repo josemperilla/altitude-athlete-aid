@@ -18,7 +18,7 @@ from datetime import date
 import anthropic
 from dotenv import load_dotenv
 
-from athletes import DEFAULT_ATHLETE, body_summary
+from athletes import body_summary
 from paths import data_file
 
 ROOT = Path(__file__).parent.parent
@@ -144,7 +144,7 @@ PLANNED CYCLING SESSIONS (adjustable):
     # de impacto al correr escala con el peso corporal, no con la masa magra. Entra
     # como contexto del razonamiento, no como algo que repetir — la regla 5 del
     # system prompt prohíbe devolver las cifras, que es lo que el atleta lee.
-    body = body_summary(DEFAULT_ATHLETE)
+    body = body_summary()
 
     user_msg = f"""Today: {date.today().isoformat()}
 Altitude context: Bogotá (~2,600m)

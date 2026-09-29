@@ -16,8 +16,8 @@ def test_diagnosis_legado_migra_a_jose(make_client, tmp_path):
     nuevo = tmp_path / "diagnosis_jose.json"
     assert nuevo.exists(), "la migración debió crear diagnosis_jose.json"
     assert json.loads(nuevo.read_text(encoding="utf-8")) == legado
-    # Y lo sirve el endpoint, bajo su atleta.
-    assert client.get("/diagnosis?athlete=jose").json() == legado
+    # Y lo sirve el endpoint.
+    assert client.get("/diagnosis").json() == legado
 
 
 def test_no_pisa_un_diagnosis_jose_existente(make_client, tmp_path):

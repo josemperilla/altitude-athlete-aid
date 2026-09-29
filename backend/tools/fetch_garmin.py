@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 import garminconnect
 from garminconnect import GarminConnectTooManyRequestsError
 
+import runna_checks
 from paths import data_file
 
 ROOT = Path(__file__).parent.parent
@@ -288,10 +289,7 @@ def main():
     # días solo hacen falta para la base de la regla de sesión pico.
     cutoff_21 = (date.today() - timedelta(days=21)).isoformat()
     activities = [a for a in activities_30d if a["date"] >= cutoff_21]
-    longest_run_30d_km = max(
-        (round((a.get("distance_m") or 0) / 1000, 1) for a in activities_30d if "run" in a["type"].lower()),
-        default=None,
-    ) or None
+    longest_run_30d_km = runna_checks.longest_run_km(activities_30d)
     print(f"  → {len(activities)} activity(ies) en 21 días; carrera más larga en 30: {longest_run_30d_km or '—'} km")
 
     print("Fetching scheduled workouts (Runna plan, próximos 60 días)...")

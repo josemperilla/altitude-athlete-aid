@@ -1,89 +1,55 @@
-"""Aislamiento entre José y Andrea a nivel HTTP, y el latido de /health.
+"""La API de un solo atleta (José) y el latido de /health.
 
-Mismas pesas (el gimnasio es conjunto), distintas carreras: lo único que
-cambia entre ?athlete=jose y ?athlete=andrea es `race` y el calendario de
-carrera, que es de José y no debe filtrarse a Andrea.
+Hasta el 29-sep-2026 la app tuvo dos perfiles y cada ruta llevaba ?athlete=.
+Se retiró el segundo: las rutas ya no lo leen, y un frontend viejo que lo siga
+mandando tiene que recibir lo mismo que uno nuevo.
 """
 import json
 
 
-def test_gym_fuerza_compartida_y_carrera_distinta(make_client, tmp_path):
+def test_gym_trae_la_carrera_y_el_calendario(make_client, tmp_path):
     client = make_client(tmp_path)
-    jose = client.get("/gym?athlete=jose").json()
-    andrea = client.get("/gym?athlete=andrea").json()
+    gym = client.get("/gym").json()
 
-    assert jose["race"]["name"] == "Medio maratón en Bogotá"
-    assert jose["race"]["race_date"] == "2026-11-29"
+    assert gym["race"]["name"] == "Medio maratón en Bogotá"
+    assert gym["race"]["race_date"] == "2026-11-29"
     # Fechas serializadas: si as_dict dejara pasar un `date`, el JSON no saldría.
-    assert jose["race"]["block_start"] == "2026-09-28"
-    assert andrea["race"]["name"] == "Maratón de Chicago"
-    assert andrea["race"]["race_date"] == "2026-10-11"
-    # El gimnasio es conjunto: mismas sesiones, semanas y reglas para los dos.
-    assert andrea["sessions"] == jose["sessions"]
-    assert andrea["weeks"] == jose["weeks"]
-    assert andrea["rules"] == jose["rules"]
+    assert gym["race"]["block_start"] == "2026-09-28"
+    assert gym["race_date"] == gym["race"]["race_date"]
+    # Sin plan ni Garmin en disco el calendario existe, vacío; la guía de fuerza sirve igual.
+    assert isinstance(gym["calendar"], list)
+    assert "A" in gym["sessions"]
 
 
-def test_gym_andrea_sin_calendario_de_carrera(make_client, tmp_path):
+def test_un_athlete_viejo_en_la_url_se_ignora(make_client, tmp_path):
     client = make_client(tmp_path)
-    andrea = client.get("/gym?athlete=andrea").json()
-    jose = client.get("/gym?athlete=jose").json()
-
-    assert andrea["calendar"] == []
-    assert andrea["athlete_state"] is None
-    # A José el calendario se le arma como lista aunque no haya datos locales;
-    # la clave existe para los dos, vacía para quien no tiene Garmin.
-    assert isinstance(jose["calendar"], list)
+    assert client.get("/gym?athlete=otro").json()["race"] == client.get("/gym").json()["race"]
+    client.post("/gym/done?athlete=otro", json={"date": "2026-09-08", "code": "A"})
+    # El registro cae en el único archivo que hay, el de José.
+    assert client.get("/gym/done").json()["2026-09-08"]["code"] == "A"
+    assert (tmp_path / "gym_done_jose.json").exists()
 
 
-def test_garmin_y_plan_de_andrea_vacio_con_200(make_client, tmp_path):
+def test_gym_done_guarda_pesos_y_devuelve_el_mapa_por_fecha(make_client, tmp_path):
     client = make_client(tmp_path)
-    for path in ("/garmin?athlete=andrea", "/plan?athlete=andrea"):
-        response = client.get(path)
-        assert response.status_code == 200, path
-        assert response.json() == {}
-
-
-def test_gym_done_de_un_atleta_no_pisa_al_otro(make_client, tmp_path):
-    client = make_client(tmp_path)
+    assert client.get("/gym/done").json() == {}
 
     response = client.post(
-        "/gym/done?athlete=andrea", json={"date": "2026-09-08", "code": "A"}
+        "/gym/done", json={"date": "2026-09-07", "code": "A", "weights": {"squat": "80kg"}}
     )
     assert response.status_code == 200
-    assert response.json()["2026-09-08"]["code"] == "A"
-
-    joint = client.get("/gym/done").json()
-    assert joint["andrea"]["2026-09-08"]["code"] == "A"
-    assert joint["jose"] == {}
-
-    client.post(
-        "/gym/done?athlete=jose",
-        json={"date": "2026-09-07", "code": "A", "weights": {"squat": "80kg"}},
-    )
-    joint = client.get("/gym/done").json()
-    assert joint["jose"]["2026-09-07"]["weights"]["squat"] == "80kg"
-    # El registro de Andrea quedó intacto tras el POST de José.
-    assert joint["andrea"]["2026-09-08"]["code"] == "A"
+    assert client.get("/gym/done").json()["2026-09-07"]["weights"]["squat"] == "80kg"
 
 
 def test_gym_done_con_done_false_borra_solo_esa_fecha(make_client, tmp_path):
     client = make_client(tmp_path)
-    client.post("/gym/done?athlete=andrea", json={"date": "2026-09-08", "code": "A"})
-    client.post("/gym/done?athlete=andrea", json={"date": "2026-09-10", "code": "B"})
+    client.post("/gym/done", json={"date": "2026-09-08", "code": "A"})
+    client.post("/gym/done", json={"date": "2026-09-10", "code": "B"})
 
-    response = client.post(
-        "/gym/done?athlete=andrea", json={"date": "2026-09-08", "code": "A", "done": False}
-    )
+    response = client.post("/gym/done", json={"date": "2026-09-08", "code": "A", "done": False})
 
     assert "2026-09-08" not in response.json()
     assert "2026-09-10" in response.json()
-
-
-def test_get_gym_done_siempre_devuelve_las_dos_claves(make_client, tmp_path):
-    client = make_client(tmp_path)
-    joint = client.get("/gym/done").json()
-    assert joint == {"jose": {}, "andrea": {}}
 
 
 def test_health_sin_latido_es_null_con_200(make_client, tmp_path):

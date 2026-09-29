@@ -1,6 +1,6 @@
 // Tema visual: oscuro (por defecto, como siempre) o claro.
 //
-// Mismo patrón que src/lib/athlete/store.ts — localStorage + pub/sub — porque
+// Mismo patrón que src/lib/spotify/store.ts — localStorage + pub/sub — porque
 // el problema es idéntico: un valor por navegador que React necesita oír
 // cuando cambia. El <html> lleva data-theme, que styles.css usa para
 // sobreescribir los tokens; un script inline en el head lo fija antes del

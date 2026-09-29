@@ -14,8 +14,7 @@ Consumidores:
 
 Bloque: 7-sep-2026 → 29-nov-2026. Hasta el 27-sep apuntaba al medio del 4-oct
 (W12–W14); el 29-sep José cambió de carrera al 29-nov en Bogotá y el calendario
-siguió con las semanas R2–R10, alineadas con el plan nuevo de Runna. Andrea corre
-Chicago el 11-oct: el calendario con fechas es solo de José.
+siguió con las semanas R2–R10, alineadas con el plan nuevo de Runna.
 Revisado el 2-sep-2026 contra una propuesta previa de Claude; el CHANGELOG de
 abajo recoge en qué se apartó de ella (el documento original ya no está en el repo).
 
@@ -34,13 +33,13 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 
-from athletes import DEFAULT_ATHLETE, RACES
+from athletes import RACE
 
-# La carrera hacia la que apunta el bloque, fija a propósito y no leída de
-# athletes.RACES: si la carrera vuelve a cambiar, las fechas de WEEKS no se
-# mueven solas, y que este número tampoco lo haga obliga a reescribirlas juntas.
-# La carrera vigente de cada atleta vive en athletes.RACES (as_dict la expone en `race`).
-RACE_DATE = date(2026, 11, 29)
+# Una sola fecha de carrera en todo el backend: la de athletes.RACE. Las fechas
+# de WEEKS no se mueven solas si la carrera cambia; test_strength_plan falla en
+# ese caso (la semana de carrera deja de caer en los 7 días previos) y obliga a
+# reescribir el bloque junto con la fecha.
+RACE_DATE = RACE["race_date"]
 
 # Días de la semana con gimnasio. generate_plan.py lo usa para bloquear ciclismo.
 GYM_WEEKDAYS = {0: "A", 2: "B"}  # 0 = lunes, 2 = miércoles
@@ -556,7 +555,7 @@ WEEKS = [
     # más kilómetros (R5–R7, 51–57 km) la fuerza se mantiene pesada pero corta:
     # misma intensidad, menos series, que es lo que conserva la ganancia sin
     # sumar fatiga. Última pesada a 13 días de la carrera, igual que en el bloque
-    # anterior. Andrea corre Chicago el 11-oct: este calendario es de José.
+    # anterior.
     {
         "runna_week": "R2",
         "start": date(2026, 10, 5),
@@ -789,8 +788,7 @@ RULES = [
      "Los descansos largos entre series no son pereza, son parte de la prescripción."),
     ("La última sesión pesada es el lunes 16 de noviembre.",
      "Trece días antes del medio del 29-nov. La semana de carrera solo lleva el "
-     "mantenimiento de 25 minutos del lunes. Andrea corre Chicago el 11 de octubre: "
-     "la semana del 5 al 11 es su taper y no debe cargar pesado."),
+     "mantenimiento de 25 minutos del lunes."),
 ]
 
 
@@ -880,19 +878,17 @@ def _serialize_session(code: str) -> dict:
     }
 
 
-def as_dict(athlete: str = DEFAULT_ATHLETE) -> dict:
+def as_dict() -> dict:
     """Plan completo serializable — lo consume export_gym_plan.py y la app web.
 
-    Sesiones, semanas y reglas son compartidas: el gimnasio es conjunto y no
-    se filtra nada por atleta. Lo único que cambia es `race`, con la carrera
-    real del atleta que se pida (`race_date` superior es la del bloque).
+    `race_date` superior y `race.race_date` son la misma fecha; el primero
+    se conserva porque el frontend ya lo lee.
     """
     return {
         "race_date": RACE_DATE.isoformat(),
         "race": {
             k: (v.isoformat() if isinstance(v, date) else v)
-            for k, v in RACES[athlete].items()
-            if k != "has_garmin"
+            for k, v in RACE.items()
         },
         "sessions": {code: _serialize_session(code) for code in SESSIONS},
         "weeks": [

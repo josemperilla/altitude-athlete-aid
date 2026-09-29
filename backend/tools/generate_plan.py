@@ -30,7 +30,7 @@ from dotenv import load_dotenv
 import build_cycling_workout
 import runna_checks
 import strength_plan
-from athletes import DEFAULT_ATHLETE, RACES
+from athletes import RACE
 from session_intensity import summarise_session
 from usage_log import log_usage
 
@@ -189,11 +189,21 @@ def runna_context(garmin: dict, runna_plan: dict) -> dict:
     """Fecha de carrera, banderas de pico y ciclo completo, calculados una vez y
     usados dos: para el prompt y para validar lo que devuelve el modelo.
 
-    La fecha de carrera sale del evento RACE del feed de Runna si está (es la que
-    Runna de verdad planifica) y si no, de athletes.py.
+    La fecha de carrera es una sola: la de athletes.RACE. El evento RACE del feed
+    solo se usa para comprobar que el feed es de este ciclo: si no coincide (el
+    feed se cayó y quedó el runna_plan.json de un plan anterior, o Runna apunta a
+    otra carrera), se avisa y el feed se ignora entero, en vez de mezclar la
+    carrera de un plan con las sesiones de otro.
     """
-    race_iso = runna_plan.get("race_date")
-    race_date = date.fromisoformat(race_iso) if race_iso else RACES[DEFAULT_ATHLETE]["race_date"]
+    race_date = RACE["race_date"]
+    feed_race = runna_plan.get("race_date")
+    if runna_plan and feed_race != race_date.isoformat():
+        print(
+            f"⚠ El feed de Runna apunta a la carrera del {feed_race or '—'} y athletes.py a la del "
+            f"{race_date.isoformat()}: se ignora el feed. Si cambiaste de carrera, actualiza athletes.py.",
+            file=sys.stderr,
+        )
+        runna_plan = {}
     # El feed ve el ciclo entero; sin él, las ~2 semanas que trae Garmin.
     horizon = runna_plan.get("sessions") or garmin.get("weekly_plan", [])
     flags = runna_checks.spike_flags(horizon, runna_checks.longest_recent_run_km(garmin), race_date)
@@ -272,7 +282,7 @@ def _summarise_garmin(garmin: dict, ctx: dict) -> str:
 
     longest = runna_checks.longest_recent_run_km(garmin)
     race_date = ctx["race_date"]
-    race = RACES[DEFAULT_ATHLETE]
+    race = RACE
     days_left = (race_date - date.today()).days
     race_str = (
         f"{race['name']} — {race_date.isoformat()} en {race['race_location']} "
@@ -416,6 +426,13 @@ def save_outputs(plan: dict, garmin: dict) -> None:
     guardar — ver build_cycling_workout.py.
     """
     hr_zones = garmin.get("hr_zones", {})
+    # Los workouts de ejecuciones anteriores se borran: upload_workouts sube todo
+    # lo que haya en la carpeta, y un archivo viejo marcado como alternativa
+    # llegaría a Garmin aunque ese día Runna ya tenga series.
+    WORKOUTS_DIR.mkdir(parents=True, exist_ok=True)
+    for old in WORKOUTS_DIR.glob("*_cycling.json"):
+        old.unlink()
+
     for session in plan.get("cycling_sessions", []):
         built = build_cycling_workout.build(session, hr_zones)
         session["name"] = built["name"]

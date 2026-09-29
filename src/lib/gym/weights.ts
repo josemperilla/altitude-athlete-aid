@@ -2,8 +2,7 @@
 //
 // Registrar el peso solo paga si sirve para progresar, y arrancar cada sesión
 // en blanco obliga a acordarse de lo del lunes pasado. El dato ya está: el
-// backend devuelve TODAS las fechas marcadas del atleta, así que basta con
-// mirar hacia atrás.
+// backend devuelve TODAS las fechas marcadas, así que basta con mirar hacia atrás.
 
 import type { GymDoneMap } from "@/lib/schemas";
 
@@ -16,12 +15,10 @@ import type { GymDoneMap } from "@/lib/schemas";
  * Se recorre por fecha descendente, que con ISO es orden lexicográfico.
  */
 export function lastWeightFor(
-  done: GymDoneMap | undefined,
-  athlete: string,
+  entries: GymDoneMap | undefined,
   exerciseId: string,
   hoy: string,
 ): string | undefined {
-  const entries = done?.[athlete];
   if (!entries) return undefined;
   const fechas = Object.keys(entries)
     .filter((d) => d < hoy)

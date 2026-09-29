@@ -44,8 +44,10 @@ def test_19_km_despues_de_17_es_pico():
     sessions = [run("2026-11-08", 17, week=6), run("2026-11-15", 19)]
     flags = runna_checks.spike_flags(sessions, base_km=15, race_date=RACE)
     # 17 sobre 15 también pasa del 10 %: la base arranca en la historia real.
-    assert flags["2026-11-08"]["pct"] == 13
-    assert flags["2026-11-15"] == {"km": 19, "base_km": 17, "pct": 12}
+    assert flags["2026-11-08"] == {"km": 17, "base_km": 15, "cap_km": 16.5, "pct": 13}
+    # El 19 se mide contra los 16,5 que de verdad se corren, no contra los 17
+    # recortados: si no, el segundo salto de la progresión quedaba escondido.
+    assert flags["2026-11-15"] == {"km": 19, "base_km": 16.5, "cap_km": 18, "pct": 15}
 
 
 def test_subir_10_por_ciento_o_menos_no_es_pico():
@@ -96,6 +98,25 @@ def test_el_pico_que_el_modelo_olvida_lo_completa_la_regla():
     assert out[0]["source"] == "regla"
     # 17 × 1,1 = 18,7 → se baja al medio kilómetro: 18,5.
     assert out[0]["change"].startswith("Correr 18,5 km en vez de 19 km")
+
+
+def test_un_ajuste_del_modelo_en_dia_de_pico_no_borra_el_recorte():
+    sessions = [run("2026-11-15", 19)]
+    flags = {"2026-11-15": {"km": 19, "base_km": 17, "cap_km": 18.5, "pct": 12}}
+    raw = [{"date": "2026-11-15", "verdict": "ajustar", "change": "Techo de 160 bpm.", "rationale": "Altitud."}]
+    out = runna_checks.validate_adjustments(raw, sessions, RACE, flags)
+    assert out[0]["change"].startswith("Correr 18,5 km en vez de 19 km")
+    assert out[0]["change"].endswith("Además: Techo de 160 bpm.")
+    assert out[0]["source"] == "regla"
+
+
+def test_cambiar_a_facil_en_dia_de_pico_queda_con_tope_de_km():
+    sessions = [run("2026-11-15", 19)]
+    flags = {"2026-11-15": {"km": 19, "base_km": 17, "cap_km": 18.5, "pct": 12}}
+    raw = [{"date": "2026-11-15", "verdict": "cambiar_a_facil", "change": "Rodaje fácil Z1.", "rationale": "HRV bajo."}]
+    out = runna_checks.validate_adjustments(raw, sessions, RACE, flags)
+    assert out[0]["verdict"] == "cambiar_a_facil"
+    assert out[0]["change"] == "Rodaje fácil Z1. Máximo 18,5 km."
 
 
 def test_en_semana_de_carrera_no_hay_ajustes_ni_siquiera_por_regla():
@@ -187,6 +208,9 @@ def test_ciclismo_en_dia_de_rodaje_facil_queda_como_alternativa():
     assert dropped == []
     assert kept[0]["alternative_to_easy_run"] is True
     assert kept[0]["alternative_to"] == "8km Easy Run"
+    # 60 min de bici para un rodaje de ~48 min (8 km × 6): se encaja en 1–1,3×.
+    assert kept[0]["duration_min"] == 60
+
     # La alternativa a un rodaje fácil no puede ser la subida en Z2.
     assert kept[0]["type"] == "ciclorruta_en_plano"
     # El rodaje sigue ahí: la función no toca las sesiones de Runna.
@@ -209,3 +233,25 @@ def test_ciclismo_en_dia_libre_no_es_alternativa():
     kept, _ = runna_checks.reconcile_cycling([_cycling("2026-10-10")], [])
     assert kept[0]["alternative_to_easy_run"] is False
     assert kept[0]["type"] == "subida_a_patios"
+
+
+def test_la_alternativa_no_puede_durar_el_triple_del_rodaje():
+    sessions = [{"date": "2026-10-09", "sport": "running", "name": "5km Easy Run"}]
+    c = {"date": "2026-10-09", "type": "subida_a_patios", "duration_min": 110, "rationale": ""}
+    kept, _ = runna_checks.reconcile_cycling([c], sessions)
+    # 5 km × 6 min = 30 min de rodaje → la bici va entre 30 y 39 min.
+    assert kept[0]["duration_min"] == 39
+
+
+def test_rodaje_por_tiempo_en_el_feed_cuenta_como_carrera():
+    feed = (
+        "BEGIN:VEVENT\r\nUID:UPCOMING_PLAN_WORKOUT-abc_plan_week_2_EASY_RUN_0\r\n"
+        "DTSTART:20261006\r\nSUMMARY:🏃 Easy Run • 40m - 45m\r\nEND:VEVENT\r\n"
+        "BEGIN:VEVENT\r\nUID:UPCOMING_PLAN_WORKOUT-abc_plan_week_2_EASY_RUN_1\r\n"
+        "DTSTART:20261009\r\nSUMMARY:🏃 Easy Run • 10,5km\r\nEND:VEVENT\r\n"
+    )
+    sessions = fetch_runna_plan.parse_ics(feed)
+    assert [s["sport"] for s in sessions] == ["running", "running"]
+    assert sessions[0]["distance_km"] is None
+    # Coma decimal: la misma lectura de km que el resto del backend.
+    assert sessions[1]["distance_km"] == 10.5

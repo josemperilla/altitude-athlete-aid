@@ -21,9 +21,22 @@ from datetime import date
 
 SPIKE_THRESHOLD = 0.10
 VERDICTS = ("ajustar", "cambiar_a_facil")
+# La bici como alternativa a un rodaje: entre 1 y 1,3 veces su duración (por
+# minuto carga menos que correr, así que un poco más larga equivale, no suma).
+ALT_MIN_FACTOR, ALT_MAX_FACTOR = 1.0, 1.3
+# Ritmo de respaldo para estimar la duración de un rodaje sin pasos en Garmin
+# (~6 min/km, el mismo que usa session_intensity).
+EASY_MIN_PER_KM = 6
 
-# Runna escribe la distancia en el nombre: "W12 Sun Long Run - 19km Block Long Run (19km)".
-_KM_RE = re.compile(r"(\d+(?:[.,]\d+)?)\s*km\b", re.I)
+# Runna escribe la distancia en el nombre ("... Long Run (19km)") y en el resumen
+# del feed ("🏃 1km Repeats • 10,5km"). Una sola definición para los dos lectores.
+KM_RE = re.compile(r"(\d+(?:[.,]\d+)?)\s*km\b", re.I)
+
+
+def km_in(text: str) -> float | None:
+    """La última distancia en km que aparezca en el texto, con punto o coma decimal."""
+    found = KM_RE.findall(text or "")
+    return float(found[-1].replace(",", ".")) if found else None
 
 
 def is_run(item: dict) -> bool:
@@ -36,8 +49,13 @@ def planned_km(item: dict) -> float | None:
     km = item.get("distance_km")
     if isinstance(km, (int, float)) and km > 0:
         return float(km)
-    found = _KM_RE.findall(str(item.get("name") or ""))
-    return float(found[-1].replace(",", ".")) if found else None
+    return km_in(str(item.get("name") or ""))
+
+
+def longest_run_km(activities: list[dict]) -> float | None:
+    """La carrera más larga de una lista de actividades de Garmin, en km."""
+    best = max(((a.get("distance_m") or 0) / 1000 for a in activities if is_run(a)), default=0)
+    return round(best, 1) if best > 0 else None
 
 
 def longest_recent_run_km(garmin: dict) -> float | None:
@@ -51,13 +69,7 @@ def longest_recent_run_km(garmin: dict) -> float | None:
     value = garmin.get("longest_run_30d_km")
     if isinstance(value, (int, float)) and value > 0:
         return float(value)
-    runs = [
-        (a.get("distance_m") or 0) / 1000
-        for a in garmin.get("activities_last_3_weeks", [])
-        if is_run(a)
-    ]
-    best = max(runs, default=0)
-    return round(best, 1) if best > 0 else None
+    return longest_run_km(garmin.get("activities_last_3_weeks", []))
 
 
 def weeks_to_race(d: date, race_date: date) -> int:
@@ -118,12 +130,21 @@ def macro_summary(sessions: list[dict], race_date: date) -> str:
     return "\n".join(lines)
 
 
+def spike_cap(base_km: float) -> float:
+    """El máximo permitido sobre una base: +10 %, bajado al medio kilómetro
+    (un tope de 15,4 km se corre como 15)."""
+    return math.floor(base_km * (1 + SPIKE_THRESHOLD) * 2) / 2
+
+
 def spike_flags(sessions: list[dict], base_km: float | None, race_date: date) -> dict[str, dict]:
-    """{fecha: {km, base_km, pct}} de cada carrera planificada que se dispara.
+    """{fecha: {km, base_km, cap_km, pct}} de cada carrera planificada que se dispara.
 
     La base arranca en la más larga de los últimos 30 días y va subiendo con las
     carreras planificadas anteriores: si la semana 1 ya trae 16 km, la semana 2
-    se mide contra 16. El día de la carrera no se marca (es el objetivo, no un
+    se mide contra 16. Si una carrera se marcó, la base sube solo hasta el tope
+    recortado, que es lo que el atleta va a correr: medir la siguiente contra los
+    km que se le dijo que no corriera escondería justo el segundo salto de una
+    progresión. El día de la carrera no se marca (es el objetivo, no un
     entrenamiento), pero sí cuenta como base para lo que venga después.
     """
     base = base_km or 0.0
@@ -135,15 +156,19 @@ def spike_flags(sessions: list[dict], base_km: float | None, race_date: date) ->
     for s in runs:
         km = planned_km(s)
         if s["date"] != race_date.isoformat() and base > 0 and km > base * (1 + SPIKE_THRESHOLD):
-            flags[s["date"]] = {"km": km, "base_km": round(base, 1), "pct": round((km / base - 1) * 100)}
-        base = max(base, km)
+            cap = spike_cap(base)
+            flags[s["date"]] = {
+                "km": km, "base_km": round(base, 1), "cap_km": cap, "pct": round((km / base - 1) * 100),
+            }
+            base = max(base, cap)
+        else:
+            base = max(base, km)
     return flags
 
 
 def spike_adjustment(session: dict, flag: dict) -> dict:
-    """El recorte que exige la regla, para cuando el modelo no lo propuso."""
-    # Media en medio kilómetro hacia abajo: un tope de 15,4 km se corre como 15.
-    cap = math.floor(flag["base_km"] * (1 + SPIKE_THRESHOLD) * 2) / 2
+    """El recorte que exige la regla."""
+    cap = flag.get("cap_km") or spike_cap(flag["base_km"])
     cap_txt = f"{cap:g}".replace(".", ",")
     base_txt = f"{flag['base_km']:g}".replace(".", ",")
     km_txt = f"{flag['km']:g}".replace(".", ",")
@@ -158,6 +183,7 @@ def spike_adjustment(session: dict, flag: dict) -> dict:
             "el predictor de lesión más claro que se conoce (Garmin-RUNSAFE, 2025)."
         ),
         "source": "regla",
+        "cap_km": cap,
     }
 
 
@@ -201,9 +227,24 @@ def validate_adjustments(
             "source": "modelo",
         }
 
+    # El recorte por pico no es negociable: si el modelo propuso otra cosa ese día
+    # (un techo de FC, por ejemplo), se suma al recorte en vez de reemplazarlo.
     for d, flag in flags.items():
-        if d in runs_by_date and d not in out and not in_race_week(d):
-            out[d] = spike_adjustment(runs_by_date[d], flag)
+        if d not in runs_by_date or in_race_week(d):
+            continue
+        rule = spike_adjustment(runs_by_date[d], flag)
+        model = out.get(d)
+        if model is None:
+            out[d] = rule
+        elif model["verdict"] == "cambiar_a_facil":
+            cap_txt = f"{rule['cap_km']:g}".replace(".", ",")
+            model["change"] = f"{model['change']} Máximo {cap_txt} km."
+            model["rationale"] = f"{model['rationale']} {rule['rationale']}".strip()
+            model["source"] = "regla"
+        else:
+            model["change"] = f"{rule['change']} Además: {model['change']}"
+            model["rationale"] = f"{rule['rationale']} {model['rationale']}".strip()
+            model["source"] = "regla"
 
     return [out[d] for d in sorted(out)]
 
@@ -238,6 +279,14 @@ def reconcile_cycling(cycling: list[dict], sessions: list[dict]) -> tuple[list[d
             c["alternative_to_easy_run"] = True
             c["alternative_to"] = runs[0].get("name")
             c["type"] = "ciclorruta_en_plano"
+            run_min = summarise_session(runs[0])["duration_min"] or (
+                (planned_km(runs[0]) or 0) * EASY_MIN_PER_KM
+            )
+            if run_min:
+                # La alternativa tiene que costar lo mismo que el rodaje que
+                # reemplaza, no el triple: se encaja en 1–1,3× su duración.
+                lo, hi = round(run_min * ALT_MIN_FACTOR), round(run_min * ALT_MAX_FACTOR)
+                c["duration_min"] = min(max(int(c.get("duration_min") or lo), lo), hi)
             kept.append(c)
         else:
             dropped.append(c.get("date"))
