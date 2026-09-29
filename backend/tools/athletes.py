@@ -15,18 +15,24 @@ TRAINING_LOCATION = "Bogotá"
 TRAINING_ALTITUDE_M = 2600
 
 RACES = {
+    # Hasta el 29-sep-2026 era la Media Maratón del Meta (Villavicencio, 4-oct).
+    # José la dejó y arrancó en Runna un plan nuevo de 9 semanas hacia este.
     "jose": {
-        "name": "Media Maratón del Meta",
+        "name": "Medio maratón en Bogotá",
         "distance_label": "medio maratón (21.1 km)",
-        "race_date": date(2026, 10, 4),
-        "race_location": "Villavicencio",
-        "race_altitude_m": 467,
+        "race_date": date(2026, 11, 29),
+        # Lunes de la semana 1 del plan de Runna: desde aquí mide la barra de
+        # progreso del bloque en Hoy.
+        "block_start": date(2026, 9, 28),
+        "race_location": "Bogotá",
+        "race_altitude_m": 2600,
         "has_garmin": True,
     },
     "andrea": {
         "name": "Maratón de Chicago",
         "distance_label": "maratón (42.2 km)",
         "race_date": date(2026, 10, 11),
+        "block_start": date(2026, 9, 7),
         "race_location": "Chicago",
         "race_altitude_m": 181,
         "has_garmin": False,

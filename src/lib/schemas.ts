@@ -121,6 +121,23 @@ const GarminWorkoutSchema = z.custom<GarminWorkout>().nullish().catch(undefined)
 
 // ── GET /plan ───────────────────────────────────────────────────────────────
 
+/**
+ * Ajuste sugerido a una carrera de Runna (lo cuelga generate_plan.py de la
+ * sesión). Es una sugerencia: Runna no se entera, el atleta la aplica. Sin
+ * `change` no hay nada que mostrar, así que el ajuste entero desaparece.
+ */
+export const SessionAdjustmentSchema = z
+  .object({
+    verdict: optStr,
+    change: z.string().min(1),
+    rationale: optStr,
+    // "modelo" = lo propuso Claude; "regla" = recorte automático por sesión pico.
+    source: optStr,
+  })
+  .nullish()
+  .catch(undefined);
+export type SessionAdjustment = NonNullable<z.infer<typeof SessionAdjustmentSchema>>;
+
 export const PlanSessionSchema = z
   .object({
     date: optStr,
@@ -134,6 +151,10 @@ export const PlanSessionSchema = z
     zone: optStrNum,
     rationale: optStr,
     garmin_workout: GarminWorkoutSchema,
+    adjustment: SessionAdjustmentSchema,
+    // Ciclismo agendado el mismo día que un rodaje fácil: el atleta elige uno.
+    alternative_to_easy_run: z.boolean().nullish().catch(undefined),
+    alternative_to: optStr,
   })
   .catchall(z.unknown());
 export type PlanSession = z.infer<typeof PlanSessionSchema>;
@@ -272,6 +293,7 @@ export const RaceInfoSchema = z
     name: optStr,
     distance_label: optStr,
     race_date: optStr,
+    block_start: optStr,
     race_location: optStr,
     race_altitude_m: optNum,
   })

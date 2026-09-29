@@ -12,8 +12,10 @@ Consumidores:
                                 strength_sessions al augmented_plan.json
   - tools/export_gym_plan.py  → exporta web/public/plan.json para la app de Railway
 
-Bloque: 7-sep-2026 → 4-oct-2026 (medio maratón el domingo 4-oct) + semana de
-transición 5–11 oct, sin sesión fija (Andrea corre Chicago el 11-oct).
+Bloque: 7-sep-2026 → 29-nov-2026. Hasta el 27-sep apuntaba al medio del 4-oct
+(W12–W14); el 29-sep José cambió de carrera al 29-nov en Bogotá y el calendario
+siguió con las semanas R2–R10, alineadas con el plan nuevo de Runna. Andrea corre
+Chicago el 11-oct: el calendario con fechas es solo de José.
 Revisado el 2-sep-2026 contra una propuesta previa de Claude; el CHANGELOG de
 abajo recoge en qué se apartó de ella (el documento original ya no está en el repo).
 
@@ -34,9 +36,11 @@ from datetime import date, timedelta
 
 from athletes import DEFAULT_ATHLETE, RACES
 
-# La del bloque estructurado (W12–W15). La de cada atleta en particular vive en
-# athletes.RACES — as_dict(athlete) la expone por separado en `race`.
-RACE_DATE = RACES["jose"]["race_date"]
+# La carrera hacia la que apunta el bloque, fija a propósito y no leída de
+# athletes.RACES: si la carrera vuelve a cambiar, las fechas de WEEKS no se
+# mueven solas, y que este número tampoco lo haga obliga a reescribirlas juntas.
+# La carrera vigente de cada atleta vive en athletes.RACES (as_dict la expone en `race`).
+RACE_DATE = date(2026, 11, 29)
 
 # Días de la semana con gimnasio. generate_plan.py lo usa para bloquear ciclismo.
 GYM_WEEKDAYS = {0: "A", 2: "B"}  # 0 = lunes, 2 = miércoles
@@ -366,8 +370,8 @@ SESSION_A = {
         {
             "name": "Pliometría",
             "minutes": 6,
-            "note": "Va aquí, en fresco y antes de cargar. Volumen bajo a propósito: "
-                    "no hay historial pliométrico y faltan pocas semanas.",
+            "note": "Va aquí, en fresco y antes de cargar. Arranca con ~30 contactos "
+                    "y sube hasta ~50 en la semana del pico de fuerza.",
             "items": [
                 {"ex": "box_jump", "prescription": "3 × 4", "load": "Cajón 30–35 cm · 90 s"},
             ],
@@ -405,9 +409,10 @@ SESSION_B = {
     "weekday": "Miércoles",
     "duration_min": 55,
     "summary": (
-        "Va después de la sesión de calidad de Runna, con al menos 6 horas de "
-        "separación. Cargas moderadas y control: aquí no buscas récords, buscas que "
-        "la pelvis no se caiga en el kilómetro 18."
+        "Va el día antes de la sesión de calidad de Runna (jueves), así que las "
+        "piernas se quedan en moderado: RPE 6–7 y nunca al fallo. Cargas moderadas y "
+        "control: aquí no buscas récords, buscas que la pelvis no se caiga en el "
+        "kilómetro 18."
     ),
     "blocks": [
         {
@@ -530,24 +535,127 @@ WEEKS = [
     {
         "runna_week": "W15",
         "start": date(2026, 9, 28),
-        "phase": "Afinamiento",
-        "intent": "Cero carga pesada. La fuerza ganada se conserva sin entrenar durante "
-                  "semanas; la frescura no.",
-        "loading": "Solo lunes, 25 minutos. Miércoles 30: nada, o 15 minutos de movilidad.",
+        "phase": "Reentrada",
+        "intent": (
+            "Pensada como afinamiento para el medio del 4-oct. José cambió de "
+            "carrera el 29-sep (ahora es el 29-nov) y arranca en Runna un plan "
+            "nuevo de 9 semanas, así que el miércoles vuelve una B corta: dos "
+            "semanas sin carga pesada bastan de descanso."
+        ),
+        "loading": "Lunes: mantenimiento (ya hecho). Miércoles: B con 2 series, RPE 6.",
         "sessions": [
             {"date": date(2026, 9, 28), "session": "M", "scale": 1.0},
+            {"date": date(2026, 9, 30), "session": "B", "scale": 0.66,
+             "note": "2 series por ejercicio, RPE 6. Mañana toca el progresivo de Runna."},
+        ],
+    },
+    # ── Bloque hacia el medio del 29-nov (Bogotá) ────────────────────────────
+    # Semanas alineadas con el plan nuevo de Runna (R2–R9). El pico de fuerza cae
+    # en la descarga de Runna (R4, 32 km): es la semana con menos fatiga de
+    # carrera, así que la fuerza pesada no le roba a nadie. En las tres semanas de
+    # más kilómetros (R5–R7, 51–57 km) la fuerza se mantiene pesada pero corta:
+    # misma intensidad, menos series, que es lo que conserva la ganancia sin
+    # sumar fatiga. Última pesada a 13 días de la carrera, igual que en el bloque
+    # anterior. Andrea corre Chicago el 11-oct: este calendario es de José.
+    {
+        "runna_week": "R2",
+        "start": date(2026, 10, 5),
+        "phase": "Introducción",
+        "intent": (
+            "Volver a cargar sin prisa. Runna sube a 44 km y el jueves trae 5 × 1 km: "
+            "el miércoles no puede dejar las piernas pesadas."
+        ),
+        "loading": "RPE 6–7, 3–4 repeticiones en reserva. Pliometría: ~30 contactos.",
+        "sessions": [
+            {"date": date(2026, 10, 5), "session": "A", "scale": 1.0},
+            {"date": date(2026, 10, 7), "session": "B", "scale": 1.0},
         ],
     },
     {
-        "runna_week": "W16",
-        "start": date(2026, 10, 5),
-        "phase": "Transición",
+        "runna_week": "R3",
+        "start": date(2026, 10, 12),
+        "phase": "Carga",
+        "intent": "Primera semana de estímulo real. La tirada del domingo trae 7 km a ritmo de carrera.",
+        "loading": "Sube 5–10 % en sentadilla y peso muerto rumano. RPE 7–8, 2 en reserva. "
+                   "Pliometría: ~40 contactos.",
+        "sessions": [
+            {"date": date(2026, 10, 12), "session": "A", "scale": 1.0},
+            {"date": date(2026, 10, 14), "session": "B", "scale": 1.0},
+        ],
+    },
+    {
+        "runna_week": "R4",
+        "start": date(2026, 10, 19),
+        "phase": "Pico de fuerza",
         "intent": (
-            "Sin sesión cableada. Jose corrió su medio maratón el domingo 4 y "
-            "está en las primeras 72 horas de recuperación; Andrea entra al "
-            "taper final de Chicago (11-oct). Ninguno de los dos necesita carga "
-            "nueva. Si el cuerpo pide algo, movilidad ligera y ya."
+            "Runna descarga (32 km): la semana con más margen para la fuerza pesada. "
+            "Aquí va el estímulo más alto de todo el bloque."
         ),
+        "loading": "Lunes: sentadilla 4 × 4 a RPE 8. Miércoles: B completa. Pliometría: ~50 contactos.",
+        "sessions": [
+            {"date": date(2026, 10, 19), "session": "A", "scale": 1.0, "note": "Sentadilla 4 × 4 a RPE 8."},
+            {"date": date(2026, 10, 21), "session": "B", "scale": 1.0},
+        ],
+    },
+    {
+        "runna_week": "R5",
+        "start": date(2026, 10, 26),
+        "phase": "Mantenimiento pesado",
+        "intent": "Runna sube a 51 km. La fuerza se queda pesada pero corta: se conserva, no se construye.",
+        "loading": "Mismas cargas que la semana pasada, una serie menos. RPE 7–8.",
+        "sessions": [
+            {"date": date(2026, 10, 26), "session": "A", "scale": 0.75, "note": "Una serie menos por ejercicio, mismo peso."},
+            {"date": date(2026, 10, 28), "session": "B", "scale": 0.66, "note": "2 series por ejercicio."},
+        ],
+    },
+    {
+        "runna_week": "R6",
+        "start": date(2026, 11, 2),
+        "phase": "Mantenimiento pesado",
+        "intent": "54 km en Runna y tirada progresiva de 17 km el domingo.",
+        "loading": "Igual que la semana pasada. Si el HRV viene bajo, el lunes pasa a B.",
+        "sessions": [
+            {"date": date(2026, 11, 2), "session": "A", "scale": 0.75, "note": "Una serie menos por ejercicio, mismo peso."},
+            {"date": date(2026, 11, 4), "session": "B", "scale": 0.66, "note": "2 series por ejercicio."},
+        ],
+    },
+    {
+        "runna_week": "R7",
+        "start": date(2026, 11, 9),
+        "phase": "Mantenimiento pesado",
+        "intent": "La semana de más kilómetros (57) y la tirada más larga. La fuerza no puede ser la que te canse.",
+        "loading": "Lunes: sentadilla 3 × 3 pesada, sin accesorios de pierna. Miércoles: B con 2 series.",
+        "sessions": [
+            {"date": date(2026, 11, 9), "session": "A", "scale": 0.66, "note": "Sentadilla 3 × 3 pesada; sin búlgara."},
+            {"date": date(2026, 11, 11), "session": "B", "scale": 0.66, "note": "2 series por ejercicio."},
+        ],
+    },
+    {
+        "runna_week": "R8",
+        "start": date(2026, 11, 16),
+        "phase": "Afinamiento",
+        "intent": "Taper de Runna (40 km). El lunes 16 es la última sesión pesada: quedan 13 días.",
+        "loading": "Lunes: sentadilla 3 × 3 a RPE 7, sin pliometría extra. Miércoles: B muy corta.",
+        "sessions": [
+            {"date": date(2026, 11, 16), "session": "A", "scale": 0.66, "note": "Última pesada. RPE 7, lejos del fallo."},
+            {"date": date(2026, 11, 18), "session": "B", "scale": 0.5, "note": "1–2 series, solo tren superior y tronco."},
+        ],
+    },
+    {
+        "runna_week": "R9",
+        "start": date(2026, 11, 23),
+        "phase": "Semana de carrera",
+        "intent": "Cero carga pesada. La fuerza ganada se conserva semanas sin entrenar; la frescura no.",
+        "loading": "Solo lunes, 25 minutos. Miércoles 25: nada, o 15 minutos de movilidad.",
+        "sessions": [
+            {"date": date(2026, 11, 23), "session": "M", "scale": 1.0},
+        ],
+    },
+    {
+        "runna_week": "R10",
+        "start": date(2026, 11, 30),
+        "phase": "Transición",
+        "intent": "Primera semana después del medio. Sin sesión fija: movilidad si el cuerpo la pide.",
         "loading": "Nada fijo esta semana.",
         "sessions": [],
     },
@@ -661,10 +769,10 @@ SESSIONS = {
 
 
 RULES = [
-    ("El miércoles se corre primero.",
-     "La sesión de Runna es la prioridad. Gimnasio después, con 6 horas de separación "
-     "si puedes. La literatura de entrenamiento concurrente sugiere ≥6 h para minimizar "
-     "la interferencia aguda. Si solo tienes un hueco, corres."),
+    ("El miércoles, piernas en moderado: el jueves toca calidad.",
+     "La sesión de Runna es la prioridad. Si la B del miércoles te deja piernas pesadas "
+     "para las series del jueves, quítale una serie a la parte unilateral, no al tren "
+     "superior. Si un día tienes que elegir, corres."),
     ("Ninguna sesión de piernas dentro de las 36 horas previas al fondo del domingo.",
      "Ni sábado, ni domingo temprano."),
     ("Si el HRV amanece por debajo de 35 ms o el sueño por debajo de 50, cambias la Sesión A por la B.",
@@ -672,18 +780,17 @@ RULES = [
      "sueño: ese día el gimnasio resta."),
     ("Agujetas de 48 horas o más significan que te pasaste de volumen, no de peso.",
      "Quita una serie, no kilos."),
-    ("Nada nuevo después del 21 de septiembre.",
+    ("Nada nuevo después del 16 de noviembre.",
      "Ningún ejercicio, suplemento, zapatilla ni desayuno que no hayas probado ya."),
     ("Dolor agudo, punzante o en un punto exacto detiene la serie.",
      "Molestia difusa y simétrica es carga. Dolor localizado en tendón de Aquiles, "
      "rótula o tibia es señal."),
     ("A 2.600 metros recuperas más lento.",
      "Los descansos largos entre series no son pereza, son parte de la prescripción."),
-    ("El calendario estructurado cierra el 28 de septiembre.",
-     "Andrea corre el Maratón de Chicago el 11 de octubre, una semana después "
-     "del medio maratón de Jose (4-oct). La semana del 5 al 11 no lleva sesión "
-     "fija: Jose está en recuperación, Andrea en taper final. Si aparece, es "
-     "opcional."),
+    ("La última sesión pesada es el lunes 16 de noviembre.",
+     "Trece días antes del medio del 29-nov. La semana de carrera solo lleva el "
+     "mantenimiento de 25 minutos del lunes. Andrea corre Chicago el 11 de octubre: "
+     "la semana del 5 al 11 es su taper y no debe cargar pesado."),
 ]
 
 
@@ -717,7 +824,7 @@ def week_start(today: date | None = None) -> date:
 def gym_dates_from(start: date | None = None) -> dict[str, str]:
     """Las fechas con gimnasio de esta semana en adelante.
 
-    `gym_dates()` devuelve el bloque ENTERO, del 7-sep al 28-sep, y eso está
+    `gym_dates()` devuelve el bloque ENTERO, del 7-sep al 23-nov, y eso está
     bien para pintar el calendario del bloque. Pero todo lo que mira hacia
     adelante — el calendario que sirve /gym, las `strength_sessions` del plan
     aumentado, el bloque que se le inyecta a Claude — estaba usando esa misma
@@ -778,13 +885,12 @@ def as_dict(athlete: str = DEFAULT_ATHLETE) -> dict:
 
     Sesiones, semanas y reglas son compartidas: el gimnasio es conjunto y no
     se filtra nada por atleta. Lo único que cambia es `race`, con la carrera
-    real del atleta que se pida (`race_date` superior sigue siendo la del
-    bloque W12–W15 por compatibilidad).
+    real del atleta que se pida (`race_date` superior es la del bloque).
     """
     return {
         "race_date": RACE_DATE.isoformat(),
         "race": {
-            k: (v.isoformat() if k == "race_date" else v)
+            k: (v.isoformat() if isinstance(v, date) else v)
             for k, v in RACES[athlete].items()
             if k != "has_garmin"
         },

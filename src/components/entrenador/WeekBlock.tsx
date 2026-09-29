@@ -4,6 +4,7 @@ import { Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { SpotifyIcon } from "@/components/entrenador/SpotifyIcon";
 import { SessionDetailModal } from "@/components/entrenador/SessionDetailModal";
+import { AdjustmentBadge, AlternativeTag } from "@/components/entrenador/SessionAdjustment";
 import { getCreatedPlaylist, isSpotifyConnected, startSpotifyLogin } from "@/lib/spotify";
 import { usePlaylistMutation } from "@/hooks/use-playlist-mutation";
 import { garminQO } from "@/lib/api";
@@ -178,6 +179,8 @@ function SessionCard({ session, kind }: { session: PlanSession; kind: "run" | "b
           {zone != null && <span>· {String(zone)}</span>}
           {duration == null && <span>{kind === "run" ? "Carrera" : "Ciclismo"}</span>}
         </div>
+        {session?.adjustment && <AdjustmentBadge adjustment={session.adjustment} />}
+        <AlternativeTag session={session} />
         <PlaylistButton session={session} />
       </div>
       {open && <SessionDetailModal session={session} kind={kind} onClose={close} />}

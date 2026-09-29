@@ -33,6 +33,7 @@ import { stateColor, stateLabel } from "@/lib/athlete-state";
 import { PageShell } from "@/components/entrenador/PageShell";
 import { QueryState } from "@/components/entrenador/QueryState";
 import { SessionDetailModal } from "@/components/entrenador/SessionDetailModal";
+import { AdjustmentNote, AlternativeTag } from "@/components/entrenador/SessionAdjustment";
 import { PlaylistControl } from "@/components/entrenador/PlaylistControl";
 
 export const Route = createFileRoute("/")({
@@ -47,8 +48,11 @@ export const Route = createFileRoute("/")({
 
 const DAY_INITIALS = ["D", "L", "M", "X", "J", "V", "S"];
 
-/** Inicio real del calendario estructurado — fijo y compartido por los dos atletas. */
-const BLOCK_START = new Date("2026-09-07T00:00:00");
+/**
+ * Inicio del bloque cuando el backend no manda `race.block_start`. Cada atleta
+ * trae el suyo desde que José cambió de carrera (29-nov, bloque desde el 28-sep).
+ */
+const DEFAULT_BLOCK_START = "2026-09-07";
 
 /** Hash estable de string → entero, para picks deterministas por fecha. */
 function hashStr(s: string): number {
@@ -124,23 +128,25 @@ function HoyPage() {
   // tarjeta de cuenta regresiva no se pinta (nada de NaN ni fechas rotas).
   const raceName = gym?.race?.name;
   const raceDateIso = gym?.race?.race_date;
+  const blockStartIso = gym?.race?.block_start ?? DEFAULT_BLOCK_START;
 
   // Días completos que faltan para la carrera (medianoche a medianoche local).
   const daysToRace =
     raceDateIso == null
       ? null
       : Math.round((new Date(raceDateIso + "T00:00:00").getTime() - today.getTime()) / 86_400_000);
-  // Progreso del bloque: siempre contra la fecha de carrera y el inicio fijo
-  // del calendario estructurado, y no contra las semanas del plan, que pueden
-  // estar desactualizadas y dejar la semana actual como última (barra al
-  // 100 % con un mes por delante).
+  // Progreso del bloque: siempre contra la fecha de carrera y el inicio del
+  // bloque del atleta, y no contra las semanas del plan, que pueden estar
+  // desactualizadas y dejar la semana actual como última (barra al 100 % con
+  // un mes por delante).
   const blockProgress = useMemo(() => {
     if (raceDateIso == null) return 0;
-    const total = new Date(raceDateIso + "T00:00:00").getTime() - BLOCK_START.getTime();
+    const start = new Date(blockStartIso + "T00:00:00").getTime();
+    const total = new Date(raceDateIso + "T00:00:00").getTime() - start;
     if (total <= 0) return 0;
-    const elapsed = today.getTime() - BLOCK_START.getTime();
+    const elapsed = today.getTime() - start;
     return Math.min(1, Math.max(0, elapsed / total));
-  }, [raceDateIso, today]);
+  }, [raceDateIso, blockStartIso, today]);
 
   /**
    * Días desde la última corrida del trabajo semanal, o `null` si va al día.
@@ -484,6 +490,7 @@ function TodaySessionCard({
                 <span>· {String(session.primary_zone ?? session.zone)}</span>
               )}
             </div>
+            <AlternativeTag session={session} long />
           </div>
           <button
             type="button"
@@ -493,6 +500,11 @@ function TodaySessionCard({
             Paso a paso
           </button>
         </div>
+        {session?.adjustment && (
+          <div className="mt-4">
+            <AdjustmentNote adjustment={session.adjustment} compact />
+          </div>
+        )}
         <div className="mt-4 pt-4" style={{ borderTop: "1px solid var(--border)" }}>
           <div className="eyebrow mb-2 flex items-center gap-1.5">
             <Music size={11} /> Playlist de la sesión

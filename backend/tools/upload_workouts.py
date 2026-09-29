@@ -222,8 +222,10 @@ def upload_and_schedule(client: garminconnect.Garmin, workout_path: Path,
     name     = payload["workoutName"]
     date_str = workout_path.stem[:10]
 
-    # Hard block: never put cycling on a day with running
-    if date_str in running_dates:
+    # Hard block: nunca ciclismo en un día con carrera de Runna, salvo que sea la
+    # alternativa a un rodaje fácil (generate_plan.py ya verificó que la carrera
+    # de ese día es BAJA). Las dos quedan agendadas y el atleta elige.
+    if date_str in running_dates and not raw.get("alternative_to_easy_run"):
         print(f"  ⛔ SALTADO: {name} el {date_str} — ese día ya tiene carrera de Runna.")
         return
 

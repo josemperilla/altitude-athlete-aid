@@ -1,11 +1,16 @@
 """
-Reads .tmp/garmin_data.json + context/research_principles.md, calls Claude API,
-y genera el plan semanal aumentado con sesiones de ciclismo.
+Reads .tmp/garmin_data.json + context/research_principles.md (+ runna_plan.json
+si existe), calls Claude API, y genera el plan semanal aumentado: sesiones de
+ciclismo y la revisión de las carreras de Runna.
 
 Claude solo decide (fecha, tipo, duración, justificación) de cada sesión de
 ciclismo; el workout completo de Garmin y las runna_sessions se construyen en
 código (ver build_cycling_workout.py y build_runna_sessions()) — el modelo no
 reproduce JSON estructural que el código ya tiene o puede derivar.
+
+Las carreras de Runna no se reescriben: el modelo propone ajustes, runna_checks
+los valida (y añade los recortes por sesión pico que olvide) y cada uno queda en
+su sesión como `adjustment`. Runna es dueño de sus workouts en Garmin.
 
 Output:
   .tmp/augmented_plan.json       — plan completo + load analysis + rationale
@@ -23,7 +28,9 @@ import anthropic
 from dotenv import load_dotenv
 
 import build_cycling_workout
+import runna_checks
 import strength_plan
+from athletes import DEFAULT_ATHLETE, RACES
 from session_intensity import summarise_session
 from usage_log import log_usage
 
@@ -34,6 +41,7 @@ load_dotenv(ROOT / ".env")
 
 GARMIN_DATA = data_file("garmin_data.json")
 RESEARCH_PRINCIPLES = ROOT / "context" / "research_principles.md"
+RUNNA_PLAN = data_file("runna_plan.json")
 OUTPUT_PLAN = data_file("augmented_plan.json")
 WORKOUTS_DIR = data_file("workouts")
 
@@ -46,7 +54,9 @@ CONTEXTO CIENTÍFICO (principios destilados de literatura revisada por pares):
 {research}
 
 PRINCIPIOS CLAVE:
-- El entrenamiento polarizado (≥75% Z1, <10% Z2, 15-20% Z3) supera a los modelos de umbral.
+- La base es el volumen fácil (Z1) y la constancia. En corredores aficionados, polarizado y piramidal
+  rinden igual; el trabajo de umbral (Z2 del modelo de 3 zonas) es el más específico del medio maratón.
+  El error no es la Z2 con intención, sino correr los rodajes fáciles a ritmo de tempo.
 - El ciclismo añade volumen aeróbico SIN impacto de carrera — ideal para recuperación en altitud.
 - Z2 en ciclismo es un TECHO, no un piso. Usa Z1 por defecto salvo que el atleta esté claramente fresco.
 - 2-3 sesiones duras por semana (de Runna); el resto es volumen Z1.
@@ -55,13 +65,19 @@ PRINCIPIOS CLAVE:
 
 RESTRICCIONES DEL ATLETA:
 - Planifica ciclismo para las PRÓXIMAS 2 SEMANAS completas (14 días desde hoy).
-- Máximo 1-2 sesiones de ciclismo por semana. Preferir 1 si el atleta está fatigado.
-- Días PREFERIDOS para ciclismo (en orden de prioridad): jueves, domingo sin long run, viernes sin sesión intensa de Runna.
-- REGLA ABSOLUTA: LUNES y MIÉRCOLES son días de GIMNASIO (bloque de fuerza hacia el medio maratón). NUNCA pongas ciclismo en una fecha que aparezca en la lista PLAN GIMNASIO del mensaje del usuario. El lunes carga fuerza pesada de tren inferior; el miércoles el gimnasio ya va encima de la sesión de calidad de Runna. Meter bici ahí es apilar tres estímulos en un día.
-- Martes: evitar si hay otras opciones. Es el día de recuperación entre el gimnasio pesado del lunes y la calidad del miércoles. Si no queda otra, ciclorruta_en_plano ≤45 min.
-- Sábado: evitar si hay otras opciones disponibles. Solo usar como último recurso si el resto de la semana no deja ningún hueco viable.
-- REGLA ABSOLUTA: NUNCA colocar ciclismo en un día que tenga sesión de Runna. Cero excepciones. Revisa la lista completa de PLAN RUNNA y verifica que la fecha del cycling_session NO aparezca ahí.
-- REGLA ABSOLUTA: NUNCA colocar ciclismo el día de una sesión de Runna marcada como intensidad ALTA. Cada sesión en PLAN RUNNA ya trae su intensidad calculada (BAJA/MODERADA/ALTA) — úsala directamente, no la infieras del nombre.
+- Máximo 1-2 sesiones de ciclismo por semana (alternativas incluidas). Preferir 1 si el atleta está fatigado.
+- REGLA ABSOLUTA: NUNCA pongas ciclismo en una fecha que aparezca en la lista PLAN GIMNASIO del mensaje
+  del usuario (lunes y miércoles). El lunes carga fuerza pesada; el miércoles va el día antes de la calidad
+  de Runna. Meter bici ahí es apilar estímulos.
+- REGLA ABSOLUTA: NUNCA pongas ciclismo el día de una carrera de Runna de intensidad MODERADA o ALTA (tirada
+  larga, tempo, series). Cada sesión en PLAN RUNNA ya trae su intensidad calculada — úsala, no la infieras del nombre.
+- ALTERNATIVA A UN RODAJE: en un día con una carrera de Runna de intensidad BAJA (easy run) SÍ puedes poner
+  ciclismo, pero como ALTERNATIVA: el rodaje NO se quita, el atleta elige cuál de los dos hace ese día.
+  Márcalo con "alternative_to_easy_run": true. Siempre "ciclorruta_en_plano", Z1, con una duración entre 1 y
+  1,3 veces la del rodaje (la bici carga menos por minuto). Es la mejor opción cuando hay fatiga o molestias
+  de impacto, o el día después de la calidad de Runna. Justifica en "rationale" cuándo conviene elegir la bici.
+- Día sin Runna ni gimnasio (hoy suele ser solo el sábado, víspera de la tirada larga): solo
+  ciclorruta_en_plano ≤45 min, y solo si no hay un rodaje fácil mejor para la alternativa.
 - Semana 1: evalúa el estado actual del atleta. Semana 2: proyecta la progresión esperada (si está fatigado ahora, la semana 2 puede ser más intensa).
 
 TIPOS DE ENTRENAMIENTO DE CICLISMO (solo estos dos):
@@ -79,8 +95,27 @@ REGLA DE SELECCIÓN:
   Estado balanceado → subida_a_patios (si el día permite 90-110 min) o ciclorruta_en_plano
   Estado descargado → subida_a_patios preferida
 
-LAS SESIONES DE RUNNA SON DE SOLO LECTURA. No las incluyas en tu respuesta ni las modifiques
-— el sistema ya las tiene completas. Solo decides las sesiones de ciclismo que se añaden.
+REVISIÓN DE LAS CARRERAS DE RUNNA (semana a semana):
+Runna es el esqueleto: su periodización y sus ritmos se respetan por defecto. Tú revisas cada carrera
+de PLAN RUNNA dentro del horizonte de 2 semanas contra los principios de arriba, las señales de Garmin
+y el CICLO COMPLETO DE RUNNA, y propones un ajuste SOLO donde la evidencia o las señales lo pidan.
+No reescribes nada: el atleta aplica el ajuste. Una sesión que está bien NO se incluye (ausencia = mantener).
+
+Veredictos:
+  "ajustar"          — misma sesión con un cambio concreto: recortar distancia, poner techo de FC a un
+                       rodaje, controlar las series de umbral por FC en vez de por ritmo, quitar repeticiones.
+  "cambiar_a_facil"  — reemplazar por rodaje fácil Z1 (di cuántos km y el techo de FC). SOLO con fatiga
+                       objetiva: al menos dos de HRV bajo, FC en reposo elevada o sueño pobre. Cítalas.
+
+Reglas de ajuste:
+  - SEMANA DE CARRERA (así marcada en PLAN RUNNA): ningún ajuste. El sistema los descarta.
+  - TAPER: solo recortes de volumen. La intensidad de las sesiones clave y el número de días de carrera
+    se mantienen.
+  - Sesión marcada "PICO": propón siempre el recorte a ≤10 % sobre la base indicada.
+  - Altitud (Bogotá): si un ritmo de Runna puede sacar un rodaje de Z1 o una serie de umbral por encima
+    del segundo umbral, el ajuste es por FC usando ZONAS FC, no bajar el ritmo a ojo.
+  - Pocos y bien justificados: máximo 2 ajustes por semana. Runna ya periodiza.
+  - "change" es una instrucción que el atleta ejecuta sin pensar: km, minutos, bpm.
 
 FORMATO DE SALIDA — responde con un único objeto JSON válido. No incluyas "runna_sessions" ni
 "garmin_workout": el sistema los construye aparte a partir de tu decisión.
@@ -111,7 +146,16 @@ Para cada semana describe:
       "date": "YYYY-MM-DD",
       "type": "subida_a_patios | ciclorruta_en_plano",
       "duration_min": integer,
+      "alternative_to_easy_run": boolean,
       "rationale": "string en español: por qué este tipo en este día, citando las señales concretas (HRV, FC reposo, sueño, carga, intensidad de sesiones cercanas de Runna) que lo justifican"
+    }}
+  ],
+  "running_adjustments": [
+    {{
+      "date": "YYYY-MM-DD",
+      "verdict": "ajustar | cambiar_a_facil",
+      "change": "string en español: la instrucción concreta, con km, minutos o bpm",
+      "rationale": "string en español: la señal o el principio que lo justifica (1-2 oraciones)"
     }}
   ],
   "load_analysis": {{
@@ -126,7 +170,7 @@ Para cada semana describe:
 """
 
 
-def load_inputs() -> tuple[dict, str]:
+def load_inputs() -> tuple[dict, str, dict]:
     if not GARMIN_DATA.exists():
         print(f"ERROR: {GARMIN_DATA} not found. Run tools/fetch_garmin.py first.", file=sys.stderr)
         sys.exit(1)
@@ -136,10 +180,28 @@ def load_inputs() -> tuple[dict, str]:
 
     garmin = json.loads(GARMIN_DATA.read_text(encoding="utf-8"))
     research = RESEARCH_PRINCIPLES.read_text(encoding="utf-8")
-    return garmin, research
+    # Opcional: sin RUNNA_ICS_URL no existe, y el plan sale sin la vista macro.
+    runna_plan = json.loads(RUNNA_PLAN.read_text(encoding="utf-8")) if RUNNA_PLAN.exists() else {}
+    return garmin, research, runna_plan
 
 
-def _summarise_garmin(garmin: dict) -> str:
+def runna_context(garmin: dict, runna_plan: dict) -> dict:
+    """Fecha de carrera, banderas de pico y ciclo completo, calculados una vez y
+    usados dos: para el prompt y para validar lo que devuelve el modelo.
+
+    La fecha de carrera sale del evento RACE del feed de Runna si está (es la que
+    Runna de verdad planifica) y si no, de athletes.py.
+    """
+    race_iso = runna_plan.get("race_date")
+    race_date = date.fromisoformat(race_iso) if race_iso else RACES[DEFAULT_ATHLETE]["race_date"]
+    # El feed ve el ciclo entero; sin él, las ~2 semanas que trae Garmin.
+    horizon = runna_plan.get("sessions") or garmin.get("weekly_plan", [])
+    flags = runna_checks.spike_flags(horizon, runna_checks.longest_recent_run_km(garmin), race_date)
+    macro = runna_checks.macro_summary(runna_plan.get("sessions") or [], race_date)
+    return {"race_date": race_date, "flags": flags, "macro": macro}
+
+
+def _summarise_garmin(garmin: dict, ctx: dict) -> str:
     """
     Comprime el JSON de Garmin a un resumen conciso y relevante para decidir
     el plan. V1: cada sesión de Runna trae su intensidad real ya calculada
@@ -198,8 +260,26 @@ def _summarise_garmin(garmin: dict) -> str:
             parts.append(f"Z{info['max_zone']} máx")
         if info["structure"]:
             parts.append(info["structure"])
+        if runna_checks.is_run(s) and s.get("date"):
+            phase = runna_checks.phase_label(date.fromisoformat(s["date"]), ctx["race_date"])
+            if phase in ("SEMANA DE CARRERA", "TAPER"):
+                parts.append(phase)
+            flag = ctx["flags"].get(s["date"])
+            if flag:
+                parts.append(f"PICO +{flag['pct']} % sobre la más larga de 30 días ({flag['base_km']:g} km)")
         plan_lines.append(" | ".join(parts))
     plan_str = "\n".join(plan_lines) if plan_lines else "  (sin sesiones)"
+
+    longest = runna_checks.longest_recent_run_km(garmin)
+    race_date = ctx["race_date"]
+    race = RACES[DEFAULT_ATHLETE]
+    days_left = (race_date - date.today()).days
+    race_str = (
+        f"{race['name']} — {race_date.isoformat()} en {race['race_location']} "
+        f"({race['race_altitude_m']} m), faltan {days_left} días"
+        if days_left >= 0 else "ninguna carrera por delante (la última ya pasó)"
+    )
+    macro_str = ctx["macro"] or "  (sin el feed de Runna: solo se conoce lo que trae PLAN RUNNA)"
 
     return f"""ZONAS FC: {zones_str}
 
@@ -210,12 +290,18 @@ SALUD — últimos 7 días:
 
 ACTIVIDADES — últimas 3 semanas (carga de entrenamiento acumulada: {round(total_load)}):
 {acts_str}
+Carrera más larga de los últimos 30 días: {f"{longest:g} km" if longest else "sin dato"}
 
-PLAN RUNNA — próximas semanas (intensidad ya calculada, no la infieras del nombre):
+CARRERA OBJETIVO: {race_str}
+
+CICLO COMPLETO DE RUNNA — contexto para juzgar progresión, descargas y taper (NO se ajusta desde aquí):
+{macro_str}
+
+PLAN RUNNA — próximas semanas, lo que se revisa (intensidad ya calculada, no la infieras del nombre):
 {plan_str}"""
 
 
-def build_user_message(garmin: dict) -> str:
+def build_user_message(garmin: dict, ctx: dict) -> str:
     today = date.today()
     week1_sun = strength_plan.week_start(today)
     week1_sat = week1_sun + timedelta(days=6)
@@ -233,12 +319,12 @@ IMPORTANTE: En el campo weeks_plan, usa exactamente estas fechas:
   Semana 1 → "week_start": "{week1_sun.isoformat()}", "week_end": "{week1_sat.isoformat()}"
   Semana 2 → "week_start": "{week2_sun.isoformat()}", "week_end": "{week2_sat.isoformat()}"
 
-{_summarise_garmin(garmin)}
+{_summarise_garmin(garmin, ctx)}
 
 PLAN GIMNASIO — fechas bloqueadas, NO pongas ciclismo en ninguna de ellas:
 {strength_plan.prompt_block(week1_sun)}
 
-Genera el plan para las PRÓXIMAS 2 SEMANAS. Devuelve únicamente el objeto JSON."""
+Genera el plan para las PRÓXIMAS 2 SEMANAS y revisa las carreras de PLAN RUNNA. Devuelve únicamente el objeto JSON."""
 
 
 def _strip_fences(raw: str) -> str:
@@ -251,7 +337,7 @@ def _strip_fences(raw: str) -> str:
     return raw.strip()
 
 
-def call_claude(garmin: dict, research: str) -> dict:
+def call_claude(garmin: dict, research: str, ctx: dict) -> dict:
     """
     Llamada única a Claude, sin caché (las actualizaciones son demasiado
     espaciadas para que un TTL de 5 min llegue a leerse — solo pagaría el
@@ -267,7 +353,7 @@ def call_claude(garmin: dict, research: str) -> dict:
 
     client = anthropic.Anthropic(api_key=api_key)
     system_text = SYSTEM_PROMPT.format(research=research)
-    user_msg = build_user_message(garmin)
+    user_msg = build_user_message(garmin, ctx)
 
     max_tokens = 8000
     for attempt in range(2):
@@ -335,6 +421,17 @@ def save_outputs(plan: dict, garmin: dict) -> None:
         session["name"] = built["name"]
         session["primary_zone"] = built["primary_zone"]
         session["garmin_workout"] = built["garmin_workout"]
+        if session.get("alternative_to_easy_run"):
+            # Mismo nombre en Garmin a propósito: la app deduplica por fecha+nombre,
+            # y un nombre distinto la pintaría dos veces cuando vuelva desde Garmin.
+            # El aviso va en la descripción, que es lo que se lee en el reloj.
+            workout = session["garmin_workout"]
+            workout["description"] = (
+                f"ALTERNATIVA al rodaje de Runna de hoy ({session.get('alternative_to')}): "
+                f"haz uno de los dos. {workout['description']}"
+            )
+            # Marca interna para upload_workouts.py (enrich_workout no la envía a Garmin).
+            workout["alternative_to_easy_run"] = True
 
     WORKOUTS_DIR.mkdir(parents=True, exist_ok=True)
     OUTPUT_PLAN.write_text(json.dumps(plan, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -387,12 +484,25 @@ def attach_strength(plan: dict) -> list[str]:
 
 
 def main():
-    garmin, research = load_inputs()
-    plan = call_claude(garmin, research)
+    garmin, research, runna_plan = load_inputs()
+    ctx = runna_context(garmin, runna_plan)
+    plan = call_claude(garmin, research, ctx)
     plan["runna_sessions"] = build_runna_sessions(garmin)
+    # Los ajustes se cuelgan de su carrera en runna_sessions (session.adjustment)
+    # y no quedan como lista suelta: así cualquier vista que ya muestra la
+    # sesión los muestra, sin buscarlos por fecha.
+    adjustments = runna_checks.validate_adjustments(
+        plan.pop("running_adjustments", None), plan["runna_sessions"], ctx["race_date"], ctx["flags"]
+    )
+    runna_checks.attach_adjustments(plan["runna_sessions"], adjustments)
     dropped = attach_strength(plan)
     if dropped:
         print(f"⚠ Ciclismo descartado por chocar con gimnasio: {', '.join(dropped)}")
+    plan["cycling_sessions"], dropped = runna_checks.reconcile_cycling(
+        plan.get("cycling_sessions", []), plan["runna_sessions"]
+    )
+    if dropped:
+        print(f"⚠ Ciclismo descartado por caer en tirada larga, tempo o series: {', '.join(dropped)}")
     save_outputs(plan, garmin)
 
     print("\n=== WEEK SUMMARY ===")
@@ -402,7 +512,12 @@ def main():
     sessions = plan.get("cycling_sessions", [])
     print(f"\nCycling sessions added: {len(sessions)}")
     for s in sessions:
-        print(f"  {s['date']} — {s['name']} ({s['duration_min']} min, {s['primary_zone']})")
+        alt = f" · alternativa a {s['alternative_to']}" if s.get("alternative_to_easy_run") else ""
+        print(f"  {s['date']} — {s['name']} ({s['duration_min']} min, {s['primary_zone']}){alt}")
+
+    print(f"\nRunna adjustments: {len(adjustments)}")
+    for a in adjustments:
+        print(f"  {a['date']} — {a['runna_name']}: [{a['verdict']}, {a['source']}] {a['change']}")
 
     strength = plan.get("strength_sessions", [])
     print(f"\nStrength sessions: {len(strength)}")

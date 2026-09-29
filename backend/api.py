@@ -281,9 +281,12 @@ def get_insights() -> list:
 
 @app.post("/update")
 def update_plan() -> dict:
-    """Runs fetch_garmin → generate_plan → upload_workouts sequentially."""
+    """Runs fetch_garmin → fetch_runna_plan → generate_plan → upload_workouts sequentially."""
     steps = [
         ("fetch_garmin.py",    "Conectando a Garmin"),
+        # Nunca falla: sin RUNNA_ICS_URL o sin red conserva el plan anterior y
+        # generate_plan sigue sin la vista macro del ciclo.
+        ("fetch_runna_plan.py", "Leyendo el plan completo de Runna"),
         ("generate_plan.py",   "Generando plan"),
         ("upload_workouts.py", "Subiendo workouts"),
     ]

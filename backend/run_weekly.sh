@@ -28,6 +28,7 @@ run_step() {
 }
 
 run_step "Fetch Garmin"      "fetch_garmin.py"
+run_step "Plan de Runna"     "fetch_runna_plan.py"
 run_step "Generar plan"      "generate_plan.py"
 run_step "Subir workouts"    "upload_workouts.py"
 # El gimnasio ya no se exporta: /gym lo construye al vuelo desde
@@ -52,7 +53,7 @@ path.write_text(
     json.dumps(
         {
             "last_run": datetime.now().isoformat(timespec="seconds"),
-            "steps_ok": ["fetch_garmin.py", "generate_plan.py", "upload_workouts.py"],
+            "steps_ok": ["fetch_garmin.py", "fetch_runna_plan.py", "generate_plan.py", "upload_workouts.py"],
         },
         ensure_ascii=False,
     ),

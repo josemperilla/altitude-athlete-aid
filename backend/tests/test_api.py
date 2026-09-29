@@ -12,7 +12,10 @@ def test_gym_fuerza_compartida_y_carrera_distinta(make_client, tmp_path):
     jose = client.get("/gym?athlete=jose").json()
     andrea = client.get("/gym?athlete=andrea").json()
 
-    assert jose["race"]["name"] == "Media Maratón del Meta"
+    assert jose["race"]["name"] == "Medio maratón en Bogotá"
+    assert jose["race"]["race_date"] == "2026-11-29"
+    # Fechas serializadas: si as_dict dejara pasar un `date`, el JSON no saldría.
+    assert jose["race"]["block_start"] == "2026-09-28"
     assert andrea["race"]["name"] == "Maratón de Chicago"
     assert andrea["race"]["race_date"] == "2026-10-11"
     # El gimnasio es conjunto: mismas sesiones, semanas y reglas para los dos.

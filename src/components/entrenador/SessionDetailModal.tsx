@@ -8,6 +8,7 @@ import { garminQO } from "@/lib/api";
 import { useAthleteId } from "@/hooks/use-athlete-id";
 import type { GarminData, PlanSession } from "@/lib/schemas";
 import { PlaylistControl } from "./PlaylistControl";
+import { AdjustmentNote, AlternativeTag } from "./SessionAdjustment";
 
 const SPORT_COLOR = { running: "var(--run)", cycling: "var(--bike)" } as const;
 const INTENSITY_COLOR: Record<IntensityLevel, string> = {
@@ -155,6 +156,9 @@ export function SessionDetailModal({
             {Number.isFinite(distance) && distance > 0 && <Chip>{distance} km</Chip>}
             <Chip color={intensityColor}>{intensity.label}</Chip>
           </div>
+
+          {session?.adjustment && <AdjustmentNote adjustment={session.adjustment} />}
+          {session && <AlternativeTag session={session} long />}
 
           {rationale && (
             <Section title="Objetivo">

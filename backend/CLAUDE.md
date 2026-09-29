@@ -81,14 +81,16 @@ pestañas del frontend React. La única UI es la de React.
 
 ### Tools disponibles
 - `tools/fetch_garmin.py` — trae actividades, salud y zonas de Garmin Connect → `.tmp/garmin_data.json`
-- `tools/generate_plan.py` — cruza Garmin + investigación, llama a Claude, produce `.tmp/augmented_plan.json` y un JSON de workout por sesión de ciclismo
+- `tools/fetch_runna_plan.py` — lee el plan COMPLETO de Runna desde su feed iCalendar (`RUNNA_ICS_URL`) → `runna_plan.json`. Garmin solo trae ~2 semanas; el feed trae el ciclo entero con ritmos y la fecha de carrera. Sin URL o sin red, avisa y no falla
+- `tools/generate_plan.py` — cruza Garmin + feed de Runna + investigación, llama a Claude, produce `.tmp/augmented_plan.json` (ciclismo + revisión de las carreras de Runna) y un JSON de workout por sesión de ciclismo
+- `tools/runna_checks.py` — reglas deterministas: sesión pico (>10 % sobre la más larga de 30 días), semana de carrera/taper, validación de ajustes y ciclismo como alternativa a rodajes fáciles
 - `tools/upload_workouts.py` — sube y agenda esos workouts en Garmin (Runna los lee de ahí)
 - `tools/diagnose.py` — evalúa una molestia física contra el plan de la semana
 - `tools/extract_papers.py` — extrae `Running_papers/*.pdf` → `context/research_insights.md`, con caché por tamaño+mtime
 
 ### API (`api.py`, puerto 8503)
 `GET /plan` · `GET /garmin` · `GET /diagnosis` · `GET /insights` · `POST /update` (corre
-fetch → generate → upload) · `POST /diagnose`. CORS abierto para que el frontend consuma.
+fetch Garmin → feed Runna → generate → upload) · `POST /diagnose`. CORS abierto para que el frontend consuma.
 
 ### Forma de los datos del plan
 `augmented_plan.json` trae `runna_sessions` y `cycling_sessions`, y **no tienen la misma
@@ -97,6 +99,11 @@ forma**. Las de Runna traen `date`, `name`, `sport` (`"running"` / `"cycling"`),
 (`"Z1"`…`"Z5"`) y `rationale`. `runna_sessions` puede incluir sesiones de ciclismo, así
 que no asumas que un arreglo equivale a un deporte — usa el campo `sport`. El frontend
 depende de esta forma; si la cambias, hay que ajustarlo allá también.
+
+Una carrera de Runna puede traer `adjustment` (`verdict`, `change`, `rationale`, `source`):
+un ajuste sugerido que el atleta aplica; Runna nunca se reescribe. Una sesión de ciclismo
+con `alternative_to_easy_run: true` va el mismo día que un rodaje fácil y el atleta elige
+uno de los dos (upload la agenda igual, pese al bloqueo de días con carrera).
 
 ### File Structure
 ```

@@ -281,9 +281,18 @@ def main():
     client = login()
     print("Connected.\n")
 
-    print("Fetching activities (last 21 days)...")
-    activities = fetch_activities(client)
-    print(f"  → {len(activities)} activity(ies)")
+    print("Fetching activities (last 30 days)...")
+    activities_30d = fetch_activities(client, days=30)
+    # La lista que viaja al frontend sigue siendo de 21 días: Cuerpo la agrupa
+    # por semana, y 30 días le añadirían una cuarta semana a medias. Los 30
+    # días solo hacen falta para la base de la regla de sesión pico.
+    cutoff_21 = (date.today() - timedelta(days=21)).isoformat()
+    activities = [a for a in activities_30d if a["date"] >= cutoff_21]
+    longest_run_30d_km = max(
+        (round((a.get("distance_m") or 0) / 1000, 1) for a in activities_30d if "run" in a["type"].lower()),
+        default=None,
+    ) or None
+    print(f"  → {len(activities)} activity(ies) en 21 días; carrera más larga en 30: {longest_run_30d_km or '—'} km")
 
     print("Fetching scheduled workouts (Runna plan, próximos 60 días)...")
     weekly_plan = fetch_scheduled_workouts(client)
@@ -307,6 +316,7 @@ def main():
         "extracted_at": date.today().isoformat(),
         "weekly_plan": weekly_plan,
         "activities_last_3_weeks": activities,
+        "longest_run_30d_km": longest_run_30d_km,
         "health": health,
         "hr_zones": hr_zones,
     }
