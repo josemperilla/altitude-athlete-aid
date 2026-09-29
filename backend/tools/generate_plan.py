@@ -28,6 +28,7 @@ import anthropic
 from dotenv import load_dotenv
 
 import adjust_workout
+import performance
 import build_cycling_workout
 import runna_checks
 import strength_plan
@@ -43,6 +44,7 @@ load_dotenv(ROOT / ".env")
 GARMIN_DATA = data_file("garmin_data.json")
 RESEARCH_PRINCIPLES = ROOT / "context" / "research_principles.md"
 RUNNA_PLAN = data_file("runna_plan.json")
+HISTORY = data_file("activity_history.json")
 OUTPUT_PLAN = data_file("augmented_plan.json")
 WORKOUTS_DIR = data_file("workouts")
 
@@ -117,6 +119,11 @@ Reglas de ajuste:
   - Sesión marcada "PICO": propón siempre el recorte a ≤10 % sobre la base indicada.
   - Altitud (Bogotá): si un ritmo de Runna puede sacar un rodaje de Z1 o una serie de umbral por encima
     del segundo umbral, el ajuste es por FC usando ZONAS FC, no bajar el ritmo a ojo.
+  - RENDIMIENTO REAL manda sobre el nombre de la sesión. Si el tiempo bajo 156 lpm está por debajo de la
+    meta, mira de dónde sale el tiempo duro: si los rodajes fáciles se van a umbral, "hr_cap" 156 en los
+    fáciles; si sale de tiradas largas que se corren a ritmo de carrera cuando Runna las pide
+    conversacionales, "hr_cap" 156 en esas tiradas (nunca en una tirada con bloques a ritmo de carrera).
+    No subas volumen de golpe para "compensar" semanas flojas: la constancia vale más.
   - Pocos y bien justificados: máximo 2 ajustes por semana. Runna ya periodiza.
   - "change" es una instrucción que el atleta ejecuta sin pensar: km, minutos, bpm.
 
@@ -223,7 +230,9 @@ def runna_context(garmin: dict, runna_plan: dict) -> dict:
     horizon = runna_plan.get("sessions") or garmin.get("weekly_plan", [])
     flags = runna_checks.spike_flags(horizon, runna_checks.longest_recent_run_km(garmin), race_date)
     macro = runna_checks.macro_summary(runna_plan.get("sessions") or [], race_date)
-    return {"race_date": race_date, "flags": flags, "macro": macro}
+    history = json.loads(HISTORY.read_text(encoding="utf-8")) if HISTORY.exists() else []
+    perf = performance.prompt_block(performance.build(history)) if history else ""
+    return {"race_date": race_date, "flags": flags, "macro": macro, "performance": perf}
 
 
 def _summarise_garmin(garmin: dict, ctx: dict) -> str:
@@ -318,6 +327,9 @@ ACTIVIDADES — últimas 3 semanas (carga de entrenamiento acumulada: {round(tot
 Carrera más larga de los últimos 30 días: {f"{longest:g} km" if longest else "sin dato"}
 
 CARRERA OBJETIVO: {race_str}
+
+RENDIMIENTO REAL — historial de Garmin, últimas 12 semanas (zonas agrupadas en bajo/umbral/alto):
+{ctx.get("performance") or "  (sin historial todavía)"}
 
 CICLO COMPLETO DE RUNNA — contexto para juzgar progresión, descargas y taper (NO se ajusta desde aquí):
 {macro_str}

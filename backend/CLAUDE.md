@@ -83,6 +83,7 @@ pestañas del frontend React. La única UI es la de React.
 - `tools/fetch_garmin.py` — trae actividades, salud y zonas de Garmin Connect → `.tmp/garmin_data.json`
 - `tools/fetch_runna_plan.py` — lee el plan COMPLETO de Runna desde su feed iCalendar (`RUNNA_ICS_URL`) → `runna_plan.json`. Garmin solo trae ~2 semanas; el feed trae el ciclo entero con ritmos y la fecha de carrera. Sin URL o sin red, avisa y no falla
 - `tools/generate_plan.py` — cruza Garmin + feed de Runna + investigación, llama a Claude, produce `.tmp/augmented_plan.json` (ciclismo + revisión de las carreras de Runna) y un JSON de workout por sesión de ciclismo
+- `tools/performance.py` — tablero de rendimiento desde `activity_history.json` (resúmenes de Garmin, ~26 semanas): zonas agrupadas en suave/umbral/alto, volumen, eficiencia aeróbica, técnica y lecturas. Lo sirve `GET /performance` y va resumido al prompt de `generate_plan`
 - `tools/runna_checks.py` — reglas deterministas: sesión pico (>10 % sobre la más larga de 30 días), semana de carrera/taper, validación de ajustes y ciclismo como alternativa a rodajes fáciles
 - `tools/adjust_workout.py` — aplica las `ops` de un ajuste (`set_distance_km`, `set_reps`, `hr_cap`, `easy_run`) sobre el workout real de Runna y devuelve uno nuevo, «Ajustado · <nombre>», listo para Garmin
 - `tools/upload_workouts.py` — borra lo que subió la vez anterior (ciclismo y «Ajustado · …») y sube y agenda lo nuevo. El workout de Runna nunca se toca: el ajustado va al lado, el mismo día

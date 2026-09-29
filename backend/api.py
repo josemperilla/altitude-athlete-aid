@@ -9,6 +9,7 @@ Endpoints (un solo atleta, José; un ?athlete= viejo se ignora):
   GET  /gym           → bloque de fuerza + carrera + calendario de la semana
   GET/POST /gym/done  → sesiones de gimnasio marcadas como hechas
   GET  /insights      → insights educativos por categoría
+  GET  /performance   → tablero de rendimiento (historial de Garmin)
   POST /update        → corre fetch + generate + upload (actualiza el plan)
   POST /diagnose      → analiza una molestia física
   GET  /health        → latido del trabajo semanal (last_run o null), sin token
@@ -241,6 +242,28 @@ def post_gym_done(body: GymDoneRequest) -> dict:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
     return data
+
+
+@app.get("/performance")
+def get_performance() -> dict:
+    """Tablero de rendimiento calculado al vuelo desde activity_history.json.
+
+    Vacío con 200 si todavía no hay historial (nunca se corrió /update con esta
+    versión): el frontend tiene estado vacío para eso, igual que /diagnosis.
+    """
+    import performance
+    history = _read_list(data_file("activity_history.json"))
+    return performance.build(history) if history else {}
+
+
+def _read_list(path: Path) -> list:
+    if path.exists():
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            return data if isinstance(data, list) else []
+        except Exception:
+            return []
+    return []
 
 
 @app.get("/insights")

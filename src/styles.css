@@ -93,6 +93,11 @@
      scrim del modal, selección de texto). Como tokens, cada tema pone la suya. */
   --chart-grid: rgba(233, 206, 169, 0.08);
   --chart-axis: rgba(233, 206, 169, 0.15);
+  /* Intensidad (bajo · umbral · alto): rampa ordinal de un solo tono, validada
+     con dataviz/validate_palette.js --ordinal contra --surface de cada tema. */
+  --zone-low: #2f5aa8;
+  --zone-mid: #3b82f6;
+  --zone-high: #9cc3fb;
   --scrim: rgba(2, 1, 1, 0.82);
   --selection: rgba(233, 206, 169, 0.28);
 
@@ -138,6 +143,9 @@
 
   --chart-grid: rgba(72, 56, 24, 0.13);
   --chart-axis: rgba(72, 56, 24, 0.2);
+  --zone-low: #6aa5f5;
+  --zone-mid: #2f6fe0;
+  --zone-high: #1e3a8a;
   --scrim: rgba(45, 38, 25, 0.42);
   --selection: rgba(122, 90, 30, 0.22);
 

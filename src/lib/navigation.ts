@@ -1,4 +1,12 @@
-import { Activity, BookOpen, CalendarDays, Dumbbell, Sun, type LucideIcon } from "lucide-react";
+import {
+  Activity,
+  BookOpen,
+  CalendarDays,
+  Dumbbell,
+  Sun,
+  TrendingUp,
+  type LucideIcon,
+} from "lucide-react";
 
 /**
  * Las pestañas de la app. "Hoy" es la cabina diaria; el resto cuelga de ella.
@@ -9,6 +17,7 @@ export const NAV_TABS = [
   { to: "/", label: "Hoy", short: "Hoy", icon: Sun },
   { to: "/plan", label: "Plan", short: "Plan", icon: CalendarDays },
   { to: "/cuerpo", label: "Cuerpo", short: "Cuerpo", icon: Activity },
+  { to: "/rendimiento", label: "Rendimiento", short: "Rinde", icon: TrendingUp },
   { to: "/gimnasio", label: "Gimnasio", short: "Gym", icon: Dumbbell },
   { to: "/aprende", label: "Aprende", short: "Aprende", icon: BookOpen },
 ] as const satisfies ReadonlyArray<{

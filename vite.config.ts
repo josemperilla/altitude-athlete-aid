@@ -33,6 +33,7 @@ export default defineConfig({
         "/gym": { target: "http://localhost:8503", changeOrigin: true, bypass: htmlBypass },
         "/gym/done": { target: "http://localhost:8503", changeOrigin: true, bypass: htmlBypass },
         "/health": { target: "http://localhost:8503", changeOrigin: true, bypass: htmlBypass },
+        "/performance": { target: "http://localhost:8503", changeOrigin: true, bypass: htmlBypass },
       },
     },
   },

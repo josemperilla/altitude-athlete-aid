@@ -336,6 +336,74 @@ export type GymDoneEntry = z.infer<typeof GymDoneEntrySchema>;
 export const GymDoneMapSchema = lenientRecord(GymDoneEntrySchema, "gym-done");
 export type GymDoneMap = z.infer<typeof GymDoneMapSchema>;
 
+// ── GET /performance ────────────────────────────────────────────────────────
+// Tablero de rendimiento (backend/tools/performance.py). Zonas agrupadas en tres:
+// bajo < 156 lpm · umbral 156–175 · alto ≥ 176. Minutos por semana, % por mes.
+
+const ZonesPctSchema = z.object({ low: z.number(), mid: z.number(), high: z.number() });
+
+export const PerformanceWeekSchema = z.object({
+  week: z.string(),
+  km: z.number(),
+  runs: z.number(),
+  low_min: z.number(),
+  mid_min: z.number(),
+  high_min: z.number(),
+  long_km: z.number(),
+});
+
+export const PerformanceMonthSchema = z.object({
+  month: z.string(),
+  km: z.number(),
+  zones_pct: ZonesPctSchema,
+  efficiency: optNum,
+  efficiency_n: optNum,
+  cadence: optNum,
+  gct_ms: optNum,
+  stride_cm: optNum,
+  vo2max: optNum,
+});
+
+export const PerformanceInsightSchema = z.object({
+  level: z.enum(["ok", "watch", "act"]),
+  title: z.string(),
+  detail: z.string(),
+});
+
+export const PerformanceSchema = z
+  .object({
+    generated_at: optStr,
+    kpis: z
+      .object({
+        weekly_km_12w: optNum,
+        weekly_km_cv: optNum,
+        weeks_3plus_runs: optNum,
+        weeks_counted: optNum,
+        zones_pct_12w: ZonesPctSchema.nullish().catch(undefined),
+        easy_runs: optNum,
+        easy_runs_in_zone: optNum,
+        longest_km_12w: optNum,
+        vo2max: optNum,
+        vo2max_date: optStr,
+        max_hr_observed: optNum,
+      })
+      .nullish()
+      .catch(undefined),
+    zone_model: z
+      .object({ low_target_pct: optNum })
+      .catchall(z.unknown())
+      .nullish()
+      .catch(undefined),
+    weekly: lenientArray(PerformanceWeekSchema, "performance.weekly"),
+    monthly: lenientArray(PerformanceMonthSchema, "performance.monthly"),
+    insights: lenientArray(PerformanceInsightSchema, "performance.insights"),
+  })
+  .catchall(z.unknown());
+export type Performance = z.infer<typeof PerformanceSchema>;
+export type PerformanceWeek = z.infer<typeof PerformanceWeekSchema>;
+export type PerformanceMonth = z.infer<typeof PerformanceMonthSchema>;
+export type PerformanceInsight = z.infer<typeof PerformanceInsightSchema>;
+
 // ── GET /insights ───────────────────────────────────────────────────────────
 
 export const InsightSchema = z

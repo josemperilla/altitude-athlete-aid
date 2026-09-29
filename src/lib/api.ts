@@ -11,6 +11,8 @@ import {
   GymDoneMapSchema,
   InsightsSchema,
   DiagnoseResultSchema,
+  PerformanceSchema,
+  type Performance,
   type GarminData,
   type PlanData,
   type GymData,
@@ -111,6 +113,13 @@ export const healthQO = () => ({
   queryFn: () => apiFetch<{ last_run?: string | null }>("/health"),
   staleTime: 5 * 60_000,
   retry: false,
+});
+
+export const performanceQO = () => ({
+  queryKey: ["performance"] as const,
+  queryFn: async (): Promise<Performance> =>
+    parseWith(PerformanceSchema, await apiFetch("/performance"), "GET /performance"),
+  staleTime: 5 * 60_000,
 });
 
 export const insightsQO = () => ({

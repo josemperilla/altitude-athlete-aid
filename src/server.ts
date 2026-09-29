@@ -82,6 +82,7 @@ const API_PATHS = new Set([
   // en dev no se nota, porque el proxy de Vite sí es por prefijo.
   "/gym/done",
   "/health",
+  "/performance",
 ]);
 
 /**

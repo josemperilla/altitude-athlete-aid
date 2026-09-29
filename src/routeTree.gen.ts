@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SpotifyCallbackRouteImport } from './routes/spotify-callback'
+import { Route as RendimientoRouteImport } from './routes/rendimiento'
 import { Route as PlanRouteImport } from './routes/plan'
 import { Route as HistorialRouteImport } from './routes/historial'
 import { Route as GimnasioRouteImport } from './routes/gimnasio'
@@ -22,6 +23,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const SpotifyCallbackRoute = SpotifyCallbackRouteImport.update({
   id: '/spotify-callback',
   path: '/spotify-callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RendimientoRoute = RendimientoRouteImport.update({
+  id: '/rendimiento',
+  path: '/rendimiento',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PlanRoute = PlanRouteImport.update({
@@ -74,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/gimnasio': typeof GimnasioRoute
   '/historial': typeof HistorialRoute
   '/plan': typeof PlanRoute
+  '/rendimiento': typeof RendimientoRoute
   '/spotify-callback': typeof SpotifyCallbackRoute
 }
 export interface FileRoutesByTo {
@@ -85,6 +92,7 @@ export interface FileRoutesByTo {
   '/gimnasio': typeof GimnasioRoute
   '/historial': typeof HistorialRoute
   '/plan': typeof PlanRoute
+  '/rendimiento': typeof RendimientoRoute
   '/spotify-callback': typeof SpotifyCallbackRoute
 }
 export interface FileRoutesById {
@@ -97,6 +105,7 @@ export interface FileRoutesById {
   '/gimnasio': typeof GimnasioRoute
   '/historial': typeof HistorialRoute
   '/plan': typeof PlanRoute
+  '/rendimiento': typeof RendimientoRoute
   '/spotify-callback': typeof SpotifyCallbackRoute
 }
 export interface FileRouteTypes {
@@ -110,6 +119,7 @@ export interface FileRouteTypes {
     | '/gimnasio'
     | '/historial'
     | '/plan'
+    | '/rendimiento'
     | '/spotify-callback'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/gimnasio'
     | '/historial'
     | '/plan'
+    | '/rendimiento'
     | '/spotify-callback'
   id:
     | '__root__'
@@ -132,6 +143,7 @@ export interface FileRouteTypes {
     | '/gimnasio'
     | '/historial'
     | '/plan'
+    | '/rendimiento'
     | '/spotify-callback'
   fileRoutesById: FileRoutesById
 }
@@ -144,6 +156,7 @@ export interface RootRouteChildren {
   GimnasioRoute: typeof GimnasioRoute
   HistorialRoute: typeof HistorialRoute
   PlanRoute: typeof PlanRoute
+  RendimientoRoute: typeof RendimientoRoute
   SpotifyCallbackRoute: typeof SpotifyCallbackRoute
 }
 
@@ -154,6 +167,13 @@ declare module '@tanstack/react-router' {
       path: '/spotify-callback'
       fullPath: '/spotify-callback'
       preLoaderRoute: typeof SpotifyCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rendimiento': {
+      id: '/rendimiento'
+      path: '/rendimiento'
+      fullPath: '/rendimiento'
+      preLoaderRoute: typeof RendimientoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/plan': {
@@ -224,6 +244,7 @@ const rootRouteChildren: RootRouteChildren = {
   GimnasioRoute: GimnasioRoute,
   HistorialRoute: HistorialRoute,
   PlanRoute: PlanRoute,
+  RendimientoRoute: RendimientoRoute,
   SpotifyCallbackRoute: SpotifyCallbackRoute,
 }
 export const routeTree = rootRouteImport

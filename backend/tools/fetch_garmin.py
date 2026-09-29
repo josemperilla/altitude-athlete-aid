@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 import garminconnect
 from garminconnect import GarminConnectTooManyRequestsError
 
+import performance
 import runna_checks
 from upload_workouts import ADJUSTED_PREFIX
 from paths import data_file
@@ -25,6 +26,7 @@ ROOT = Path(__file__).parent.parent
 load_dotenv(ROOT / ".env")
 
 OUTPUT = data_file("garmin_data.json")
+HISTORY = data_file("activity_history.json")
 
 
 def login() -> garminconnect.Garmin:
@@ -67,6 +69,13 @@ def fetch_activities(client: garminconnect.Garmin, days: int = 21) -> list:
                 "anaerobic_effect": a.get("anaerobicTrainingEffect"),
             })
     return result
+
+
+def fetch_history(client: garminconnect.Garmin, limit: int = 250) -> list[dict]:
+    """Resúmenes compactos de las carreras recientes (~26 semanas o más) para el
+    tablero de rendimiento. Una sola llamada: cada resumen ya trae el tiempo en
+    zonas de FC, VO2máx y dinámica de carrera, sin bajar la serie de pulsaciones."""
+    return [r for r in (performance.compact(a) for a in client.get_activities(0, limit)) if r]
 
 
 def fetch_scheduled_workouts(client: garminconnect.Garmin, days_ahead: int = 60) -> list:
@@ -297,6 +306,17 @@ def main():
     activities = [a for a in activities_30d if a["date"] >= cutoff_21]
     longest_run_30d_km = runna_checks.longest_run_km(activities_30d)
     print(f"  → {len(activities)} activity(ies) en 21 días; carrera más larga en 30: {longest_run_30d_km or '—'} km")
+
+    # El historial va aparte de garmin_data.json: /garmin lo sirve entero al
+    # frontend y 250 actividades no hacen falta en cada pantalla. Si falla, el
+    # tablero se queda con el anterior y el plan sale igual.
+    print("Fetching activity history (tablero de rendimiento)...")
+    try:
+        history = fetch_history(client)
+        HISTORY.write_text(json.dumps(history, ensure_ascii=False), encoding="utf-8")
+        print(f"  → {len(history)} carreras en el historial")
+    except Exception as e:
+        print(f"  WARNING: no se pudo bajar el historial ({e}); se conserva el anterior.", file=sys.stderr)
 
     print("Fetching scheduled workouts (Runna plan, próximos 60 días)...")
     weekly_plan = fetch_scheduled_workouts(client)

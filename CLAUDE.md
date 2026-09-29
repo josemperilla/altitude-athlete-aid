@@ -20,7 +20,7 @@ La app es un copiloto diario: `/` es la cabina del día y el resto cuelga de ah�
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/server.ts`              | SSR entry + proxy al backend (desambiguado por `Accept`: navegación → SPA, JSON → API)                                                                                 |
 | `src/router.tsx`             | Router (routeTree generado)                                                                                                                                            |
-| `src/routes/`                | `/` Hoy · `/plan` calendario · `/cuerpo` señales+dolor · `/gimnasio` fuerza · `/aprende` papers · `/ajustes` Spotify/plan · redirects de `/historial` y `/diagnostico` |
+| `src/routes/`                | `/` Hoy · `/plan` calendario · `/cuerpo` señales+dolor · `/rendimiento` tablero (zonas, volumen, eficiencia) · `/gimnasio` fuerza · `/aprende` papers · `/ajustes` Spotify/plan · redirects de `/historial` y `/diagnostico` |
 | `src/components/entrenador/` | UI de la app (WeekBlock, SessionDetailModal, PlaylistControl, chrome Sidebar/MobileNav, gym/\*)                                                                        |
 | `src/components/ui/`         | Primitivas (sonner, formularios Field/Select/Range)                                                                                                                    |
 | `src/hooks/`                 | `useAthlete` (foto Garmin+plan), mutaciones, store reactivo de Spotify                                                                                                 |
